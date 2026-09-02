@@ -6,3 +6,33 @@
 # 系统文件
 .DS_Store
 Thumbs.db
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+
+# Django
+.env
+.env.*
+!.env.example
+db.sqlite3
+*.sqlite3
+private_media/
+staticfiles/
+
+# Tests and tools
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Logs
+*.log
+logs/
+
+# IDE and system
+.vscode/
+.idea/
