@@ -8,7 +8,7 @@
 
 - 当前正式开发基线：PRD V1.1A（钉钉集成核心试点版）。
 - 历史参考版本：PRD V1.1，不作为当前开发范围的判定依据。
-- 当前阶段：**项目初始化准备完成，Django 代码尚未初始化**。
+- 当前阶段：**最小 Django 单体项目骨架已初始化，尚未创建正式数据库迁移**。
 
 需求、架构或实现说明发生冲突时，应以 V1.1A PRD 和架构文档为准，并在继续开发前报告冲突。
 
@@ -50,7 +50,7 @@
 
 ## 目标工程目录
 
-以下为下一阶段将要初始化的核心结构，以架构文档为准：
+当前已初始化以下核心结构，以架构文档为准：
 
 ```text
 AI-OpsAI-IT/
@@ -65,7 +65,19 @@ AI-OpsAI-IT/
 └── docs/               项目文档唯一入口
 ```
 
-当前尚未创建 `manage.py`、`config`、`apps` 等 Django 代码；上述目录将在下一阶段初始化。
+当前已创建 `manage.py`、分环境 `config/settings`、8 个 App 骨架、模板和静态资源目录，以及最小健康检查测试。`private_media/` 仅作为本地私有附件目录并由 Git 忽略。
+
+## 本地骨架验证
+
+所有 Python 命令均使用项目根目录的 `.venv`：
+
+```powershell
+.\.venv\Scripts\python.exe manage.py check
+.\.venv\Scripts\python.exe -m pytest
+.\.venv\Scripts\python.exe manage.py runserver
+```
+
+开发设置暂时指向 SQLite，只用于无迁移的骨架检查；本步骤未运行迁移，也不会创建 `db.sqlite3`。正式本地开发将在后续容器环境阶段切换为 PostgreSQL。
 
 ## 文档导航
 
@@ -86,6 +98,9 @@ AI-OpsAI-IT/
 - 系统架构与 API 清单；
 - `knowledge` 候选模型参考代码；
 - Codex 分阶段开发计划；
-- 项目文档分类归档。
+- 项目文档分类归档；
+- Django 分环境设置与 8 个 App 骨架；
+- 最小自定义用户模型；
+- `/health/live` 存活检查及自动化测试。
 
-下一步：初始化最小可运行的 Django 单体项目骨架。下一阶段只建立工程基础，不提前开发全部业务接口。
+下一步：在不提前开发业务功能的前提下，准备正式本地 PostgreSQL 运行环境和首批迁移。

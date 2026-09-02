@@ -27,6 +27,12 @@ packages = []
 [tool.ruff]
 target-version = "py313"
 line-length = 100
+extend-exclude = ["docs/05-Database/knowledge_models_reference.py"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.test"
+python_files = ["test_*.py", "tests.py"]
+addopts = "-ra"

@@ -17,6 +17,11 @@
 - 增加 `knowledge` 核心模型参考代码。
 - 增加 Codex 分阶段开发指令。
 - 增加根目录 `AGENTS.md`，统一后续开发约束。
+- 初始化 Django 分环境配置。
+- 创建 8 个 App 骨架。
+- 增加最小自定义用户模型 `accounts.User`。
+- 增加不依赖数据库或外部系统的 `/health/live` 存活检查。
+- 增加健康检查自动化测试和 pytest 配置。
 
 ### Changed
 
@@ -45,4 +50,3 @@
 
 - 完成第一阶段 Word 到 Markdown 的 PRD 转换。
 - 建立初版 `docs` 目录、README 和 Git 忽略规则。
-
