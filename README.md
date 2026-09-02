@@ -2,66 +2,90 @@
 
 ## 项目简介
 
-`OpsAI-IT 故障问答知识库` 是面向企业内部员工和 IT 运维团队的知识服务平台，Git 仓库名称为 `AI-OpsAI-IT`，钉钉工作台名称为 `IT 知识库`。平台以钉钉作为统一入口，通过结构化知识管理和智能搜索与知识推荐帮助员工快速定位常见故障解决方案，并在知识无法解决问题时衔接现有 IT 服务流程。
+`OpsAI-IT 故障问答知识库` 是面向企业内部员工和 IT 运维团队的知识库平台。员工通过钉钉工作台中的“IT 知识库”进入系统，使用知识浏览、分类和搜索解决常见 IT 问题；知识无法解决时，可跳转至现有统一 IT 服务入口。知识库由公司独立部署和管理，钉钉提供统一入口、免登身份和基础集成能力。
 
-## 项目目标
+## 当前开发基线
 
-- **故障知识沉淀**：将分散的运维经验转化为可审核、可追溯、可持续维护的知识资产。
-- **可信知识底座**：建设可审核、受权限控制的内容基础，为后续检索增强问答和智能运维能力提供支撑。
-- **员工自助服务**：让员工通过搜索、分类和知识推荐快速解决常见 IT 问题。
-- **降低 IT 重复工作**：减少重复咨询，使运维人员聚焦复杂故障和服务改进。
+- 当前正式开发基线：PRD V1.1A（钉钉集成核心试点版）。
+- 历史参考版本：PRD V1.1，不作为当前开发范围的判定依据。
+- 当前阶段：**项目初始化准备完成，Django 代码尚未初始化**。
 
-## 核心架构
+需求、架构或实现说明发生冲突时，应以 V1.1A PRD 和架构文档为准，并在继续开发前报告冲突。
 
-```mermaid
-graph LR
-    Employee[员工] --> DingTalk[钉钉工作台]
-    DingTalk --> Platform[知识库平台]
-    Platform --> Search[智能搜索与知识推荐]
-    Platform --> Service[现有 IT 服务入口]
-    Platform --> DB[(数据库)]
-```
+## 当前范围
 
-当前 V1.1 聚焦“知识库核心能力 + 钉钉基础集成”：知识库独立部署，钉钉提供工作台入口、钉钉免登、组织和消息能力；访问同时受钉钉应用可见范围与平台 RBAC 控制。V1.1 不提供生成式 AI 问答，也不重复建设完整 ITSM；检索增强问答与 ITSM 深度联动按照后续路线图建设。
+- 知识浏览与分类导航；
+- 全文搜索、筛选和零结果处理；
+- 文章、版本及完整内容生命周期；
+- 审核、发布、复审、下架和归档；
+- 内容受众权限及服务端权限过滤；
+- 钉钉工作台入口、免登和基础集成；
+- 统一 IT 服务入口跳转。
 
-## 工程目录
+## 本期不开发
+
+- 生成式 AI 问答；
+- 完整 ITSM 工单系统；
+- 微服务；
+- Vue 或 React 前后端分离；
+- Kubernetes；
+- Elasticsearch；
+- Redis 和 Celery。
+
+## 技术路线
+
+项目采用**模块化 Django 单体应用**：
+
+- Python 3.13；
+- Django 5.2 LTS；
+- Django Templates；
+- Bootstrap；
+- HTMX；
+- PostgreSQL；
+- Docker Compose；
+- Caddy；
+- ClamAV（在附件功能阶段接入）。
+
+首版不拆分微服务或独立前端工程。页面渲染、业务逻辑、权限、搜索、审核、钉钉适配和数据库访问均位于同一个 Django 代码库中。
+
+## 目标工程目录
+
+以下为下一阶段将要初始化的核心结构，以架构文档为准：
 
 ```text
 AI-OpsAI-IT/
-├── backend/                 后端工程
-├── frontend/                前端工程
-├── database/                数据库脚本与迁移
-├── scripts/                 工程辅助脚本
-├── tests/                   测试工程
-└── docs/                    项目文档唯一入口
+├── manage.py
+├── config/             Django 项目配置
+├── apps/               业务与集成 App
+├── templates/          Django Templates 页面
+├── static/             Bootstrap、HTMX 和自有静态资源
+├── private_media/      私有附件目录
+├── tests/              跨 App 测试
+├── deploy/             Docker Compose、Caddy 和部署脚本
+└── docs/               项目文档唯一入口
 ```
 
-当前工程目录仅建立规范骨架，尚未生成代码。
+当前尚未创建 `manage.py`、`config`、`apps` 等 Django 代码；上述目录将在下一阶段初始化。
 
-## 文档目录
+## 文档导航
 
-| 目录 | 用途 |
-| --- | --- |
-| [`docs/01-Research`](docs/01-Research/) | 需求调研、访谈问题和参考资料 |
-| [产品需求文档 PRD V1.1——钉钉集成版](docs/02-PRD/产品需求文档PRD-V1.1-钉钉集成版.md) | 当前正式产品需求文档 |
-| [`docs/03-Design`](docs/03-Design/) | 产品、UI 和接口设计 |
-| [`docs/04-Architecture`](docs/04-Architecture/) | 系统架构与技术方案 |
-| [`docs/05-Database`](docs/05-Database/) | 数据库模型与数据字典 |
-| [`docs/06-Process`](docs/06-Process/) | 业务流程与状态流程 |
-| [`docs/07-ADR`](docs/07-ADR/) | 架构决策记录 |
-| [`docs/08-Meeting`](docs/08-Meeting/) | 会议纪要与决策记录 |
-| [`docs/09-KnowledgeBase`](docs/09-KnowledgeBase/) | 故障分类、FAQ、知识文章、AI 问答及 SOP 规范 |
-| [`docs/Archive`](docs/Archive/) | 历史版本和归档资料 |
+- [V1.1A 当前开发基线 PRD](docs/02-PRD/产品需求文档PRD-V1.1A-钉钉集成核心试点版-优化稿.md)
+- [V1.1 历史参考 PRD](docs/02-PRD/产品需求文档PRD-V1.1-钉钉集成版.md)
+- [Django 项目模块目录结构](docs/04-Architecture/Django项目模块目录结构.md)
+- [系统架构与 API 接口清单](docs/04-Architecture/系统架构与API接口清单.md)
+- [knowledge 候选模型参考代码](docs/05-Database/knowledge_models_reference.py)
+- [Codex 分阶段开发指令](docs/06-Process/OpsAI-IT-Codex分阶段开发指令.md)
+- [项目变更记录](CHANGELOG.md)
 
-## 项目状态
+## 开发状态
 
-- 当前阶段：V1.1 需求评审与工程结构规范化。
-- 当前范围：知识库核心能力、钉钉入口、免登、权限、搜索、内容生命周期及 IT 服务跳转。
-- 后续方向：知识运营增强、AI 检索增强问答、ITSM 深度联动。
+已完成：
 
-## 文档维护约定
+- V1.1A 需求基线；
+- Django 模块目录规划；
+- 系统架构与 API 清单；
+- `knowledge` 候选模型参考代码；
+- Codex 分阶段开发计划；
+- 项目文档分类归档。
 
-- `docs` 是项目文档的唯一入口，新文档应按主题归档到对应编号目录。
-- 历史版本和不再维护的源文件进入 `docs/Archive`，不得直接删除。
-- 架构重大决策应在 `docs/07-ADR` 中单独记录。
-- 项目级重要变更应同步更新 [`CHANGELOG.md`](CHANGELOG.md)。
+下一步：初始化最小可运行的 Django 单体项目骨架。下一阶段只建立工程基础，不提前开发全部业务接口。

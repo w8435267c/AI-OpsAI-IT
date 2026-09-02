@@ -11,6 +11,12 @@
 - 建立 `docs/01-Research` 至 `docs/09-KnowledgeBase` 的标准文档分类体系。
 - 建立 `backend`、`frontend`、`database`、`scripts` 和 `tests` 工程目录骨架。
 - 增加项目变更记录文件。
+- 增加 V1.1A 钉钉集成核心试点版 PRD。
+- 增加 Django 模块化单体项目目录规划。
+- 增加系统架构与 API 接口清单。
+- 增加 `knowledge` 核心模型参考代码。
+- 增加 Codex 分阶段开发指令。
+- 增加根目录 `AGENTS.md`，统一后续开发约束。
 
 ### Changed
 
@@ -18,6 +24,15 @@
 - 将需求调研资料迁移至 `docs/01-Research`。
 - 将 Markdown 产品需求文档迁移至 `docs/02-PRD`。
 - 更新 README 的项目目标、核心架构、目录说明及维护约定。
+- 将 V1.1A 确立为当前正式开发基线，V1.1 保留为历史参考。
+- 将项目技术路线调整为 Django 模块化单体。
+- 按 PRD、架构、数据库和流程重新归档项目文档。
+- 更新 README，反映 Django 尚未初始化的当前开发状态。
+
+### Removed
+
+- 移除根目录重复的 V1.1 PRD 入口；历史版本仍保留在 `docs/02-PRD/`。
+- 移除已被正式文件替代的 `.gitkeep` 占位文件。
 
 ### Preserved
 
