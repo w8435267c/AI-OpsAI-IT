@@ -23,7 +23,7 @@ from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
 KB_NO_VALIDATOR = RegexValidator(
-    regex=r"^KB-\d{6}$",
+    regex=r"^KB-[0-9]{6}$",
     message=_("知识编号必须符合 KB-000001 格式。"),
 )
 
@@ -409,6 +409,14 @@ class Article(models.Model):
             models.Index(
                 fields=("article_status", "effective_at"),
                 name="kb_art_status_effect_idx",
+            ),
+        ]
+        constraints = [
+            # 数据库层保证知识编号严格符合 KB-000001 格式并拒绝空字符串，
+            # 正则与 KB_NO_VALIDATOR 保持一致；编号生成仍由后续 Service 负责。
+            models.CheckConstraint(
+                condition=Q(kb_no__regex=r"^KB-[0-9]{6}$"),
+                name="kb_article_kb_no_format_ck",
             ),
         ]
 

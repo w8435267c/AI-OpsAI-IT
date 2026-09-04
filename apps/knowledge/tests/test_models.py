@@ -8,14 +8,17 @@
 
 from datetime import timedelta
 
+from django.contrib import admin
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.db.models.deletion import ProtectedError
-from django.test import TestCase
+from django.test import RequestFactory, TestCase
+from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts.models import Department, User, UserGroup
 
+from ..admin import ArticleAdmin
 from ..models import (
     Article,
     ArticleAudience,
@@ -231,9 +234,24 @@ class ArticleTests(TestCase):
         article.full_clean()
 
     def test_kb_no_format_validator_rejects_invalid(self):
+        # 编号格式现由数据库约束兜底，非法值已无法落库；
+        # 这里用未保存实例单独验证模型校验器仍能给出可读错误。
+        space = make_space()
+        category = make_category(space)
+        owner = create_user()
         for bad in ("KB-00001", "KB-1", "kb-000001", "KB-0000001", "AB-000001"):
             with self.subTest(kb_no=bad):
-                article = make_article(kb_no=bad)
+                article = Article(
+                    kb_no=bad,
+                    title="测试文章",
+                    space=space,
+                    category=category,
+                    article_type=ArticleType.GUIDE,
+                    owner=owner,
+                    created_by=owner,
+                    updated_by=owner,
+                    review_due_at=timezone.now() + timedelta(days=180),
+                )
                 with self.assertRaises(ValidationError):
                     article.full_clean()
 
@@ -721,3 +739,103 @@ class ReviewRecordTests(TestCase):
         )
         self.assertIn(version.article.kb_no, str(record))
         self.assertIn("审核通过", str(record))
+
+
+class ArticleKbNoDbFormatTests(TestCase):
+    """编号格式数据库检查约束：绕过模型校验直接写库验证。"""
+
+    def _create_with_kb_no(self, kb_no: str) -> Article:
+        space = make_space()
+        category = make_category(space)
+        owner = create_user()
+        return Article.objects.create(
+            kb_no=kb_no,
+            title="编号格式测试",
+            space=space,
+            category=category,
+            article_type=ArticleType.GUIDE,
+            owner=owner,
+            created_by=owner,
+            updated_by=owner,
+            review_due_at=timezone.now() + timedelta(days=180),
+        )
+
+    def test_empty_kb_no_rejected_by_db(self):
+        # objects.create() 绕过模型校验，证明空编号由数据库约束拒绝
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            self._create_with_kb_no("")
+
+    def test_illegal_kb_no_formats_rejected_by_db(self):
+        bad_values = (
+            "KA-000001",  # 错误前缀
+            "KB-00001",  # 数字不足 6 位
+            "kb-000001",  # 小写前缀
+            "KB-00001a",  # 含字母
+            "KB-00001 ",  # 含空格
+            "KB-٠٠٠٠٠١",  # 非 ASCII 数字（阿拉伯-印度数字）
+        )
+        for bad in bad_values:
+            with self.subTest(kb_no=bad):
+                with self.assertRaises(IntegrityError), transaction.atomic():
+                    self._create_with_kb_no(bad)
+
+    def test_valid_kb_no_accepted_by_db(self):
+        article = self._create_with_kb_no("KB-000001")
+        self.assertEqual(article.kb_no, "KB-000001")
+
+
+class ArticleAdminTests(TestCase):
+    """编号生成服务落地前 Admin 新增入口关闭，查看与编辑不受影响。"""
+
+    def setUp(self):
+        self.admin_user = User.objects.create_superuser(
+            username="kb-admin", password="test-admin-password"
+        )
+        self.article = make_article()
+
+    def _admin_instance(self) -> ArticleAdmin:
+        return ArticleAdmin(Article, admin.site)
+
+    def test_has_add_permission_returns_false(self):
+        request = RequestFactory().get("/admin/knowledge/article/add/")
+        request.user = self.admin_user
+        self.assertFalse(self._admin_instance().has_add_permission(request))
+
+    def test_add_url_rejected_even_with_admin_privileges(self):
+        self.client.force_login(self.admin_user)
+        url = reverse("admin:knowledge_article_add")
+        self.assertEqual(self.client.get(url).status_code, 403)
+        self.assertEqual(self.client.post(url, {}).status_code, 403)
+        # 直接访问新增 URL 也无法创建任何文章记录
+        self.assertEqual(Article.objects.count(), 1)
+
+    def test_change_view_remains_accessible(self):
+        self.client.force_login(self.admin_user)
+        url = reverse("admin:knowledge_article_change", args=[self.article.id])
+        self.assertEqual(self.client.get(url).status_code, 200)
+
+    def test_existing_article_can_be_edited_via_admin(self):
+        self.client.force_login(self.admin_user)
+        url = reverse("admin:knowledge_article_change", args=[self.article.id])
+        data = {
+            "title": "Admin 更新后的标题",
+            "space": str(self.article.space_id),
+            "category": str(self.article.category_id),
+            "article_type": ArticleType.GUIDE,
+            "audience_policy": self.article.audience_policy,
+            "owner": str(self.article.owner_id),
+            "article_status": self.article.article_status,
+            "effective_at_0": "",
+            "effective_at_1": "",
+            "review_due_at_0": "2030-01-01",
+            "review_due_at_1": "12:00:00",
+            "current_published_version": "",
+            "latest_working_version": "",
+            "created_by": str(self.article.created_by_id),
+            "updated_by": str(self.article.created_by_id),
+            "_save": "保存",
+        }
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 302)
+        self.article.refresh_from_db()
+        self.assertEqual(self.article.title, "Admin 更新后的标题")

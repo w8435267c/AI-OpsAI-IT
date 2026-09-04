@@ -62,6 +62,11 @@ class ArticleAdmin(admin.ModelAdmin):
     )
     readonly_fields = ("created_at", "updated_at")
 
+    def has_add_permission(self, request):
+        # 编号生成服务完成并接入安全创建流程前，禁止通过 Admin 新增文章，
+        # 防止在未生成编号时写入空 kb_no；恢复新增前必须同步提供编号生成或拦截机制。
+        return False
+
 
 @admin.register(ArticleVersion)
 class ArticleVersionAdmin(admin.ModelAdmin):
