@@ -1,6 +1,8 @@
-"""仅供本地骨架验证使用的开发设置。"""
+"""仅供本地开发使用的设置；数据库为 deploy/compose.yaml 提供的 PostgreSQL。"""
 
 import os
+
+from django.core.exceptions import ImproperlyConfigured
 
 from .base import *  # noqa: F403
 
@@ -15,10 +17,26 @@ ALLOWED_HOSTS = [
     if host.strip()
 ]
 
-# 骨架阶段临时使用 SQLite；正式本地开发将在 Docker 阶段切换到 PostgreSQL。
+# 本地开发数据库：由 deploy/compose.yaml 的 db 服务提供。
+# 变量由 base.py 已加载的根目录 .env 提供；只提示缺失的变量名，不输出任何值。
+_REQUIRED_POSTGRES_VARS = ("POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD")
+_missing = [name for name in _REQUIRED_POSTGRES_VARS if not os.getenv(name)]
+if _missing:
+    raise ImproperlyConfigured(
+        "缺少 PostgreSQL 环境变量：{}。请按 README 复制 .env.example 为 .env 并填入本地值。".format(
+            ", ".join(_missing)
+        )
+    )
+
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",  # noqa: F405
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.getenv("POSTGRES_DB"),
+        "USER": os.getenv("POSTGRES_USER"),
+        "PASSWORD": os.getenv("POSTGRES_PASSWORD"),
+        "HOST": os.getenv("POSTGRES_HOST", "localhost"),
+        "PORT": os.getenv("POSTGRES_PORT", "5432"),
+        # 就绪检查在数据库停止时快速失败，避免长时间卡住
+        "OPTIONS": {"connect_timeout": 3},
     }
 }

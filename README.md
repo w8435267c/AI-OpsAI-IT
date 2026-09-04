@@ -67,17 +67,74 @@ AI-OpsAI-IT/
 
 当前已创建 `manage.py`、分环境 `config/settings`、8 个 App 骨架、模板和静态资源目录，以及最小健康检查测试。`private_media/` 仅作为本地私有附件目录并由 Git 忽略。
 
-## 本地骨架验证
+## 本地开发环境（Windows + Docker Desktop）
 
-所有 Python 命令均使用项目根目录的 `.venv`：
+本地开发数据库使用 Docker Compose 提供的 PostgreSQL；Django 既可运行在 Compose 的 `web` 容器中，也可在宿主机 `.venv` 中直接运行（测试环境继续使用 SQLite 内存库）。
+
+### 首次准备
 
 ```powershell
-.\.venv\Scripts\python.exe manage.py check
-.\.venv\Scripts\python.exe -m pytest
-.\.venv\Scripts\python.exe manage.py runserver
+# 复制示例配置并替换其中的密钥与密码（必须替换，且 .env 不得提交）
+Copy-Item .env.example .env
 ```
 
-开发设置暂时指向 SQLite，只用于无迁移的骨架检查；本步骤未运行迁移，也不会创建 `db.sqlite3`。正式本地开发将在后续容器环境阶段切换为 PostgreSQL。
+说明：
+
+- `DJANGO_SECRET_KEY` 与 `POSTGRES_PASSWORD` 必须替换为本地随机值；
+- 宿主机运行 Django 时使用 `POSTGRES_HOST=localhost`；Compose 的 `web` 服务会自动覆盖为 `POSTGRES_HOST=db`，无需修改 `.env`；
+- 所有 Compose 命令均在仓库根目录执行，统一写法为：
+
+```text
+docker compose --env-file .env -f deploy/compose.yaml ...
+```
+
+### 常用命令
+
+```powershell
+# 校验 Compose 配置
+docker compose --env-file .env -f deploy/compose.yaml config --quiet
+
+# 拉取数据库镜像并构建 web 镜像
+docker compose --env-file .env -f deploy/compose.yaml pull db
+docker compose --env-file .env -f deploy/compose.yaml build web
+
+# 启动数据库并等待健康（healthy）
+docker compose --env-file .env -f deploy/compose.yaml up -d db
+docker compose --env-file .env -f deploy/compose.yaml ps
+
+# 执行迁移（通过一次性 web 容器）
+docker compose --env-file .env -f deploy/compose.yaml run --rm web python manage.py migrate
+
+# 启动 web 开发服务
+docker compose --env-file .env -f deploy/compose.yaml up -d web
+
+# 查看状态与日志
+docker compose --env-file .env -f deploy/compose.yaml ps
+docker compose --env-file .env -f deploy/compose.yaml logs -f web db
+
+# 健康检查
+curl.exe http://127.0.0.1:8000/health/live
+curl.exe http://127.0.0.1:8000/health/ready
+
+# 创建 Django 管理员（交互式）
+docker compose --env-file .env -f deploy/compose.yaml run --rm web python manage.py createsuperuser
+
+# 正常停止（保留数据库数据）
+docker compose --env-file .env -f deploy/compose.yaml down
+```
+
+> ⚠️ **危险操作**：`docker compose --env-file .env -f deploy/compose.yaml down -v` 会**永久删除**本地 PostgreSQL 数据（named volume），仅在明确需要重置数据库时使用。
+
+数据库数据保存在 Docker named volume 中，位于 Docker 的 WSL 2 数据盘（`D:\DockerData\wsl`），与项目目录解耦；`down` 不会删除数据。
+
+如镜像拉取失败，请检查本机网络与 Docker Desktop 的代理设置；本流程不要求登录 Docker Hub。
+
+宿主机直接运行 Django（`db` 容器保持 healthy 时）：
+
+```powershell
+.\.venv\Scripts\python.exe manage.py runserver
+.\.venv\Scripts\python.exe -m pytest
+```
 
 ## 文档导航
 
@@ -101,6 +158,8 @@ AI-OpsAI-IT/
 - 项目文档分类归档；
 - Django 分环境设置与 8 个 App 骨架；
 - 最小自定义用户模型；
-- `/health/live` 存活检查及自动化测试。
+- `/health/live` 存活检查及自动化测试；
+- Docker Desktop（WSL 2 后端）与 PostgreSQL 本地开发环境（`deploy/compose.yaml`，db + web）；
+- `/health/ready` 就绪检查及自动化测试。
 
-下一步：在不提前开发业务功能的前提下，准备正式本地 PostgreSQL 运行环境和首批迁移。
+下一步：按 Codex 分阶段开发指令第 6 步接入 `knowledge` 核心数据模型，在此之前不提前开发业务功能。

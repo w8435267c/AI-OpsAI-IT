@@ -80,6 +80,9 @@
 ## 10. 当前项目状态
 
 - V1.1A 文档开发基线已经建立。
-- Django 尚未初始化，当前没有可运行的 Django 项目。
+- Django 单体项目骨架已初始化，`/health/live` 与 `/health/ready` 可运行并有自动化测试。
+- Docker Desktop 4.89 与 WSL 2 已就绪；PostgreSQL 本地开发环境已通过 `deploy/compose.yaml`（db + web 服务）建立，数据位于 Docker 的 WSL 2 数据盘。
+- 本地开发数据库使用 PostgreSQL（连接变量由未跟踪的 `.env` 提供，`POSTGRES_HOST` 在 Compose 内覆盖为 `db`）；测试环境继续使用 SQLite 内存库。
 - `docs/05-Database/knowledge_models_reference.py` 只是候选模型参考代码，当前不会被 Django 加载。
-- 下一步是创建最小 Django 单体项目骨架；禁止现在提前实现业务功能。
+- 下一步是按 Codex 分阶段开发指令第 6 步接入 `knowledge` 核心数据模型；禁止提前实现业务功能。
+- 规则文档不得写入密码、个人代理或机器专属临时路径。

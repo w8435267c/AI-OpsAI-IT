@@ -1,0 +1,30 @@
+# Git 历史与本地状态
+.git
+
+# 本地虚拟环境与 Python 缓存
+.venv
+__pycache__
+*.py[cod]
+*.egg-info
+.pytest_cache
+.ruff_cache
+
+# 本地机密：真实 .env 不得进入构建上下文
+.env
+.env.*
+!.env.example
+
+# 本地数据库文件与私有附件
+db.sqlite3
+*.sqlite3
+private_media
+
+# IDE 与系统缓存
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# 日志
+*.log
+logs/

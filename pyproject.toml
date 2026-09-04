@@ -27,7 +27,11 @@ packages = []
 [tool.ruff]
 target-version = "py313"
 line-length = 100
-extend-exclude = ["docs/05-Database/knowledge_models_reference.py"]
+extend-exclude = [
+    "docs/05-Database/knowledge_models_reference.py",
+    # Django 自动生成的迁移文件不做行长检查
+    "apps/*/migrations/",
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
