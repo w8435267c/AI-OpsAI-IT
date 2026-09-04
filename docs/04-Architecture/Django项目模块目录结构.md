@@ -128,11 +128,10 @@ AUTH_USER_MODEL = "accounts.User"
 并且 `accounts.models` 至少提供：
 
 ```python
-class Department(models.Model):
-    ...
+class Department(models.Model): ...
 
-class UserGroup(models.Model):
-    ...
+
+class UserGroup(models.Model): ...
 ```
 
 其中 `UserGroup` 是“内容受众用户组”，不能直接等同于系统操作角色。系统角色仍使用独立的 RBAC 关系管理。
