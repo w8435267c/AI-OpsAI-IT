@@ -31,6 +31,13 @@ class SystemRole:
 # 按最小权限分别覆盖草稿管理、审核记录与知识管理。
 # 审核"批准 / 驳回 / 发布 / 下架"等状态机需要自定义操作权限，
 # 待对应业务步骤实现时再补充定义，本步骤不提前添加。
+# 安全收紧（第 7B 步）：
+# - 不授予 accounts.change_user / auth.change_group：这两个 Django
+#   内置权限过于宽泛（可编辑超级管理员标记、直接权限、任意 Group 权限
+#   与密码），不能用来表达"禁用账号"和"受控配置系统角色"；正式的账号
+#   状态管理与角色授权以后必须通过白名单表单、Service 和审计实现。
+# - 不授予 knowledge.change_reviewrecord：审核记录形成后不可篡改，
+#   只能由正式审核 Service 在事务中创建（add）与查看（view）。
 SYSTEM_ROLES: tuple[SystemRole, ...] = (
     SystemRole(
         code=ROLE_EMPLOYEE,
@@ -60,7 +67,6 @@ SYSTEM_ROLES: tuple[SystemRole, ...] = (
             "knowledge.view_article",
             "knowledge.view_articleversion",
             "knowledge.add_reviewrecord",
-            "knowledge.change_reviewrecord",
             "knowledge.view_reviewrecord",
         ),
     ),
@@ -84,13 +90,12 @@ SYSTEM_ROLES: tuple[SystemRole, ...] = (
             "knowledge.change_articleaudience",
             "knowledge.view_articleaudience",
             "knowledge.add_reviewrecord",
-            "knowledge.change_reviewrecord",
             "knowledge.view_reviewrecord",
-            # 用户模型为自定义 accounts.User，其内置权限位于 accounts app 下
+            # 用户模型为自定义 accounts.User，其内置权限位于 accounts app 下。
+            # 知识库管理员对用户与系统 Group 仅保留只读查看能力；
+            # 账号状态维护与角色授权由后续白名单表单 / Service / 审计实现。
             "accounts.view_user",
-            "accounts.change_user",
             "auth.view_group",
-            "auth.change_group",
         ),
     ),
 )
@@ -99,20 +104,39 @@ SYSTEM_ROLE_BY_CODE = {role.code: role for role in SYSTEM_ROLES}
 SYSTEM_ROLE_BY_NAME = {role.name: role for role in SYSTEM_ROLES}
 
 
-def has_real_identity(user) -> bool:
-    """判断用户是否携带真实身份特征（可用密码、超级管理员、工号、邮箱或钉钉标识）。
+def dev_user_deviation(user, identity) -> str | None:
+    """严格核对开发用户与预期身份是否完全一致，返回第一条偏差描述；一致返回 None。
 
-    本地模拟身份必须不携带任何真实身份特征；开发用户命令与模拟登录视图共用此校验。
+    模拟登录与 create_dev_users 共用此校验：任何偏差都必须安全拒绝，
+    绝不自动修复（不重新激活、不清除组或权限、不覆盖身份字段、不重置运行痕迹）。
     """
-    return (
-        user.has_usable_password()
-        or user.is_superuser
-        or bool(user.employee_no)
-        or bool(user.email)
-        or bool(user.dingtalk_corp_id)
-        or bool(user.dingtalk_user_id)
-        or bool(user.dingtalk_union_id)
-    )
+    from .models import AccountStatus  # 延迟导入，避免模块加载顺序耦合
+
+    if user.has_usable_password():
+        return "存在可用密码"
+    if user.is_superuser:
+        return "具有超级管理员状态"
+    if user.is_staff != identity.is_staff:
+        return "staff 标志与身份定义不一致"
+    if not user.is_active:
+        return "账号已被禁用"
+    if user.account_status != AccountStatus.ACTIVE:
+        return "账号状态非正常"
+    if user.display_name != identity.display_name:
+        return "显示名称与预期不一致"
+    if user.email:
+        return "邮箱字段非空"
+    if user.employee_no:
+        return "工号字段非空"
+    if user.dingtalk_corp_id or user.dingtalk_user_id or user.dingtalk_union_id:
+        return "钉钉身份字段非空"
+    groups = list(user.groups.all())
+    expected_group = SYSTEM_ROLE_BY_CODE[identity.role_code].name
+    if len(groups) != 1 or groups[0].name != expected_group:
+        return "系统角色组与预期不一致"
+    if user.user_permissions.exists():
+        return "存在直接用户权限"
+    return None
 
 
 @dataclass(frozen=True)

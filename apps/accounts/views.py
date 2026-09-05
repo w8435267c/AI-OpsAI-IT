@@ -10,7 +10,7 @@ from django.views.decorators.http import require_POST
 
 from .forms import DevLoginForm
 from .models import User
-from .roles import DEV_IDENTITY_BY_USERNAME, has_real_identity
+from .roles import DEV_IDENTITY_BY_USERNAME, dev_user_deviation
 
 
 def _dev_login_available() -> bool:
@@ -19,11 +19,19 @@ def _dev_login_available() -> bool:
 
 
 def _load_safe_dev_user(username: str):
-    """按白名单取开发用户，并复核其仍是安全的开发身份（无密码、无真实身份特征、未禁用）。"""
-    if DEV_IDENTITY_BY_USERNAME.get(username) is None:
+    """按白名单取开发用户，并严格复核其仍是安全的开发身份。
+
+    任何偏差（可用密码、超级管理员状态、staff 漂移、禁用/离职、
+    身份字段、系统角色组或直接权限）都安全拒绝且绝不自动修复；
+    拒绝原因不透露给登录页面，只给出统一的安全提示。
+    """
+    identity = DEV_IDENTITY_BY_USERNAME.get(username)
+    if identity is None:
         return None
     user = User.objects.filter(username=username).first()
-    if user is None or not user.is_active or has_real_identity(user):
+    if user is None:
+        return None
+    if dev_user_deviation(user, identity) is not None:
         return None
     return user
 

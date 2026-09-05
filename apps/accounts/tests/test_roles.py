@@ -14,6 +14,7 @@ from apps.accounts.roles import (
     ROLE_EMPLOYEE,
     ROLE_KNOWLEDGE_ADMIN,
     ROLE_REVIEWER,
+    SYSTEM_ROLE_BY_CODE,
     SYSTEM_ROLES,
     SystemRole,
 )
@@ -52,6 +53,82 @@ class SystemRoleDefinitionTests(TestCase):
                 app_label, _, codename = perm.partition(".")
                 self.assertTrue(app_label, f"权限缺少 app_label：{perm}")
                 self.assertTrue(codename, f"权限缺少 codename：{perm}")
+
+
+class ExpectedPermissionMatrixTests(TestCase):
+    """修正后的权限矩阵：逐项核对每个角色的权限 codename 与数量，而非只测数量。"""
+
+    EXPECTED = {
+        "普通员工": set(),
+        "知识编辑员": {
+            "knowledge.view_knowledgespace",
+            "knowledge.view_category",
+            "knowledge.add_article",
+            "knowledge.change_article",
+            "knowledge.view_article",
+            "knowledge.add_articleversion",
+            "knowledge.change_articleversion",
+            "knowledge.view_articleversion",
+        },
+        "知识审核员": {
+            "knowledge.view_knowledgespace",
+            "knowledge.view_category",
+            "knowledge.view_article",
+            "knowledge.view_articleversion",
+            "knowledge.add_reviewrecord",
+            "knowledge.view_reviewrecord",
+        },
+        "知识库管理员": {
+            "knowledge.add_knowledgespace",
+            "knowledge.change_knowledgespace",
+            "knowledge.view_knowledgespace",
+            "knowledge.add_category",
+            "knowledge.change_category",
+            "knowledge.view_category",
+            "knowledge.add_article",
+            "knowledge.change_article",
+            "knowledge.view_article",
+            "knowledge.add_articleversion",
+            "knowledge.change_articleversion",
+            "knowledge.view_articleversion",
+            "knowledge.add_articleaudience",
+            "knowledge.change_articleaudience",
+            "knowledge.view_articleaudience",
+            "knowledge.add_reviewrecord",
+            "knowledge.view_reviewrecord",
+            "accounts.view_user",
+            "auth.view_group",
+        },
+    }
+
+    def test_expected_permission_codenames_exact(self):
+        self.assertEqual({role.name for role in SYSTEM_ROLES}, set(self.EXPECTED))
+        for role in SYSTEM_ROLES:
+            self.assertEqual(
+                set(role.permissions),
+                self.EXPECTED[role.name],
+                f"角色 {role.name} 的权限集合与预期不一致",
+            )
+
+    def test_expected_permission_counts_0_8_6_19(self):
+        self.assertEqual([len(role.permissions) for role in SYSTEM_ROLES], [0, 8, 6, 19])
+
+    def test_dangerous_builtin_permissions_removed(self):
+        forbidden = {
+            "accounts.change_user",
+            "auth.change_group",
+            "knowledge.change_reviewrecord",
+        }
+        for role in SYSTEM_ROLES:
+            self.assertTrue(
+                forbidden.isdisjoint(set(role.permissions)),
+                f"角色 {role.name} 仍包含危险权限：{forbidden & set(role.permissions)}",
+            )
+
+    def test_view_permissions_kept_for_admin(self):
+        admin_role = SYSTEM_ROLE_BY_CODE[ROLE_KNOWLEDGE_ADMIN]
+        self.assertIn("accounts.view_user", admin_role.permissions)
+        self.assertIn("auth.view_group", admin_role.permissions)
 
 
 class SyncSystemRolesCommandTests(TestCase):
@@ -140,3 +217,33 @@ class SyncSystemRolesCommandTests(TestCase):
                 call_command("sync_system_roles")
         self.assertIn("no_such_perm", str(ctx.exception))
         self.assertEqual(SystemGroup.objects.count(), 0)
+
+    def test_mid_execution_failure_rolls_back_entire_sync(self):
+        # 预置漂移：前两个组各多一个权限，后两个组不存在。
+        # 在第三个角色写入时注入故障，验证前两个角色的修正也被整体回滚，
+        # 不允许出现"部分同步成功"的半成品状态。
+        call_command("sync_system_roles")
+        bogus = Permission.objects.get(content_type__app_label="auth", codename="add_group")
+        for name in ("普通员工", "知识编辑员"):
+            SystemGroup.objects.get(name=name).permissions.add(bogus)
+        SystemGroup.objects.filter(name__in=["知识审核员", "知识库管理员"]).delete()
+
+        real_get_or_create = SystemGroup.objects.get_or_create
+        calls = {"n": 0}
+
+        def failing_get_or_create(*args, **kwargs):
+            calls["n"] += 1
+            if calls["n"] == 3:  # 第三个角色（知识审核员）写入时注入故障
+                raise RuntimeError("注入故障：第三个角色同步失败")
+            return real_get_or_create(*args, **kwargs)
+
+        with mock.patch.object(SystemGroup.objects, "get_or_create", failing_get_or_create):
+            with self.assertRaises(CommandError):
+                call_command("sync_system_roles")
+
+        # 整体回滚：前两个组的漂移未被部分修正，后两个组仍不存在。
+        self.assertIn(bogus, SystemGroup.objects.get(name="普通员工").permissions.all())
+        self.assertIn(bogus, SystemGroup.objects.get(name="知识编辑员").permissions.all())
+        self.assertFalse(
+            SystemGroup.objects.filter(name__in=["知识审核员", "知识库管理员"]).exists()
+        )

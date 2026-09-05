@@ -2,6 +2,7 @@
 
 from django.contrib.auth.models import Group, Permission
 from django.core.management.base import BaseCommand, CommandError
+from django.db import transaction
 
 from apps.accounts import roles
 
@@ -41,12 +42,20 @@ class Command(BaseCommand):
                 )
             )
 
-        for role, resolved in planned:
-            group, created = Group.objects.get_or_create(name=role.name)
-            group.permissions.set(resolved)
-            self.stdout.write(
-                "{}：{}（权限 {} 项）".format(
-                    "创建" if created else "同步", group.name, len(resolved)
-                )
-            )
+        # 写入阶段整体事务：任意一个角色同步失败，前面角色的创建与
+        # 权限修改全部回滚，保证一次同步要么全成、要么全无部分写入。
+        try:
+            with transaction.atomic():
+                for role, resolved in planned:
+                    group, created = Group.objects.get_or_create(name=role.name)
+                    group.permissions.set(resolved)
+                    self.stdout.write(
+                        "{}：{}（权限 {} 项）".format(
+                            "创建" if created else "同步", group.name, len(resolved)
+                        )
+                    )
+        except CommandError:
+            raise
+        except Exception as exc:
+            raise CommandError(f"系统角色同步失败，已整体回滚且未留下部分写入：{exc}。") from exc
         self.stdout.write(f"系统角色同步完成，共 {len(planned)} 个角色。")

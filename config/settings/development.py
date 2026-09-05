@@ -17,9 +17,11 @@ ALLOWED_HOSTS = [
     if host.strip()
 ]
 
-# 本地模拟登录开关（仅限本机开发）：默认开启，方便本地直接体验四类系统角色；
+# 本地模拟登录开关（仅限本机开发）：默认关闭，需在未跟踪的 .env 中
+# 显式设置 DJANGO_DEV_LOGIN_ENABLED=true 并重启 web 服务才会启用；
 # 生产与测试设置硬关闭，且生产不受环境变量影响。正式认证由钉钉免登实现。
-DEV_LOGIN_ENABLED = os.getenv("DJANGO_DEV_LOGIN_ENABLED", "true").strip().lower() in (
+# 仅识别 1/true/yes/on（不区分大小写），其余值一律视为关闭。
+DEV_LOGIN_ENABLED = os.getenv("DJANGO_DEV_LOGIN_ENABLED", "false").strip().lower() in (
     "1",
     "true",
     "yes",

@@ -163,9 +163,11 @@ docker compose --env-file .env -f deploy/compose.yaml exec -T web python manage.
 
 模拟登录入口：<http://127.0.0.1:8000/dev/login/>（登录/切换身份与登出均只能使用 POST，启用 CSRF；页面只显示当前身份与系统角色）。
 
-开启/关闭：由 `DJANGO_DEV_LOGIN_ENABLED` 环境变量控制，仅本地开发设置读取，默认开启；如需关闭，在 `.env` 中设置 `DJANGO_DEV_LOGIN_ENABLED=false` 并重启 web 服务。开关关闭或 `DEBUG=False` 时入口返回 404。
+开启/关闭：由 `DJANGO_DEV_LOGIN_ENABLED` 环境变量控制，仅本地开发设置读取，**默认关闭**。需要本地模拟登录时，在未跟踪的 `.env` 中显式设置 `DJANGO_DEV_LOGIN_ENABLED=true` 并重启 web 服务；设置 `false`（或删除该变量）即恢复关闭。开关关闭或 `DEBUG=False` 时入口返回 404。
 
 安全边界：本入口仅限本机开发使用，开发用户均无可用密码，不得将该入口作为正式认证方案；生产环境强制关闭模拟登录（production 设置硬编码，环境变量无法重新开启），正式认证后续由钉钉免登实现。
+
+后台权限边界：知识库管理员在 Django Admin 中对用户与系统操作角色 Group 仅保留**只读查看**能力——只有超级管理员（`is_superuser=True`）可以新增、修改、删除用户或系统 Group，非超级管理员即使被直接授予相关内置权限也无法通过后台绕过；账号状态维护与系统角色授权不依赖后台实现，正式功能后续由白名单表单、Service 与审计完成。审核记录在后台对任何人（包括超级管理员）只读，只能由正式审核 Service 在事务中创建；文章版本在版本 Service 落地前对非超级管理员只读；文章的编号、状态、当前/最新版本指针与创建/更新人字段在后台一律只读。
 
 ## 文档导航
 

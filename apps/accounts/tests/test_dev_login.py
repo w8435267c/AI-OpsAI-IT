@@ -8,6 +8,7 @@ from unittest import mock
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group as SystemGroup
+from django.contrib.auth.models import Permission
 from django.core.management import call_command
 from django.test import Client, RequestFactory, SimpleTestCase, TestCase, override_settings
 from django.urls import reverse
@@ -100,6 +101,84 @@ class DevLoginEnabledTests(TestCase):
         user.set_password("real-pass")
         user.save()
         response = self.client.post(self.login_url, {"username": "dev_editor"})
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_disabled_account_refused(self):
+        user = User.objects.get(username="dev_employee")
+        user.account_status = "disabled"
+        user.save()
+        response = self.client.post(self.login_url, {"username": "dev_employee"})
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_departed_account_refused(self):
+        user = User.objects.get(username="dev_employee")
+        user.account_status = "departed"
+        user.save()
+        response = self.client.post(self.login_url, {"username": "dev_employee"})
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_inactive_user_refused(self):
+        user = User.objects.get(username="dev_employee")
+        user.is_active = False
+        user.save()
+        response = self.client.post(self.login_url, {"username": "dev_employee"})
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_wrong_group_refused(self):
+        user = User.objects.get(username="dev_employee")
+        user.groups.set([SystemGroup.objects.get(name="知识编辑员")])
+        response = self.client.post(self.login_url, {"username": "dev_employee"})
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_extra_group_refused(self):
+        user = User.objects.get(username="dev_employee")
+        user.groups.add(SystemGroup.objects.create(name="多余组"))
+        response = self.client.post(self.login_url, {"username": "dev_employee"})
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_direct_permission_refused(self):
+        user = User.objects.get(username="dev_employee")
+        perm = Permission.objects.get(content_type__app_label="knowledge", codename="view_article")
+        user.user_permissions.add(perm)
+        response = self.client.post(self.login_url, {"username": "dev_employee"})
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_staff_drift_refused(self):
+        user = User.objects.get(username="dev_employee")
+        user.is_staff = True
+        user.save()
+        response = self.client.post(self.login_url, {"username": "dev_employee"})
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_employee_no_refused(self):
+        user = User.objects.get(username="dev_employee")
+        user.employee_no = "E-1"
+        user.save()
+        response = self.client.post(self.login_url, {"username": "dev_employee"})
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_dingtalk_identity_refused(self):
+        user = User.objects.get(username="dev_employee")
+        user.dingtalk_user_id = "ding-fake-001"
+        user.save()
+        response = self.client.post(self.login_url, {"username": "dev_employee"})
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_display_name_drift_refused(self):
+        user = User.objects.get(username="dev_employee")
+        user.display_name = "被篡改的显示名称"
+        user.save()
+        response = self.client.post(self.login_url, {"username": "dev_employee"})
         self.assertEqual(response.status_code, 200)
         self.assertNotIn("_auth_user_id", self.client.session)
 
@@ -247,6 +326,24 @@ class DevLoginSettingsModuleTests(SimpleTestCase):
         ):
             importlib.reload(dev)
             self.assertIs(dev.DEV_LOGIN_ENABLED, False)
+
+    def test_development_defaults_off_when_unset(self):
+        # 修复后：未设置环境变量时开发环境默认关闭模拟登录，
+        # 必须显式开启（安全默认值，禁止为方便而默认开启）。
+        dev = importlib.import_module("config.settings.development")
+        with mock.patch.dict(os.environ, self._REQUIRED_ENV, clear=True):
+            importlib.reload(dev)
+            self.assertIs(dev.DEV_LOGIN_ENABLED, False)
+
+    def test_development_strict_false_values(self):
+        # 仅识别 1/true/yes/on（不区分大小写）；其余值一律视为关闭。
+        dev = importlib.import_module("config.settings.development")
+        for value in ("false", "0", "", "garbage", " False "):
+            with mock.patch.dict(
+                os.environ, self._REQUIRED_ENV | {"DJANGO_DEV_LOGIN_ENABLED": value}
+            ):
+                importlib.reload(dev)
+                self.assertIs(dev.DEV_LOGIN_ENABLED, False, f"值 {value!r} 必须解析为关闭")
 
     def test_production_hard_disabled_even_with_env(self):
         prod = importlib.import_module("config.settings.production")
