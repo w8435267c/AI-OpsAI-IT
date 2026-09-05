@@ -22,6 +22,10 @@ ALLOWED_HOSTS = [
 if not ALLOWED_HOSTS:
     raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS 必须至少包含一个主机名")
 
+# 模拟登录在生产环境强制关闭：此处硬编码，不读取任何环境变量，
+# 即使设置 DJANGO_DEV_LOGIN_ENABLED 也无法开启。正式认证由钉钉免登实现。
+DEV_LOGIN_ENABLED = False
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",

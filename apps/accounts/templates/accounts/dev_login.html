@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>本地模拟登录 - OpsAI-IT</title>
+  <style>
+    body { font-family: system-ui, "Microsoft YaHei", sans-serif; background: #f4f6f8; }
+    main { max-width: 480px; margin: 60px auto; padding: 24px; background: #fff; border-radius: 8px; }
+    h1 { font-size: 20px; }
+    .hint, .current { color: #555; font-size: 14px; }
+    .error { color: #c0392b; font-size: 14px; }
+    button { margin-top: 8px; padding: 6px 16px; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>OpsAI-IT 本地模拟登录</h1>
+    <p class="hint">仅限本地开发环境使用；生产环境已强制关闭本入口，正式认证将由钉钉免登提供。</p>
+    {% if user.is_authenticated %}
+      <p class="current">
+        当前身份：{{ user.username }}（{{ user.display_name }}）
+        系统角色：
+        {% for group in user.groups.all %}{{ group.name }}{% if not forloop.last %}、{% endif %}{% empty %}无{% endfor %}
+      </p>
+    {% else %}
+      <p class="current">当前未登录。</p>
+    {% endif %}
+    <form method="post" action="{% url 'accounts:dev-login' %}">
+      {% csrf_token %}
+      {% if request.GET.next %}<input type="hidden" name="next" value="{{ request.GET.next }}">{% endif %}
+      <p>{{ form.username.label_tag }} {{ form.username }}</p>
+      {% if form.username.errors %}<p class="error">{{ form.username.errors }}</p>{% endif %}
+      <button type="submit">登录 / 切换身份</button>
+    </form>
+    {% if user.is_authenticated %}
+      <form method="post" action="{% url 'accounts:dev-logout' %}">
+        {% csrf_token %}
+        <button type="submit">退出登录</button>
+      </form>
+    {% endif %}
+  </main>
+</body>
+</html>

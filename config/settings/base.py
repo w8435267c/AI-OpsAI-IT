@@ -79,6 +79,12 @@ MEDIA_ROOT = BASE_DIR / "private_media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "accounts.User"
 
+# 本地模拟登录总开关，默认关闭。只有 development.py 读取环境变量
+# DJANGO_DEV_LOGIN_ENABLED；production.py 硬编码为 False，无法通过
+# 环境变量重新开启；test.py 保持 False，相关测试用 override_settings 开启。
+# 模拟登录 View 必须同时满足 DEBUG=True 且本开关为 True 才可用。
+DEV_LOGIN_ENABLED = False
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,

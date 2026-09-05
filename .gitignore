@@ -33,6 +33,9 @@ htmlcov/
 *.log
 logs/
 
+# 本地验收报告（不入库）
+OpsAI-IT-里程碑B验收报告-2026-09-04.md
+
 # IDE and system
 .vscode/
 .idea/

@@ -17,6 +17,15 @@ ALLOWED_HOSTS = [
     if host.strip()
 ]
 
+# 本地模拟登录开关（仅限本机开发）：默认开启，方便本地直接体验四类系统角色；
+# 生产与测试设置硬关闭，且生产不受环境变量影响。正式认证由钉钉免登实现。
+DEV_LOGIN_ENABLED = os.getenv("DJANGO_DEV_LOGIN_ENABLED", "true").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
+
 # 本地开发数据库：由 deploy/compose.yaml 的 db 服务提供。
 # 变量由 base.py 已加载的根目录 .env 提供；只提示缺失的变量名，不输出任何值。
 _REQUIRED_POSTGRES_VARS = ("POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD")

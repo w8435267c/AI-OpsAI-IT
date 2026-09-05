@@ -136,6 +136,37 @@ docker compose --env-file .env -f deploy/compose.yaml down
 .\.venv\Scripts\python.exe -m pytest
 ```
 
+### 系统角色与本地模拟登录（仅限本地开发）
+
+系统操作角色使用 Django `Group`/`Permission` 实现（与内容受众 `UserGroup` 严格分离），共四类：普通员工、知识编辑员、知识审核员、知识库管理员。
+
+同步系统角色（幂等，可重复执行）：
+
+```powershell
+docker compose --env-file .env -f deploy/compose.yaml exec -T web python manage.py sync_system_roles
+```
+
+创建本地开发身份（幂等；仅 `DEBUG=True` 且开发登录开关启用时可用，生产配置下拒绝执行）：
+
+```powershell
+docker compose --env-file .env -f deploy/compose.yaml exec -T web python manage.py create_dev_users
+```
+
+四种本地身份（用户名带 `dev_` 前缀，均为无可用密码、无钉钉身份的安全开发用户）：
+
+| 用户名 | 显示名称 | 系统角色 | staff |
+| --- | --- | --- | --- |
+| `dev_employee` | 本地模拟-普通员工 | 普通员工 | 否 |
+| `dev_editor` | 本地模拟-知识编辑员 | 知识编辑员 | 否 |
+| `dev_reviewer` | 本地模拟-知识审核员 | 知识审核员 | 否 |
+| `dev_knowledge_admin` | 本地模拟-知识库管理员 | 知识库管理员 | 是（用于访问 Django Admin） |
+
+模拟登录入口：<http://127.0.0.1:8000/dev/login/>（登录/切换身份与登出均只能使用 POST，启用 CSRF；页面只显示当前身份与系统角色）。
+
+开启/关闭：由 `DJANGO_DEV_LOGIN_ENABLED` 环境变量控制，仅本地开发设置读取，默认开启；如需关闭，在 `.env` 中设置 `DJANGO_DEV_LOGIN_ENABLED=false` 并重启 web 服务。开关关闭或 `DEBUG=False` 时入口返回 404。
+
+安全边界：本入口仅限本机开发使用，开发用户均无可用密码，不得将该入口作为正式认证方案；生产环境强制关闭模拟登录（production 设置硬编码，环境变量无法重新开启），正式认证后续由钉钉免登实现。
+
 ## 文档导航
 
 - [V1.1A 当前开发基线 PRD](docs/02-PRD/产品需求文档PRD-V1.1A-钉钉集成核心试点版-优化稿.md)
