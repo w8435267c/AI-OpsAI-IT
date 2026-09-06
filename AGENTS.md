@@ -127,11 +127,14 @@ git show -s --format=full HEAD
 - Django 单体项目骨架已初始化，`/health/live` 与 `/health/ready` 可运行并有自动化测试。
 - Docker Desktop 4.89 与 WSL 2 已就绪；PostgreSQL 本地开发环境已通过 `deploy/compose.yaml`（db + web 服务）建立，数据位于 Docker 的 WSL 2 数据盘。
 - 本地开发数据库使用 PostgreSQL（连接变量由未跟踪的 `.env` 提供，`POSTGRES_HOST` 在 Compose 内覆盖为 `db`）；测试环境继续使用 SQLite 内存库。
-- 里程碑：第一阶段第 1～6 步已完成，里程碑 B 的代码、数据模型、迁移和测试底座已经建立；当前尚未进入第 7 步。
+- 里程碑：第一阶段第 1～6 步已完成，里程碑 B 的代码、数据模型、迁移和测试底座已经建立；第 7 步（本地模拟登录与系统操作角色）已经完成，安全收紧提交 c5f1bbb 已通过第 7C 只读审计（结论 A：完整通过），PostgreSQL 补充只读核验已经完成。
 - accounts：`User`、`Department`、`UserDepartment`、`UserGroup`、`UserGroupMembership` 已正式建立，`0001`、`0002` 已在 PostgreSQL 应用，相关约束和模型测试已通过；`UserGroup` 仅用于内容受众，系统操作角色仍使用 Django `Group`/`Permission`。
 - knowledge：`KnowledgeSpace`、`Category`、`Article`、`ArticleVersion`、`ArticleAudience`、`ReviewRecord` 已接入，`0001`、`0002` 已在 PostgreSQL 应用；核心外键、唯一约束、CHECK、条件唯一索引和模型校验已经建立；当前未实现发布事务、编号生成服务、受众 Selector、搜索、API、页面或钉钉功能。
 - Article 编号：数据库只允许 `KB-000001` 格式的知识编号；编号生成服务尚未实现，在其安全接入前 Article Admin 新增入口保持关闭；不得通过 Admin、Signal、随机默认值或临时拼接绕过编号规则。
 - 候选参考：`docs/05-Database/knowledge_models_reference.py` 继续作为设计参考保留；Django 运行时正式模型位于 `apps/knowledge/models.py`，后续开发不得重新复制候选文件覆盖正式模型。
-- 验证基线：全量 pytest 108 passed、11 subtests passed；Django check、迁移检查、Ruff、健康检查均通过；PostgreSQL 与 db/web 容器正常；knowledge 当前无业务数据。测试数量是当前状态记录，不是永久验收标准，后续测试增减时应同步更新。
-- 下一步是按 Codex/claude code 分阶段开发指令第 7 步，建立本地模拟登录和系统操作角色；生产环境必须强制关闭模拟登录；禁止提前实现第 8 步受众权限 Selector 或更后续功能。
+- 验证基线：全量 pytest 227 passed、11 subtests passed；Django check、迁移检查、Ruff、健康检查均通过；PostgreSQL 与 db/web 容器正常；knowledge 当前无业务数据。测试数量是当前状态记录，不是永久验收标准，后续测试增减时应同步更新。
+- 系统操作角色权限矩阵（0/8/6/19）：普通员工 0 项、知识编辑员 8 项、知识审核员 6 项、知识库管理员 19 项；均不含 delete 权限，已移除 accounts.change_user、auth.change_group、knowledge.change_reviewrecord 等危险权限。
+- 本地模拟登录：仅限 DEBUG=True 且显式开启开发开关（DJANGO_DEV_LOGIN_ENABLED，默认关闭，仅识别 1/true/yes/on）；production.py 硬编码强制关闭；固定开发身份为 dev_employee、dev_editor、dev_reviewer、dev_knowledge_admin（均 is_superuser=False、密码不可用、仅属各自系统角色，仅 dev_knowledge_admin 为 staff=True）。
+- Article 编号服务尚未实现，Article Admin 新增入口仍保持关闭；第 8 步受众 Selector 尚未实现，当前尚未进入第 8 步。
+- 下一步：先对本次文档提交做只读复核，再决定 GitHub + Gitee 双端安全推送；本地当前存在尚未推送的第 7 步提交（c4abe43、c5f1bbb，共 2 个，数量以 Git 实际检查为准）。
 - 规则文档不得写入密码、个人代理或机器专属临时路径。
