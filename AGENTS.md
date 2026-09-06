@@ -136,5 +136,5 @@ git show -s --format=full HEAD
 - 系统操作角色权限矩阵（0/8/6/19）：普通员工 0 项、知识编辑员 8 项、知识审核员 6 项、知识库管理员 19 项；均不含 delete 权限，已移除 accounts.change_user、auth.change_group、knowledge.change_reviewrecord 等危险权限。
 - 本地模拟登录：仅限 DEBUG=True 且显式开启开发开关（DJANGO_DEV_LOGIN_ENABLED，默认关闭，仅识别 1/true/yes/on）；production.py 硬编码强制关闭；固定开发身份为 dev_employee、dev_editor、dev_reviewer、dev_knowledge_admin（均 is_superuser=False、密码不可用、仅属各自系统角色，仅 dev_knowledge_admin 为 staff=True）。
 - Article 编号服务尚未实现，Article Admin 新增入口仍保持关闭；第 8 步受众 Selector 尚未实现，当前尚未进入第 8 步。
-- 下一步：先对本次文档提交做只读复核，再决定 GitHub + Gitee 双端安全推送；本地当前存在尚未推送的第 7 步提交（c4abe43、c5f1bbb，共 2 个，数量以 Git 实际检查为准）。
+- 下一步：先对本次文档提交做只读复核，再决定 GitHub + Gitee 双端安全推送；第 7 步功能、安全修复及状态文档的双端同步状态，以推送前后对 GitHub、Gitee 的实时核验结果为准；本节不记录动态领先/落后数量。
 - 规则文档不得写入密码、个人代理或机器专属临时路径。
