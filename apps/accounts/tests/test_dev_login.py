@@ -1,7 +1,6 @@
 """本地模拟登录视图、开关保护与安全边界测试。"""
 
 import importlib
-import importlib.util
 import os
 from unittest import mock
 
@@ -253,8 +252,12 @@ class DevLoginEnabledTests(TestCase):
         self.assertEqual(response.status_code, 403)
         self.assertEqual(Article.objects.count(), 0)
 
-    def test_step8_audience_selector_not_implemented(self):
-        self.assertIsNone(importlib.util.find_spec("apps.knowledge.selectors"))
+    def test_step8_audience_selector_implemented_no_http_endpoint(self):
+        # 第 8B 步受众 Selector 已实现；本步不新增页面 / HTTP API / 搜索 / 附件。
+        from apps.knowledge import selectors
+
+        self.assertTrue(callable(selectors.visible_articles))
+        self.assertTrue(callable(selectors.can_read_article))
 
 
 @override_settings(DEBUG=True, DEV_LOGIN_ENABLED=False)

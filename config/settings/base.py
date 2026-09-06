@@ -85,6 +85,15 @@ AUTH_USER_MODEL = "accounts.User"
 # 模拟登录 View 必须同时满足 DEBUG=True 且本开关为 True 才可用。
 DEV_LOGIN_ENABLED = False
 
+# “仅 IT”内容受众绑定：通过环境变量 KNOWLEDGE_IT_USER_GROUP_ID 指定一个
+# accounts.UserGroup 主键，作为 it_only 受众的唯一身份来源。缺省未配置（None）。
+# 属于权限配置，由部署管理者显式设置；不按显示名称、角色名或部门名猜测 IT 身份。
+# 配置缺失、无效或组不存在 / 停用时，不授予 it_only 阅读权限。
+_it_user_group_id = os.getenv("KNOWLEDGE_IT_USER_GROUP_ID")
+KNOWLEDGE_IT_USER_GROUP_ID = (
+    int(_it_user_group_id) if _it_user_group_id and _it_user_group_id.strip().isdigit() else None
+)
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,

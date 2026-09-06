@@ -446,6 +446,16 @@ class Article(models.Model):
             elif version.status not in allowed_statuses:
                 errors["latest_working_version"] = _("最新工作版本只能是草稿、待审核或已驳回状态。")
 
+        # 修改文章策略时检查既有受众规则是否与最终策略一致；DENY 规则不受限。
+        if self.pk:
+            for rule in self.audience_rules.all():
+                rule_error = _audience_policy_error(
+                    rule.audience_type, rule.effect, self.audience_policy
+                )
+                if rule_error:
+                    errors["audience_policy"] = _("受众规则与策略不一致：{}").format(rule_error)
+                    break
+
         if errors:
             raise ValidationError(errors)
 
@@ -631,6 +641,34 @@ class ArticleVersion(models.Model):
         return f"{self.article.kb_no} v{self.version_no}"
 
 
+def _audience_policy_error(audience_type, effect, audience_policy) -> str | None:
+    """返回 allow 规则与文章受众策略不一致时的中文错误；一致返回 None。
+
+    只约束 ALLOW 规则：DENY 始终允许 department / user_group / user（数据库
+    形状约束已禁止 all_employees / it_only 的 deny）。读取侧始终按文章策略
+    计算允许范围，不一致的 allow 不扩大范围；本校验在写入侧兜底。
+    """
+    if effect == AudienceEffect.DENY:
+        return None
+    if audience_policy == AudiencePolicy.RESTRICTED:
+        if audience_type in (
+            AudienceType.DEPARTMENT,
+            AudienceType.USER_GROUP,
+            AudienceType.USER,
+        ):
+            return None
+        return _("“指定范围”策略下，允许规则只能是部门、用户组或用户。")
+    if audience_policy == AudiencePolicy.ALL_EMPLOYEES:
+        if audience_type == AudienceType.ALL_EMPLOYEES:
+            return None
+        return _("“全员”策略下，不允许部门、用户组或用户的允许规则。")
+    if audience_policy == AudiencePolicy.IT_ONLY:
+        if audience_type == AudienceType.IT_ONLY:
+            return None
+        return _("“仅 IT”策略下，不允许部门、用户组或用户的允许规则。")
+    return _("未识别的受众策略。")
+
+
 class ArticleAudience(models.Model):
     """文章内容受众：记录允许或显式拒绝的部门、用户组和用户。"""
 
@@ -790,37 +828,45 @@ class ArticleAudience(models.Model):
 
     def clean(self) -> None:
         super().clean()
-        target_fields = {
-            AudienceType.DEPARTMENT: "department",
-            AudienceType.USER_GROUP: "user_group",
-            AudienceType.USER: "user",
-        }
-        selected_targets = {
-            "department": self.department_id,
-            "user_group": self.user_group_id,
-            "user": self.user_id,
-        }
+        errors: dict[str, str] = {}
+
+        # 策略一致性：allow 规则类型必须与文章受众策略一致（DENY 不受限）。
+        if self.article_id:
+            policy_error = _audience_policy_error(
+                self.audience_type, self.effect, self.article.audience_policy
+            )
+            if policy_error:
+                errors["audience_type"] = policy_error
 
         if self.audience_type in {
             AudienceType.ALL_EMPLOYEES,
             AudienceType.IT_ONLY,
         }:
-            if any(selected_targets.values()):
-                raise ValidationError(_("全员或仅 IT 规则不能指定部门、用户组或用户。"))
+            if any((self.department_id, self.user_group_id, self.user_id)):
+                errors.setdefault(
+                    "audience_type", _("全员或仅 IT 规则不能指定部门、用户组或用户。")
+                )
             if self.effect != AudienceEffect.ALLOW:
-                raise ValidationError({"effect": _("全员或仅 IT 规则只能使用允许效果。")})
-            return
-
-        required_field = target_fields.get(self.audience_type)
-        if not required_field:
-            raise ValidationError({"audience_type": _("不支持的受众类型。")})
-
-        errors: dict[str, str] = {}
-        for field_name, field_value in selected_targets.items():
-            if field_name == required_field and not field_value:
-                errors[field_name] = _("当前受众类型必须指定对应对象。")
-            elif field_name != required_field and field_value:
-                errors[field_name] = _("当前受众类型不能填写该对象。")
+                errors["effect"] = _("全员或仅 IT 规则只能使用允许效果。")
+        else:
+            required_field = {
+                AudienceType.DEPARTMENT: "department",
+                AudienceType.USER_GROUP: "user_group",
+                AudienceType.USER: "user",
+            }.get(self.audience_type)
+            if not required_field:
+                errors["audience_type"] = _("不支持的受众类型。")
+            else:
+                selected_targets = {
+                    "department": self.department_id,
+                    "user_group": self.user_group_id,
+                    "user": self.user_id,
+                }
+                for field_name, field_value in selected_targets.items():
+                    if field_name == required_field and not field_value:
+                        errors[field_name] = _("当前受众类型必须指定对应对象。")
+                    elif field_name != required_field and field_value:
+                        errors[field_name] = _("当前受众类型不能填写该对象。")
 
         if errors:
             raise ValidationError(errors)
