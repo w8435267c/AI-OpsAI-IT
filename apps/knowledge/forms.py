@@ -77,6 +77,35 @@ class AudienceInlineFormSet(BaseInlineFormSet):
             if key in keys:
                 raise ValidationError("最终受众规则重复，请删除或调整重复项。")
             keys.add(key)
+        self._ordered_changes = self.order_changes()
+
+    def order_changes(self):
+        # FormSet 缓存中的实例已被绑定表单修改，必须重新读取数据库的原始键。
+        original = {rule.pk: self.rule_key(rule) for rule in self.get_queryset().all()}
+        deleted = {form.instance.pk for form in self.deleted_forms}
+        occupied = {key: pk for pk, key in original.items() if pk not in deleted}
+        pending = [
+            form
+            for form in self.initial_forms
+            if form.instance.pk not in deleted and form.has_changed()
+        ]
+        ordered = []
+        while pending:
+            for form in pending:
+                pk = form.instance.pk
+                target = self.rule_key(form.instance)
+                if target not in occupied or occupied[target] == pk:
+                    occupied.pop(original[pk], None)
+                    occupied[target] = pk
+                    ordered.append(form)
+                    pending.remove(form)
+                    break
+            else:
+                raise ValidationError(
+                    "本次修改包含受众规则目标的循环交换，当前暂不支持。"
+                    "请取消交换，或联系管理员调整规则。"
+                )
+        return ordered
 
     @staticmethod
     def rule_key(rule):
@@ -97,10 +126,9 @@ class AudienceInlineFormSet(BaseInlineFormSet):
             if form in self.deleted_forms:
                 self.deleted_objects.append(form.instance)
                 self.delete_existing(form.instance, commit=commit)
-        for form in self.initial_forms:
-            if form not in self.deleted_forms and form.has_changed():
-                self.changed_objects.append((form.instance, form.changed_data))
-                saved.append(self.save_existing(form, form.instance, commit=commit))
-                if not commit:
-                    self.saved_forms.append(form)
+        for form in self._ordered_changes:
+            self.changed_objects.append((form.instance, form.changed_data))
+            saved.append(self.save_existing(form, form.instance, commit=commit))
+            if not commit:
+                self.saved_forms.append(form)
         return saved

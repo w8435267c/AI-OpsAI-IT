@@ -252,3 +252,125 @@ def test_standalone_audience_admin_validation_preserved(setup):
     assert response.status_code == 200
     assert "audience_type" in response.context["adminform"].form.errors
     assert article.audience_rules.count() == 1
+
+
+def set_target(data, rule, target):
+    for index in range(int(data["audience_rules-INITIAL_FORMS"])):
+        if str(data[f"audience_rules-{index}-id"]) == str(rule.pk):
+            data[f"audience_rules-{index}-user"] = str(target.pk)
+            return
+    raise AssertionError("missing rule")
+
+
+@pytest.mark.parametrize("size", [2, 3])
+def test_cycle_rejected_preserving_input_and_database(setup, size):
+    user, client, article, first = setup
+    rules = [first] + [_add_audience(article, "user", user=_mk_user()) for _ in range(size - 1)]
+    before = list(article.audience_rules.order_by("pk").values())
+    data = payload(user, article, title="保留输入")
+    for index, rule in enumerate(rules):
+        set_target(data, rule, rules[(index + 1) % size].user)
+    response = post(client, article, data)
+    assert response.status_code == 200
+    assert "循环交换" in str(errors(response))
+    assert response.context["adminform"].form["title"].value() == "保留输入"
+    article.refresh_from_db()
+    assert article.title != "保留输入"
+    assert list(article.audience_rules.order_by("pk").values()) == before
+    from apps.knowledge.validation_context import pending_article, pending_audience
+
+    assert pending_article.get() is None and pending_audience.get() is None
+
+
+@pytest.mark.parametrize("fail", [False, True])
+def test_dependency_chain_identity_metadata_and_rollback(setup, fail):
+    root, client, article, first = setup
+    second = _add_audience(article, "user", user=_mk_user())
+    third = _mk_user()
+    editor = _mk_user(is_staff=True)
+    editor.user_permissions.set(
+        Permission.objects.filter(
+            content_type__app_label="knowledge",
+            codename__in=["change_article", "change_articleaudience", "view_articleaudience"],
+        )
+    )
+    client.force_login(editor)
+    before = list(article.audience_rules.order_by("pk").values())
+    data = payload(root, article, title="更新链")
+    set_target(data, first, second.user)
+    set_target(data, second, third)
+    calls = []
+    original_save = ArticleAudience.save
+
+    def save(instance, *args, **kwargs):
+        calls.append(instance.pk)
+        if fail and len(calls) == 2:
+            raise RuntimeError("中途失败")
+        return original_save(instance, *args, **kwargs)
+
+    with patch.object(ArticleAudience, "save", save):
+        if fail:
+            with pytest.raises(RuntimeError, match="中途失败"):
+                post(client, article, data)
+        else:
+            response = post(client, article, data)
+            assert response.status_code == 302, errors(response)
+    assert calls == [second.pk, first.pk]
+    article.refresh_from_db()
+    if fail:
+        assert article.title != "更新链"
+        assert list(article.audience_rules.order_by("pk").values()) == before
+    else:
+        for row in before:
+            current = ArticleAudience.objects.get(pk=row["id"])
+            assert current.created_at == row["created_at"]
+            assert current.created_by_id == row["created_by_id"]
+        assert ArticleAudience.objects.get(pk=first.pk).user_id == second.user_id
+        assert ArticleAudience.objects.get(pk=second.pk).user_id == third.pk
+    from apps.knowledge.validation_context import pending_article, pending_audience
+
+    assert pending_article.get() is None and pending_audience.get() is None
+
+
+@pytest.mark.parametrize("attack", ["foreign_id", "duplicate_id"])
+def test_dependency_form_id_tampering(setup, attack):
+    root, client, article, first = setup
+    _add_audience(article, "user", user=_mk_user())
+    foreign = _add_audience(_mk_article(), "user", user=_mk_user())
+    before = list(ArticleAudience.objects.order_by("pk").values())
+    data = payload(root, article, title="不得保存")
+    data["audience_rules-0-id"] = (
+        str(foreign.pk) if attack == "foreign_id" else data["audience_rules-1-id"]
+    )
+    assert post(client, article, data).status_code == 200
+    assert list(ArticleAudience.objects.order_by("pk").values()) == before
+
+
+def test_delete_change_add_dependency_batch(setup):
+    root, client, article, first = setup
+    second = _add_audience(article, "user", user=_mk_user())
+    data = payload(root, article)
+    set_target(data, first, second.user)
+    for i in range(2):
+        if str(data[f"audience_rules-{i}-id"]) == str(second.pk):
+            data[f"audience_rules-{i}-DELETE"] = "on"
+        else:
+            data[f"audience_rules-{i}-created_by"] = str(root.pk)
+    data.update(
+        {
+            "audience_rules-TOTAL_FORMS": "3",
+            "audience_rules-2-article": str(article.pk),
+            "audience_rules-2-audience_type": "user",
+            "audience_rules-2-effect": "allow",
+            "audience_rules-2-user": str(first.user_id),
+            "audience_rules-2-created_by": str(root.pk),
+        }
+    )
+    response = post(client, article, data)
+    assert response.status_code == 302, errors(response)
+    assert not ArticleAudience.objects.filter(pk=second.pk).exists()
+    old_time = first.created_at
+    first.refresh_from_db()
+    assert first.user_id == second.user_id and first.created_by_id == root.pk
+    assert first.created_at == old_time
+    assert article.audience_rules.count() == 2
