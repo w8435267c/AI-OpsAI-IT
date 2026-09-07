@@ -27,10 +27,11 @@ staff / superuser / 编辑员 / 审核员 / 知识管理员 / 作者 / 空间负
 from __future__ import annotations
 
 from django.conf import settings
-from django.db.models import Exists, F, OuterRef, Q
+from django.db.models import Exists, F, OuterRef, Q, QuerySet, Subquery
 from django.utils import timezone
 
-from apps.accounts.models import AccountStatus, UserDepartment, UserGroupMembership
+from apps.accounts.models import AccountStatus, User, UserDepartment, UserGroupMembership
+from apps.knowledge.configuration import parse_it_group_id
 from apps.knowledge.models import (
     Article,
     ArticleAudience,
@@ -44,9 +45,9 @@ from apps.knowledge.models import (
 
 def _user_account_allowed(user) -> bool:
     """账号门槛：匿名、未保存、禁用或非正常状态一律不进入受众计算。"""
-    if user is None or not user.is_authenticated:
+    if not isinstance(user, User) or not user.is_authenticated:
         return False
-    if not getattr(user, "pk", None):
+    if not user.pk or user._state.adding:
         return False
     if not user.is_active:
         return False
@@ -80,13 +81,68 @@ def _active_group_ids(user):
 
 def _configured_it_group_id():
     """读取“仅 IT”绑定的内容用户组主键；未配置或无法解析为整数返回 None。"""
-    raw = getattr(settings, "KNOWLEDGE_IT_USER_GROUP_ID", None)
-    if raw is None:
-        return None
-    try:
-        return int(raw)
-    except (TypeError, ValueError):
-        return None
+    return parse_it_group_id(getattr(settings, "KNOWLEDGE_IT_USER_GROUP_ID", None))
+
+
+def _unique_article_base(base):
+    """将 base 的范围与排序投影到唯一文章；详见 ADR-0001 的公开契约。"""
+    if base is None:
+        return Article.objects.order_by("-updated_at", "pk")
+    if not isinstance(base, QuerySet) or base.model is not Article:
+        raise ValueError("base 必须是 Article QuerySet。")
+    query = base.query
+    if (
+        base._fields is not None
+        or query.is_sliced
+        or query.combinator
+        or query.annotations
+        or query.extra
+        or query.select_for_update
+        or query.distinct_fields
+        or query.deferred_loading[0]
+    ):
+        raise ValueError("base 不支持投影、预先切片、集合运算、注解、额外 SQL、锁或延迟字段。")
+    ordering = query.order_by or (Article._meta.ordering if query.default_ordering else ())
+    normalized = []
+    for term in ordering:
+        if not isinstance(term, str) or term == "?":
+            raise ValueError("base 排序仅支持确定的模型字段路径，不支持随机或表达式排序。")
+        descending = term.startswith("-")
+        parts = term.lstrip("-").split("__")
+        model = Article
+        for index, part in enumerate(parts):
+            field = model._meta.pk if part == "pk" else model._meta.get_field(part)
+            if index < len(parts) - 1:
+                if not field.is_relation:
+                    raise ValueError("base 排序必须使用模型字段路径。")
+                model = field.related_model
+            elif field.is_relation:
+                if not field.concrete:
+                    raise ValueError("关联排序请明确指定末级字段。")
+                if part == field.name and field.related_model._meta.ordering:
+                    raise ValueError("关联模型有默认排序，请显式指定关联排序字段。")
+                parts[index] = field.attname
+        if not query.standard_ordering:
+            descending = not descending
+        normalized.append(("-" if descending else "") + "__".join(parts))
+    qs = Article.objects.using(base.db).filter(pk__in=base.order_by().values("pk"))
+    if base.query.select_related:
+        from copy import deepcopy
+
+        qs.query.select_related = deepcopy(base.query.select_related)
+    if base._prefetch_related_lookups:
+        qs = qs.prefetch_related(*base._prefetch_related_lookups)
+    # 每篇文章取 base 按完整排序元组排出的首行；所有排序值来自同一行。
+    # 外层不连接一对多表，因此 count/分页不受关联行数影响。
+    ordered_rows = base.filter(pk=OuterRef("pk")).order_by(*normalized)
+    ordered_rows.query.distinct = False
+    ordered_rows.query.standard_ordering = True
+    result_order = []
+    for index, term in enumerate(normalized):
+        alias = f"_audience_order_{index}"
+        qs = qs.alias(**{alias: Subquery(ordered_rows.values(term.lstrip("-"))[:1])})
+        result_order.append(("-" if term.startswith("-") else "") + alias)
+    return qs.order_by(*result_order, "pk")
 
 
 def _is_it_staff(user) -> bool:
@@ -172,7 +228,7 @@ def visible_articles(user, *, base=None, now=None):
     原过滤条件。user 不满足账号门槛时返回空集。
     """
     now = now or timezone.now()
-    qs = base if base is not None else Article.objects.all()
+    qs = _unique_article_base(base)
 
     if not _user_account_allowed(user):
         return qs.none()
@@ -214,6 +270,4 @@ def can_read_article(user, article, *, now=None):
     """
     if article is None or not getattr(article, "pk", None):
         return False
-    return visible_articles(
-        user, base=Article.objects.filter(pk=article.pk), now=now
-    ).exists()
+    return visible_articles(user, base=Article.objects.filter(pk=article.pk), now=now).exists()

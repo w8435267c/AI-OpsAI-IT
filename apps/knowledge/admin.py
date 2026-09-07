@@ -2,6 +2,7 @@
 
 from django.contrib import admin
 
+from .forms import AudienceInlineForm, AudienceInlineFormSet, JointArticleForm
 from .models import (
     Article,
     ArticleAudience,
@@ -37,8 +38,31 @@ class CategoryAdmin(admin.ModelAdmin):
     readonly_fields = ("created_at", "updated_at")
 
 
+class ArticleAudienceInline(admin.TabularInline):
+    model = ArticleAudience
+    form = AudienceInlineForm
+    formset = AudienceInlineFormSet
+    extra = 0
+    autocomplete_fields = ("department", "user_group", "user", "created_by")
+
+    def get_formset(self, request, obj=None, **kwargs):
+        formset = super().get_formset(request, obj, **kwargs)
+        formset.allow_add = self.has_add_permission(request, obj)
+        formset.allow_change = self.has_change_permission(request, obj)
+        formset.allow_delete = self.has_delete_permission(request, obj)
+        return formset
+
+
 @admin.register(Article)
 class ArticleAdmin(admin.ModelAdmin):
+    inlines = (ArticleAudienceInline,)
+
+    def get_form(self, request, obj=None, **kwargs):
+        # 无任何受众权限时没有 Inline，父表单仍使用默认模型校验，不能跳过旧规则。
+        if self.get_inline_instances(request, obj):
+            kwargs["form"] = JointArticleForm
+        return super().get_form(request, obj, **kwargs)
+
     list_display = (
         "kb_no",
         "title",

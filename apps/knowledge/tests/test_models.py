@@ -834,6 +834,10 @@ class ArticleAdminTests(TestCase):
             "created_by": str(self.article.created_by_id),
             "updated_by": str(self.article.created_by_id),
             "_save": "保存",
+            "audience_rules-TOTAL_FORMS": "0",
+            "audience_rules-INITIAL_FORMS": "0",
+            "audience_rules-MIN_NUM_FORMS": "0",
+            "audience_rules-MAX_NUM_FORMS": "1000",
         }
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, 302)

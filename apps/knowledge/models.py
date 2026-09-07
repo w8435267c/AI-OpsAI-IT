@@ -7,7 +7,7 @@
 本模块只建立数据结构与模型级校验：
 - 知识编号只实现字段、格式校验和唯一性，编号生成服务后续实现；
 - 发布、驳回、下架与版本切换事务由后续 Service 负责；
-- 受众“拒绝优先”的匹配逻辑由后续 Selector 负责；
+- 受众“拒绝优先”的匹配逻辑由 knowledge.selectors 负责；
 - 文章版本指针只能由 knowledge.services 或 workflow.services 修改。
 """
 
@@ -21,6 +21,8 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
+
+from .validation_context import pending_article, pending_audience
 
 KB_NO_VALIDATOR = RegexValidator(
     regex=r"^KB-[0-9]{6}$",
@@ -136,7 +138,7 @@ class KnowledgeSpace(models.Model):
         max_length=20,
         choices=AudiencePolicy.choices,
         default=AudiencePolicy.RESTRICTED,
-        db_comment="在文章未明确覆盖时使用的默认内容受众策略。",
+        db_comment="仅供新建文章赋初值，读取不回退，修改默认值不改变已有文章。",
     )
     is_active = models.BooleanField(
         _("是否启用"),
@@ -447,7 +449,7 @@ class Article(models.Model):
                 errors["latest_working_version"] = _("最新工作版本只能是草稿、待审核或已驳回状态。")
 
         # 修改文章策略时检查既有受众规则是否与最终策略一致；DENY 规则不受限。
-        if self.pk:
+        if self.pk and pending_article.get() is not self:
             for rule in self.audience_rules.all():
                 rule_error = _audience_policy_error(
                     rule.audience_type, rule.effect, self.audience_policy
@@ -825,6 +827,17 @@ class ArticleAudience(models.Model):
                 name="kb_aud_user_uniq",
             ),
         ]
+
+    def validate_constraints(self, exclude=None):
+        # 联合表单的条件唯一性按最终规则集校验，不能被本次待删除的旧行误拒绝。
+        # 其他入口保留完整数据库约束校验；形状 CHECK 在联合表单中仍执行。
+        if pending_audience.get() is not self:
+            return super().validate_constraints(exclude=exclude)
+        for constraint in self._meta.constraints:
+            if not isinstance(constraint, models.UniqueConstraint):
+                constraint.validate(
+                    type(self), self, exclude=exclude, using=self._state.db or "default"
+                )
 
     def clean(self) -> None:
         super().clean()

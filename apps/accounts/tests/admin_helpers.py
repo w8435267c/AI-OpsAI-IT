@@ -32,4 +32,14 @@ def build_change_post_data(model_admin, request_user, obj, **overrides):
         else:
             data[name] = val if val is not None else ""
     data.update(overrides)
+    # 真实 Admin 联合提交也必须携带 Inline 管理表单及未变化的既有规则。
+    for inline in model_admin.get_inline_instances(req, obj):
+        formset = inline.get_formset(req, obj)(instance=obj)
+        for field in formset.management_form:
+            data[field.html_name] = field.value()
+        for form in formset.forms:
+            for field in form:
+                value = field.value()
+                if value not in (None, False):
+                    data[field.html_name] = value
     return data
