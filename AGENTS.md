@@ -138,6 +138,10 @@ git show -s --format=full HEAD
 - 本地模拟登录：仅限 DEBUG=True 且显式开启开发开关（DJANGO_DEV_LOGIN_ENABLED，默认关闭，仅识别 1/true/yes/on）；production.py 硬编码强制关闭；固定开发身份为 dev_employee、dev_editor、dev_reviewer、dev_knowledge_admin（均 is_superuser=False、密码不可用、仅属各自系统角色，仅 dev_knowledge_admin 为 staff=True）。
 - Article 编号服务尚未实现，Article Admin 新增入口仍保持关闭；第 8 步内容受众 Selector 已实现（`apps/knowledge/selectors.py` 的 `visible_articles` / `can_read_article`），尚未接入页面、HTTP API、搜索或附件。
 - 内容受众语义（第 8B 步，见 `docs/07-ADR/0001`）：账号门槛 → 文章策略（`all_employees` / `it_only` / `restricted`）→ 拒绝优先；员工阅读路径不因 `is_staff` / `is_superuser` / 编辑员 / 审核员 / 知识管理员 / 作者 / 空间负责人越权；`it_only` 通过服务端配置 `KNOWLEDGE_IT_USER_GROUP_ID` 绑定一个启用的内容用户组，未配置时不授予 it_only 阅读权限；读取侧按文章策略计算允许范围，不一致 allow 不扩大范围。
-- 第 8F 步按用户调整后的范围：循环交换在表单阶段明确拒绝，非循环更新按唯一键依赖保存，不删除重插或扩权，无新增迁移。隔离专项 159 passed；全量 386 passed、11 subtests passed；Django check、迁移一致性及 Ruff 检查通过。并发及 PostgreSQL 行为未验证。
-- 下一步：执行本次明确范围的第 8G 步复核；不自动推送或进入第 9 步。
+- 第 8F 步已实现：常规联合编辑、非循环更新链及授权删除／修改／新增混合操作；循环交换首版不支持，在表单阶段中文提示、保留输入、整次不保存。不删除重插既有规则，不改变数据库约束或角色权限，无新增迁移。
+- 以下成绩引用用户提供的此前完成报告，不是第 8H 文档同步时重新执行的结果。第 8F 历史验证：隔离专项 159 passed；完整套件 386 passed、11 subtests passed；Django check、迁移一致性及 Ruff 检查通过。
+- 第 8G 定点复核：A，按调整后的范围通过。项目专项 76 passed、仓库外补充复现 12 passed；Django check、迁移一致性、Ruff 静态与格式、工作区及提交差异空白检查通过；第 8G 未重跑完整套件。第 8F 确定性保存缺陷已按当前契约关闭；PostgreSQL 及持久库迁移仍需另行安排。
+- 仓库迁移文件：accounts.0001～0002、knowledge.0001～0003 已存在。上文 PostgreSQL 已应用 0001、0002 及 knowledge.0003 未应用的说明属于此前报告；当前持久数据库迁移状态、实际数据库注释仍待核验，不从文件存在推断数据库已更新。
+- PostgreSQL 查询、排序及相关数据库行为待验证。未新增并发协调锁，实际并发及锁行为未验证；并发写入仍可能冲突或覆盖更新，atomic() 不等同于并发安全。
+- 下一步：安排 PostgreSQL 验证准备，具体数据库操作另行限定范围；不自动操作数据库、推送或进入第 9 步。同步状态以对 GitHub、Gitee 的实时核验为准。
 - 规则文档不得写入密码、个人代理或机器专属临时路径。
