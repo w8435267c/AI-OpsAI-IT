@@ -1,0 +1,14 @@
+{% extends "wagtailadmin/base.html" %}
+{% block titletag %}批准审核{% endblock %}
+{% block content %}
+{% if approved %}
+<h1>批准成功</h1><p>本次受审修订已发布为正式内容。</p>
+{% else %}
+<h1>批准审核：{{ content.title }}</h1>
+<p>任务：{{ task.pk }}；受审修订：{{ revision.pk }}</p>
+<p>{{ content.summary }}</p><div>{{ content.body|linebreaks }}</div>
+<form method="post" action="{% url 'f05b_approve' task.pk %}">
+{% csrf_token %}<button type="submit" class="button">批准并发布本次修订</button>
+</form>
+{% endif %}
+{% endblock %}

@@ -24,6 +24,8 @@
 
 固定采用 Python 3.13、Django 5.2 LTS、PostgreSQL、Django Templates + Bootstrap + HTMX 和 Docker Compose，整体架构为模块化 Django 单体。
 
+融合方向已获用户确认：以 OpsAI-IT 为主项目，Wagtail 作为依赖提供内容编辑、版本和审核基础能力；保留 accounts.User、组织关系、内容受众及各 App 职责，不维护 Wagtail 框架分叉。候选“Article 稳定业务身份 + 一对一 KnowledgeContent Snippet”仍待最小验证，详见 `docs/07-ADR/0002-Wagtail融合基线与最小设计.md`；不得据此删除 ArticleVersion、ReviewRecord 或维护两套可独立编辑的内容及发布状态。
+
 未经明确批准，不得引入 React 或 Vue 前后端分离、微服务、Redis、Celery、Elasticsearch、Kubernetes 或独立 API 网关。
 
 ## 4. App 职责边界
@@ -143,5 +145,7 @@ git show -s --format=full HEAD
 - 第 8G 定点复核：A，按调整后的范围通过。项目专项 76 passed、仓库外补充复现 12 passed；Django check、迁移一致性、Ruff 静态与格式、工作区及提交差异空白检查通过；第 8G 未重跑完整套件。第 8F 确定性保存缺陷已按当前契约关闭；PostgreSQL 及持久库迁移仍需另行安排。
 - 仓库迁移文件：accounts.0001～0002、knowledge.0001～0003 已存在。上文 PostgreSQL 已应用 0001、0002 及 knowledge.0003 未应用的说明属于此前报告；当前持久数据库迁移状态、实际数据库注释仍待核验，不从文件存在推断数据库已更新。
 - PostgreSQL 查询、排序及相关数据库行为待验证。未新增并发协调锁，实际并发及锁行为未验证；并发写入仍可能冲突或覆盖更新，atomic() 不等同于并发安全。
-- 下一步：安排 PostgreSQL 验证准备，具体数据库操作另行限定范围；不自动操作数据库、推送或进入第 9 步。同步状态以对 GitHub、Gitee 的实时核验为准。
+- 当前阶段：本轮授权执行融合 F01，仅落地 ADR-0002 和本规则的最小同步；方向已确认，模型方案待最小验证。此前 PostgreSQL 验证待办保留，第 8J 尚未取得实际运行证据；不得把静态检查、测试收集或历史成绩写成实际数据库验证通过。
+- 后续 F02 仅计划建立独立融合工作目录/分支及 .venv、固定安装依赖并验证 Python/Django/Wagtail 兼容性，不同时实现内容模型、审核、搜索或数据迁移。实验配置不得导入会读取真实 .env 的 base/test 配置链；配置与凭据、数据库、Python 依赖分别隔离，禁止复用开发数据卷 opsai-it_postgres_data。
+- F01 完成后停止，不自动执行 F02、数据库操作、推送或第 9 步；后续任务按用户明确授权推进。同步状态以对 GitHub、Gitee 的实时核验为准。
 - 规则文档不得写入密码、个人代理或机器专属临时路径。

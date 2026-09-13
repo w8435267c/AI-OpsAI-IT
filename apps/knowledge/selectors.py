@@ -221,8 +221,11 @@ def _deny_exists(dept_ids, group_ids, user_pk):
     )
 
 
-def visible_articles(user, *, base=None, now=None):
-    """返回对 user 可见（active + 已发布 + 命中受众）的文章 QuerySet，未求值。
+def _audience_eligible_articles(user, *, base=None, now=None):
+    """只过滤业务可见性，不证明存在可读取的正式内容。
+
+    返回账号、文章/空间状态、生效时间及受众规则允许的候选 QuerySet。
+    调用方必须另行核验正式内容，不能将候选集作为完整授权结果。
 
     base 为可选的 Article QuerySet；传入时仅在其范围内进一步收紧，不丢弃其
     原过滤条件。user 不满足账号门槛时返回空集。
@@ -240,9 +243,6 @@ def visible_articles(user, *, base=None, now=None):
     qs = qs.filter(
         article_status=ArticleStatus.ACTIVE,
         space__is_active=True,
-        current_published_version__isnull=False,
-        current_published_version__status=VersionStatus.PUBLISHED,
-        current_published_version__article_id=F("pk"),
     ).filter(
         Q(effective_at__isnull=True) | Q(effective_at__lte=now),
     )
@@ -260,6 +260,18 @@ def visible_articles(user, *, base=None, now=None):
     qs = qs.exclude(_deny_exists(dept_ids, group_ids, user.pk))
 
     return qs
+
+
+def visible_articles(user, *, base=None, now=None):
+    """返回对 user 可见（业务可见且旧正式版本有效）的文章 QuerySet。
+
+    base 和 now 沿用公共过滤契约；旧发布限制始终执行，不能由调用方关闭。
+    """
+    return _audience_eligible_articles(user, base=base, now=now).filter(
+        current_published_version__isnull=False,
+        current_published_version__status=VersionStatus.PUBLISHED,
+        current_published_version__article_id=F("pk"),
+    )
 
 
 def can_read_article(user, article, *, now=None):

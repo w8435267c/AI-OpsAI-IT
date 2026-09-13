@@ -1,0 +1,19 @@
+{% extends "wagtailadmin/base.html" %}
+{% block titletag %}实验审核{% endblock %}
+{% block content %}
+<h1>实验审核：{{ content.title }}</h1>
+<p>当前草稿修订：{{ content.latest_revision_id }}；审核状态：{{ state.status|default:"未提交" }}</p>
+{% if can_submit %}
+<form method="post" action="{% url 'f05a_submit' content.pk %}">
+{% csrf_token %}<input type="hidden" name="revision_id" value="{{ content.latest_revision_id }}">
+<button type="submit">提交当前修订审核</button>
+</form>
+{% endif %}
+{% if can_reject %}
+<p>审核修订：{{ state.current_task_state.revision_id }}</p>
+<form method="post" action="{% url 'f05a_reject' content.pk %}">
+{% csrf_token %}<input type="hidden" name="task_state_id" value="{{ state.current_task_state_id }}">
+<label>驳回说明 <textarea name="comment"></textarea></label><button type="submit">驳回</button>
+</form>
+{% endif %}
+{% endblock %}

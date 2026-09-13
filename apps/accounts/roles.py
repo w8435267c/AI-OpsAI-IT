@@ -8,7 +8,7 @@
 管理命令、表单、视图和测试统一引用本模块，避免在多个文件散落硬编码。
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 ROLE_EMPLOYEE = "employee"
 ROLE_EDITOR = "editor"
@@ -99,6 +99,26 @@ SYSTEM_ROLES: tuple[SystemRole, ...] = (
         ),
     ),
 )
+
+# 配置档只改变权限集合，不改变角色名、固定开发身份或默认行为。
+ROLE_PROFILES = ("default", "wagtail-poc")
+PROFILE_REQUIRED_APPS = {"default": (), "wagtail-poc": ("wagtail", "wagtail.admin")}
+WAGTAIL_ACCESS_PERMISSION = "wagtailadmin.access_admin"
+
+
+def get_system_roles(profile: str = "default") -> tuple[SystemRole, ...]:
+    """从原始集合构造显式最小增量；不导入 Wagtail、不根据安装状态切换。"""
+    if profile not in ROLE_PROFILES:
+        raise ValueError(f"未知角色配置档：{profile}")
+    if profile == "default":
+        return SYSTEM_ROLES
+    return tuple(
+        replace(role, permissions=(*role.permissions, WAGTAIL_ACCESS_PERMISSION))
+        if role.code in (ROLE_EDITOR, ROLE_REVIEWER, ROLE_KNOWLEDGE_ADMIN)
+        else role
+        for role in SYSTEM_ROLES
+    )
+
 
 SYSTEM_ROLE_BY_CODE = {role.code: role for role in SYSTEM_ROLES}
 SYSTEM_ROLE_BY_NAME = {role.name: role for role in SYSTEM_ROLES}

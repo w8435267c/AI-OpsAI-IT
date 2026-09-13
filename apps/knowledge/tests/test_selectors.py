@@ -39,7 +39,11 @@ from apps.knowledge.models import (
     SpaceType,
     VersionStatus,
 )
-from apps.knowledge.selectors import can_read_article, visible_articles
+from apps.knowledge.selectors import (
+    _audience_eligible_articles,
+    can_read_article,
+    visible_articles,
+)
 
 _seq = {"user": 0, "space": 0, "category": 0, "kb": 0}
 
@@ -469,7 +473,10 @@ class ContentStatusTests(TestCase):
 
     def test_no_published_version_excluded(self):
         article = _mk_article(policy=AudiencePolicy.ALL_EMPLOYEES)
-        self.assertNotIn(article, visible_articles(_mk_user()))
+        user = _mk_user()
+        self.assertIn(article, _audience_eligible_articles(user))
+        self.assertNotIn(article, visible_articles(user))
+        self.assertFalse(can_read_article(user, article))
 
     def test_wrong_version_status_excluded(self):
         article = _mk_article(policy=AudiencePolicy.ALL_EMPLOYEES)
@@ -484,7 +491,10 @@ class ContentStatusTests(TestCase):
         )
         article.current_published_version = version
         article.save(update_fields=["current_published_version"])
-        self.assertNotIn(article, visible_articles(_mk_user()))
+        user = _mk_user()
+        self.assertIn(article, _audience_eligible_articles(user))
+        self.assertNotIn(article, visible_articles(user))
+        self.assertFalse(can_read_article(user, article))
 
     def test_pointer_to_other_article_excluded(self):
         article_a = _mk_article(policy=AudiencePolicy.ALL_EMPLOYEES)
@@ -492,7 +502,9 @@ class ContentStatusTests(TestCase):
         article_a.current_published_version = version_b
         article_a.save(update_fields=["current_published_version"])
         u = _mk_user()
+        self.assertIn(article_a, _audience_eligible_articles(u))
         self.assertNotIn(article_a, visible_articles(u))
+        self.assertFalse(can_read_article(u, article_a))
         self.assertIn(article_b, visible_articles(u))
 
     def test_new_version_in_review_old_published_still_visible(self):

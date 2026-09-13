@@ -1,5 +1,6 @@
 """同步系统操作角色：创建/取得四个 Django Group 并把权限校准为代码定义的集合。"""
 
+from django.apps import apps
 from django.contrib.auth.models import Group, Permission
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
@@ -14,9 +15,10 @@ def _resolve_permissions(role):
     for codename in role.permissions:
         app_label, _, perm_codename = codename.partition(".")
         try:
-            permission = Permission.objects.get(
-                content_type__app_label=app_label, codename=perm_codename
-            )
+            lookup = {"content_type__app_label": app_label, "codename": perm_codename}
+            if codename == roles.WAGTAIL_ACCESS_PERMISSION:
+                lookup["content_type__model"] = "admin"
+            permission = Permission.objects.get(**lookup)
         except Permission.DoesNotExist:
             missing.append(codename)
         else:
@@ -27,11 +29,29 @@ def _resolve_permissions(role):
 class Command(BaseCommand):
     help = "创建或取得四个系统操作角色，并将其权限同步为代码定义的准确集合。"
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--profile",
+            choices=roles.ROLE_PROFILES,
+            default="default",
+            help="显式角色配置档；默认保持原权限，wagtail-poc 仅增加后台入口。",
+        )
+
     def handle(self, *args, **options):
+        profile = options["profile"]
+        try:
+            selected_roles = roles.get_system_roles(profile)
+        except ValueError as exc:
+            raise CommandError(str(exc)) from exc
+        missing_apps = [
+            name for name in roles.PROFILE_REQUIRED_APPS[profile] if not apps.is_installed(name)
+        ]
+        if missing_apps:
+            raise CommandError("配置档所需 App 未启用，未做任何写入：" + "、".join(missing_apps))
         # 先整体解析：任何权限缺失都直接报错停止，不做部分写入。
         planned = []
         all_missing = []
-        for role in roles.SYSTEM_ROLES:
+        for role in selected_roles:
             resolved, missing = _resolve_permissions(role)
             planned.append((role, resolved))
             all_missing.extend(missing)

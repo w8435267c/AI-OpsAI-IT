@@ -32,6 +32,14 @@ def _find_business_association(user) -> str | None:
 class Command(BaseCommand):
     help = "创建本地模拟登录的四个固定开发用户（仅 DEBUG=True 且开发登录开关启用时可用）。"
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--profile",
+            choices=roles.ROLE_PROFILES,
+            default="default",
+            help="显式传给角色同步；融合环境需指定 wagtail-poc。",
+        )
+
     def handle(self, *args, **options):
         if not (settings.DEBUG and settings.DEV_LOGIN_ENABLED):
             raise CommandError(
@@ -67,7 +75,7 @@ class Command(BaseCommand):
         # 用户只做幂等确认，不做任何写入（不重置 last_login 等运行痕迹）。
         try:
             with transaction.atomic():
-                call_command("sync_system_roles", verbosity=0)
+                call_command("sync_system_roles", profile=options["profile"], verbosity=0)
                 for identity in roles.DEV_IDENTITIES:
                     group = Group.objects.get(
                         name=roles.SYSTEM_ROLE_BY_CODE[identity.role_code].name

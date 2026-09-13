@@ -1,0 +1,7 @@
+# F02: 固定框架版本，保留主项目运行依赖；不安装业务项目或上游 extras。
+Django==5.2.17
+Wagtail==7.4.3
+psycopg[binary]==3.3.5
+python-dotenv==1.2.3
+# 仅用于本轮新增 Python 文件的静态检查，与原环境一致。
+ruff==0.16.5
