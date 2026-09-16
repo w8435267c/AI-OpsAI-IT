@@ -16,6 +16,7 @@ from experiments.wagtail_f04b.views import (
 )
 
 from . import services
+from .body_rules import EmptyBodyRejected
 
 
 class ReviewEditView(DraftEditView):
@@ -94,6 +95,9 @@ def operation(request, pk, kind):
             services.submit(pk, value, request.user)
         else:
             services.reject(pk, value, request.user, request.POST.get("comment", ""))
+    except EmptyBodyRejected as exc:
+        # 预期业务拒绝：返回中文原因与 409，不是 500，也不吞掉其他程序异常。
+        return HttpResponse(exc.reason, status=409)
     except (services.Conflict, ValidationError, ObjectDoesNotExist):
         return HttpResponse("目标修订或任务不符合当前操作条件", status=409)
     return redirect("f05a_review", pk=pk)

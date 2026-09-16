@@ -7,6 +7,7 @@ from wagtail.models import TaskState, WorkflowState
 from experiments.wagtail_f04a.models import KnowledgeContent
 from experiments.wagtail_f04a.versions import checked_revision
 
+from .body_rules import require_revision_body
 from .models import RejectOnlyTask, TaskSubmission
 from .policy import valid_account
 
@@ -43,6 +44,8 @@ def submit(content_id, revision_id, user):
         or not obj.has_unpublished_changes
     ):
         raise Conflict("只能提交当前未发布草稿")
+    # 共用正文规则在任务、工作流或提交记录写入前执行；首次提交与驳回后重提同一路径。
+    require_revision_body(revision)
     workflow = obj.get_workflow()
     if workflow is None:
         raise Conflict("未配置有效工作流")

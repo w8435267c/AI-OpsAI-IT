@@ -11,6 +11,7 @@ from wagtail.models import TaskState, WorkflowState
 from apps.accounts.models import User
 from experiments.wagtail_f04a.models import KnowledgeContent
 from experiments.wagtail_f04a.versions import checked_revision
+from experiments.wagtail_f05a.body_rules import EmptyBodyRejected, require_revision_body
 from experiments.wagtail_f05a.models import TaskSubmission
 from experiments.wagtail_f05a.policy import valid_account
 
@@ -103,6 +104,11 @@ def approve_review(task_state_id, actor):
             raise ApprovalRejected("workflow_unsupported", "仅支持一个审核任务的工作流")
         obj = KnowledgeContent.objects.get(pk=workflow_state.object_id)
         revision = checked_revision(obj, state.revision_id)
+        try:
+            # 只校验本任务实际关联的受审修订；不看另一条最新草稿，也不接受客户端正文。
+            require_revision_body(revision)
+        except EmptyBodyRejected as exc:
+            raise ApprovalRejected(exc.code, exc.reason) from exc
         if revision.as_object().go_live_at is not None:
             raise ApprovalRejected("scheduled_revision", "本轮只支持即时发布")
         ctx = _ApprovalContext(
