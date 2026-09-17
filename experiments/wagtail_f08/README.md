@@ -218,3 +218,63 @@ Set-Location 'D:\Desktop\OpsAI\AI-OpsAI-IT-wagtail-poc'
 ```
 
 本轮未修改草稿表单、模型、迁移、正式配置、角色或 F08 转换逻辑；未读取真实 `.env`，未安装依赖，未运行服务器，未操作 Docker、持久数据库或主 worktree，未暂存、提交或推送。完成后停止，不进入展示页面开发。
+
+
+## F08D-1：最小员工普通文本详情页（2026-09-17）
+
+仅在 F08 合成配置注册 `GET /experiments/f08/articles/<article_id>/`。视图在检查请求方法和会话认证后，只调用 `get_employee_article_detail(request.user, article_id)`；成功页面直接使用其返回的冻结正式快照，不复制受众或批准证据判断，不读取最新草稿，不调用正文转换函数，也不回退旧版本或 `body_plaintext`。F08 URL 配置继续包含 F06 原有 JSON 详情路由，其响应结构和缓存行为保持不变。
+
+访问和响应边界：
+
+- 普通有效员工不需要 `is_staff` 或 Wagtail 后台权限；沿用既有 SessionMiddleware、AuthenticationMiddleware 和 AccountStateBackend。
+- 未登录或会话账号已停用、禁用、离职时固定返回中文 401，且不会调用详情读取器。
+- 读取器返回 `None` 时统一返回中文 404；无受众权限、不存在、未发布及其他读取拒绝不区分原因，不返回标题、摘要或正文。
+- GET 以外的方法固定返回 405 与 `Allow: GET`；该只读端点不接受任何写操作。
+- F08 专用外层中间件对 `/experiments/f08/articles/` 前缀的 200、401、404、405 响应统一写入 `Cache-Control: private, no-store`。
+
+模板只使用 Django 默认自动转义输出标题、摘要和正文；没有 `safe`、`mark_safe`、关闭自动转义、Markdown、脚本 DOM 写入或 `innerHTML`。正文容器使用 `white-space: pre-wrap` 和 `overflow-wrap: anywhere`，保留普通文本内部换行与空白。HTML、script 和 JSON 外观字符串作为转义后的文字输出，不解码迁移封套，也不推断正文格式。
+
+### F08D-1 测试与检查
+
+- `run_page.py` 一次运行 17 个不重复测试，全部通过：5 个 F08D-1 页面专项和 12 个 F06 详情读取回归。
+- 页面专项覆盖合法第三方批准普通文本、后续草稿隔离、普通员工无后台权限、统一 401/404/405、所有响应缓存头、标题/摘要/正文自动转义、正文换行保留、F08 独占页面路由，以及 F06 JSON 接口在 F08 配置下保持原行为。
+- Django 系统检查 0 错误、108 条 SQLite 不支持 `db_comment` 的既有警告、0 silenced；`makemigrations --check --dry-run` 为 No changes detected。runner 只允许 SQLite `:memory:`，白名单环境与审计钩子未检测到真实配置、`.env`、持久数据库或网络访问。
+
+完整 PowerShell 复跑：
+
+```powershell
+Set-Location 'D:\Desktop\OpsAI\AI-OpsAI-IT-wagtail-poc'
+.\.venv\Scripts\python.exe -I -B -X utf8 experiments/wagtail_f08/run_page.py
+.\.venv\Scripts\python.exe -I -m ruff check --no-cache experiments/wagtail_f08
+.\.venv\Scripts\python.exe -I -m ruff format --check --no-cache experiments/wagtail_f08
+```
+
+本轮新增 F08 视图、路由、合成 settings、缓存中间件、模板、页面测试和隔离 runner，仅更新本 README；未修改 F06 读取/JSON 服务、F08 转换、审核服务、空正文规则、正式模型、迁移、角色或正式配置。未启动浏览器或服务器，不宣称完成浏览器验收；未操作 Docker、持久数据库或主 worktree，未暂存、提交或推送。完成后停止，不自动进入下一阶段。
+
+
+## F08D-2：员工详情页显示验收（2026-09-17）
+
+新增 `preview_page.py`。脚本沿用 F08D-1 runner 的环境白名单与审计限制，在 SQLite `:memory:` 中复用 F06 合成夹具，准备允许普通员工阅读且已由合法第三方批准发布的普通文本修订，再通过 Django 测试客户端真实请求现有 F08 页面。脚本确认响应为 200、缓存头为 `private, no-store`、脚本外观文本已经转义且正文包含 `white-space: pre-wrap` 后，才把响应 HTML 写入仓库外新建的唯一临时目录；客户端 Cookie 随后清空，输出文件不包含会话标识或真实数据。
+
+本次最终产物是**合成数据的离线页面预览**：
+
+- HTML：`D:\Desktop\OpsAI\opsai-f08d2-preview-unr2t0l0\article-detail.html`
+- 桌面截图：`D:\Desktop\OpsAI\opsai-f08d2-preview-unr2t0l0\article-detail-desktop-1440x1000.png`
+- 手机宽度截图：`D:\Desktop\OpsAI\opsai-f08d2-preview-unr2t0l0\article-detail-phone-width-390x844.png`
+
+实际使用本机 Microsoft Edge `153.0.4234.32` 无头打开生成的本地 HTML，没有启动 Django 服务器。桌面视口为 1440×1000；手机宽度通过 Edge DevTools 协议精确设置为 390×844，实测 `innerWidth=390`、`scrollWidth=390`、`bodyScrollWidth=390`，主卡片边界为 left=12、right=378、width=366，没有整页横向溢出。
+
+首次手机截图暴露卡片贴边及窄屏安全留白不足。模板只做最小样式修正：统一 `box-sizing: border-box`，为卡片设置响应式宽度，在不超过 600 像素时缩小边距、内边距和标题字号，并允许标题、摘要长文本断行。未修改正文、自动转义、认证、受众、读取或审核逻辑。修正后重新执行 F08D-1 `run_page.py`，17 项全部通过；这是模板变更后的既有回归复跑，不作为 F08D-2 新增认证或权限成绩重复计数。
+
+最终截图实际检查结果：中文标题、摘要和正文清楚可读；段落空行、内部缩进、编号步骤和 Windows 路径得到保留；长连续文本在卡片内换行；`<script>`、`<section>` 和 JSON 外观内容显示为普通文字，没有执行或渲染成标签。HTML 仅包含模板内联 CSS 和系统字体回退，不引用外部字体、图片、样式或脚本。
+
+预览脚本 Ruff 静态检查、Ruff 格式检查、`ast.parse` 语法检查及相关文件空白检查均通过，`git diff --check` 与 `git diff --cached --check` 通过。最终产物只读核验确认 HTML 不含 Cookie、会话、CSRF 或合成登录口令，不含外部资源引用，预览目录没有残留 Edge profile。
+
+生成命令：
+
+```powershell
+Set-Location 'D:\Desktop\OpsAI\AI-OpsAI-IT-wagtail-poc'
+.\.venv\Scripts\python.exe -I -B -X utf8 experiments/wagtail_f08/preview_page.py
+```
+
+本轮仅新增预览脚本、更新本 README，并按实际手机显示问题最小调整 `article_detail.html`；未新增业务功能、模型、迁移、列表、搜索或部署配置。未读取真实 `.env`，未连接持久数据库，未启动服务器，未操作 Docker 或主 worktree，未安装依赖，未暂存、提交或推送。完成后停止，不进入列表、搜索或正式部署。

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ article.title }}</title>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            background: #f5f7fa;
+            color: #1f2937;
+            font-family: "Microsoft YaHei", sans-serif;
+            line-height: 1.7;
+        }
+        main {
+            width: calc(100% - 32px);
+            max-width: 880px;
+            margin: 40px auto;
+            padding: 32px;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
+        h1 {
+            margin: 0 0 12px;
+            font-size: 28px;
+            overflow-wrap: anywhere;
+        }
+        .article-summary {
+            margin: 0 0 24px;
+            color: #4b5563;
+            overflow-wrap: anywhere;
+        }
+        .article-body {
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+        @media (max-width: 600px) {
+            main {
+                width: calc(100% - 24px);
+                margin: 16px auto;
+                padding: 20px;
+            }
+            h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>{{ article.title }}</h1>
+        <p class="article-summary">{{ article.summary }}</p>
+        <div class="article-body">{{ article.body }}</div>
+    </main>
+</body>
+</html>
