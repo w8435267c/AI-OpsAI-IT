@@ -216,8 +216,8 @@ git show -s --format=full HEAD
 
 - V1.1A 文档开发基线已经建立。
 - Django 单体项目骨架已初始化，`/health/live` 与 `/health/ready` 可运行并有自动化测试。
-- Docker Desktop 4.89 与 WSL 2 已就绪；PostgreSQL 本地开发环境已通过 `deploy/compose.yaml`（db + web 服务）建立，数据位于 Docker 的 WSL 2 数据盘。
-- 本地开发数据库使用 PostgreSQL（连接变量由未跟踪的 `.env` 提供，`POSTGRES_HOST` 在 Compose 内覆盖为 `db`）；测试环境继续使用 SQLite 内存库。
+- 电脑 B 的 Docker Desktop 4.92.0、WSL 2、Docker Engine 29.8.0 和 Docker Compose v5.5.1 已就绪；`deploy/compose.yaml` 已定义 db + web 服务，但当前电脑 B 尚未创建或启动 OpsAI PostgreSQL 容器、命名卷或数据库。
+- 正式开发数据库目标仍为 PostgreSQL（Compose 内 `POSTGRES_HOST` 覆盖为 `db`）；电脑 B 的真实 `.env` 尚不存在，未执行 `migrate`，测试环境继续使用 SQLite 内存库。
 - 里程碑：第一阶段第 1～6 步已完成，里程碑 B 的代码、数据模型、迁移和测试底座已经建立；第 7 步（本地模拟登录与系统操作角色）已经完成，安全收紧提交 c5f1bbb 已通过第 7C 只读审计（结论 A：完整通过），PostgreSQL 补充只读核验已经完成。
 - accounts：`User`、`Department`、`UserDepartment`、`UserGroup`、`UserGroupMembership` 已正式建立，`0001`、`0002` 已在 PostgreSQL 应用，相关约束和模型测试已通过；`UserGroup` 仅用于内容受众，系统操作角色仍使用 Django `Group`/`Permission`。
 - knowledge：`KnowledgeSpace`、`Category`、`Article`、`ArticleVersion`、`ArticleAudience`、`ReviewRecord` 已接入，`0001`、`0002` 已在 PostgreSQL 应用；核心外键、唯一约束、CHECK、条件唯一索引和模型校验已经建立；当前未实现发布事务、编号生成服务、搜索、API、页面或钉钉功能；内容受众 Selector 已实现。
@@ -234,7 +234,8 @@ git show -s --format=full HEAD
 - 第 8G 定点复核：A，按调整后的范围通过。项目专项 76 passed、仓库外补充复现 12 passed；Django check、迁移一致性、Ruff 静态与格式、工作区及提交差异空白检查通过；第 8G 未重跑完整套件。第 8F 确定性保存缺陷已按当前契约关闭；PostgreSQL 及持久库迁移仍需另行安排。
 - 仓库迁移文件：accounts.0001～0002、knowledge.0001～0003 已存在。上文 PostgreSQL 已应用 0001、0002 及 knowledge.0003 未应用的说明属于此前报告；当前持久数据库迁移状态、实际数据库注释仍待核验，不从文件存在推断数据库已更新。
 - PostgreSQL 查询、排序及相关数据库行为待验证。未新增并发协调锁，实际并发及锁行为未验证；并发写入仍可能冲突或覆盖更新，atomic() 不等同于并发安全。
-- 当前阶段：本轮授权执行融合 F01，仅落地 ADR-0002 和本规则的最小同步；方向已确认，模型方案待最小验证。此前 PostgreSQL 验证待办保留，第 8J 尚未取得实际运行证据；不得把静态检查、测试收集或历史成绩写成实际数据库验证通过。
-- 后续 F02 仅计划建立独立融合工作目录/分支及 .venv、固定安装依赖并验证 Python/Django/Wagtail 兼容性，不同时实现内容模型、审核、搜索或数据迁移。实验配置不得导入会读取真实 .env 的 base/test 配置链；配置与凭据、数据库、Python 依赖分别隔离，禁止复用开发数据卷 opsai-it_postgres_data。
-- F01 完成后停止，不自动执行 F02、数据库操作、推送或第 9 步；后续任务按用户明确授权推进。同步状态以对 GitHub、Gitee 的实时核验为准。
+- 当前阶段：F02～F08 已形成 Wagtail 隔离 PoC 证据，但 Wagtail 仍未进入正式根依赖、正式 settings 或正式路由；不得把实验测试、SQLite 结果或历史成绩写成正式接入、PostgreSQL 或生产验证通过。
+- 第一阶段 AI 接力文件 H01～H08 已建立并完成双端同步；OPS-H09 仅检查和修正接力元数据一致性。当前唯一接力业务任务是任务 9，状态为 `READY`、负责人为 `unassigned`，尚未授权业务实施或指定执行 Agent。
+- 任务 8J 因电脑 B 缺少真实 `.env` 且没有数据库操作授权保持 `BLOCKED`；该阻塞只影响 PostgreSQL 持久环境补充核验，不自动阻塞任务 9 或整个项目。
+- OPS-H09 完成后停止，不自动执行 OPS-H10、任务 9、数据库操作、Commit 或 Push；后续任务按用户明确授权推进。同步状态以对 GitHub、Gitee 的实时核验为准。
 - 规则文档不得写入密码、个人代理或机器专属临时路径。

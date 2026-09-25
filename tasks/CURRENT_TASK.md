@@ -53,7 +53,7 @@
 
 ## 6. 允许修改范围
 
-以下范围只在项目负责人以后明确授权开始任务 9 后才原则上允许修改；OPS-H07 本轮不得修改这些文件：
+以下范围只在项目负责人以后明确授权开始任务 9 后才原则上允许修改；当前尚未取得该授权：
 
 - Django Admin 直接实现：
   - `apps/accounts/admin.py`
@@ -156,7 +156,7 @@ Migration 不是项目永久禁止项，但任务 9 不得自动创建或修改 
 
 ## 10. 验证方式
 
-以下是未来正式实施任务 9 后必须执行的验证类型；OPS-H07 本轮不执行任务 9 测试或写入：
+以下是未来正式实施任务 9 后必须执行的验证类型；当前 H09 只检查接力元数据，不执行任务 9 测试或写入：
 
 1. **相关 Django 自动测试**：覆盖 Admin 查看、新增、修改、删除、只读字段、权限漂移、账号失效、越权请求、受众 deny 优先和事务回滚。
 2. **演示数据首次执行**：记录创建对象类别、数量和业务标识，确认仅产生预期最小样本。
@@ -181,7 +181,7 @@ Migration 不是项目永久禁止项，但任务 9 不得自动创建或修改 
 
 只有项目负责人明确授权开始任务 9 并指定执行 Agent 后，才可进行以下检查并进入业务实施：
 
-1. 依次读取 `AGENTS.md`、`docs/PROJECT.md`、`docs/PROJECT_STATE.md`、`tasks/TASKS.yaml`、`tasks/CURRENT_TASK.md`；`docs/HANDOFF.md` 建立后也必须按规则读取。
+1. 依次读取 `AGENTS.md`、`docs/PROJECT.md`、`docs/PROJECT_STATE.md`、`docs/HANDOFF.md`、`tasks/TASKS.yaml`、`tasks/CURRENT_TASK.md`。
 2. 核对实际仓库根目录、当前分支、完整 HEAD 和工作区，保护任何未知修改。
 3. 确认 `TASKS.yaml` 与本文件仍同时记录任务 9，且状态、负责人和依赖一致。
 4. 确认项目负责人已明确授权“开始任务 9”并指定执行 Agent；仅选择接力任务不等于开工授权。
@@ -213,12 +213,12 @@ Migration 不是项目永久禁止项，但任务 9 不得自动创建或修改 
 
 ### HANDOFF
 
-发生 Agent、电脑或人员切换且任务仍未完成时，进入 `HANDOFF`，并按 OPS-H08 规则维护 `docs/HANDOFF.md`。OPS-H08 当前尚未执行，本轮不得提前创建该文件。
+发生 Agent、电脑或人员切换且任务仍未完成时，进入 `HANDOFF`，并按 `docs/HANDOFF.md` 的正式模板记录真实现场。当前没有真实 Agent 切换，文件应继续保持“当前无待处理 AI 交接”。
 
 ## 13. 当前备注
 
 - 当前唯一接力任务是任务 `9`。
 - 当前状态仍为 `READY`，负责人仍为 `unassigned`。
 - 项目负责人尚未授权业务实施，任务 9 尚未真正开工。
-- OPS-H07 只创建本文件，不修改 `tasks/TASKS.yaml`、业务代码、测试、迁移、配置、数据库或部署文件。
-- 本轮不 Commit、不 Push，不执行任务 9，不创建 `docs/HANDOFF.md`，不执行 OPS-H08。
+- OPS-H07 已创建本文件；OPS-H08 已创建 `docs/HANDOFF.md`，当前没有待处理 AI 交接。
+- 当前 OPS-H09 只检查和最小修正接力元数据，不 Commit、不 Push，不执行任务 9，不执行 OPS-H10。

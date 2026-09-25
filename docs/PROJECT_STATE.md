@@ -6,15 +6,17 @@
 
 | 项目 | 当前状态 |
 | --- | --- |
-| 快照日期 | 2026-09-24 |
+| 快照日期 | 2026-09-25 |
 | 当前工作区 | `D:\Desktop\OpsAI\AI-OpsAI-IT-wagtail-poc` |
 | 当前分支 | `fusion/wagtail-poc` |
-| 基线 HEAD | `259908f3ffe09c9c444f2add85c4cf00966874bc` |
+| OPS-H09 执行基线 HEAD | `78bfda06bf39dc7106529c6c23ad08215087b43c` |
 | 当前阶段 | OpsAI Django 主项目与 Wagtail 的隔离融合验证阶段 |
 | 正式技术主体 | Python 3.13 + Django 5.2 LTS 模块化单体 |
 | Wagtail 状态 | 融合方向已确认，F02～F08 已形成隔离 PoC 证据，尚未进入正式根依赖、正式 settings 或正式路由 |
 | 电脑 B 环境 | Python、正式项目依赖、WSL 2、Docker Desktop、Docker Engine 和 Docker Compose 已恢复；真实 `.env` 尚未配置 |
-| 本轮任务 | OPS-H05：建立本状态文档 |
+| 当前接力元数据任务 | OPS-H09：第一阶段接力元数据一致性与安全检查 |
+| 当前唯一接力业务任务 | 任务 9：配置 Django Admin 和最小演示数据；`READY / unassigned`，尚未授权实施 |
+| 当前交接状态 | 当前无待处理 AI 交接 |
 
 本快照的总体结论是：正式 Django 工程已有账号、知识核心模型、权限基础、健康检查和内容受众过滤等基础能力；Wagtail 核心融合链路已在隔离实验中得到多阶段验证，但尚未完成正式接入、PostgreSQL 验证、生产迁移或正式业务路径切换。不能把 PoC 结果描述为正式上线能力。
 
@@ -168,8 +170,9 @@
 
 ### 9.1 当前阻塞
 
-- 电脑 B 的真实 `.env` 尚未由项目负责人安全准备，因此不能启动本地 PostgreSQL 开发环境或验证真实 Compose 变量。
-- Wagtail 正式接入方案和迁移边界尚未由后续融合任务最终确认。
+- 任务 8J 因电脑 B 的真实 `.env` 尚未由项目负责人安全准备，且没有数据库操作授权，保持 `BLOCKED`；当前不能启动本地 PostgreSQL 开发环境或验证真实 Compose 变量。
+- 8J 的阻塞只影响 PostgreSQL 持久环境补充核验，不自动等于整个项目或任务 9 被阻塞；任务 9 仍为 `READY / unassigned`，但尚未获准开工。
+- Wagtail 正式接入方案和迁移边界仍待后续正式融合任务决定；任务 9 不得借机处理该决策。
 
 ### 9.2 主要风险
 
@@ -187,19 +190,24 @@
 
 ## 10. Git 与任务编排状态
 
-- OPS-H05 开始前，分支为 `fusion/wagtail-poc`，HEAD 为 `259908f3ffe09c9c444f2add85c4cf00966874bc`，工作区干净。
-- OPS-H05 只允许新增本文件；未修改业务代码、配置、迁移、README、AGENTS 或其他状态/任务文件。
-- `docs/HANDOFF.md`、`tasks/TASKS.yaml`、`tasks/CURRENT_TASK.md` 当前仍未建立，不得因本文件存在而推断后续任务已经排期。
-- 本轮不创建 Commit，不 Push，不执行 Merge、Rebase、Reset 或 Clean。
-- OPS-H05 完成后停止，不自动执行 OPS-H06。
+- OPS-H05 已建立本文件，Commit 为 `e12add28540e9611facb14ca2eee143ebc2f00e3`。
+- OPS-H06 已建立 `tasks/TASKS.yaml`，Commit 为 `d512e5791c5dfaacf80a18553babb51953bcc7e3`。
+- OPS-H07 已建立 `tasks/CURRENT_TASK.md`，Commit 为 `2c9748fbe0c84ffd42d54a811636429502ee65fb`，并由项目负责人选择任务 9 作为唯一接力业务任务。
+- OPS-H08 已建立 `docs/HANDOFF.md`，Commit 为 `78bfda06bf39dc7106529c6c23ad08215087b43c`；OPS-H09 执行前已实时核验本地、GitHub 与 Gitee 三端均为该完整哈希，工作区干净。
+- 当前任务 9 仍为 `READY`，负责人为 `unassigned`，尚未授权业务实施或指定执行 Agent；任务 8J 单独保持 `BLOCKED`。
+- 当前无真实 Agent 切换，`docs/HANDOFF.md` 保持“当前无待处理 AI 交接”。
+- OPS-H09 只允许检查并最小修正六个接力元数据文件；本轮不 Commit、不 Push，不执行任务 9 或 OPS-H10。
 
 ## 11. 下一步边界
 
-下一步必须由项目负责人通过明确任务授权。无论后续任务名称为何，在授权范围未明确前均不得自动执行以下操作：
+OPS-H09 完成后必须等待项目负责人验收。若本轮存在实际修正，应先在后续明确授权下形成独立 Commit 并完成必要同步；OPS-H10 或任务 9 均须另行授权，不得自动开始。
+
+在授权范围未明确前不得自动执行以下操作：
 
 - 创建或填写真实 `.env`；
 - 启动 PostgreSQL 或 OpsAI Compose；
 - 执行 `migrate` 或修改持久数据；
 - 把 Wagtail 加入正式根依赖、settings 或路由；
 - 开始正式模型切换、数据迁移或生产部署；
-- 创建任务、交接文件、Commit 或 Push。
+- 将任务 9 从 `READY` 改为 `IN_PROGRESS`，或开始任务 9 业务实施；
+- 创建 Commit、Push，或执行 OPS-H10。
