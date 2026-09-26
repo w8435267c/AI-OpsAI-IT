@@ -221,8 +221,8 @@ tasks:
   - id: "9"
     title: "配置 Django Admin 和最小演示数据"
     priority: MUST
-    status: READY
-    owner: unassigned
+    status: IN_PROGRESS
+    owner: codex
     dependencies:
       - "8"
     objective: >
