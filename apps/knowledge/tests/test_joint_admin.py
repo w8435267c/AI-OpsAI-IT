@@ -349,13 +349,12 @@ def test_dependency_form_id_tampering(setup, attack):
 def test_delete_change_add_dependency_batch(setup):
     root, client, article, first = setup
     second = _add_audience(article, "user", user=_mk_user())
+    original_creator_id = first.created_by_id
     data = payload(root, article)
     set_target(data, first, second.user)
     for i in range(2):
         if str(data[f"audience_rules-{i}-id"]) == str(second.pk):
             data[f"audience_rules-{i}-DELETE"] = "on"
-        else:
-            data[f"audience_rules-{i}-created_by"] = str(root.pk)
     data.update(
         {
             "audience_rules-TOTAL_FORMS": "3",
@@ -371,6 +370,6 @@ def test_delete_change_add_dependency_batch(setup):
     assert not ArticleAudience.objects.filter(pk=second.pk).exists()
     old_time = first.created_at
     first.refresh_from_db()
-    assert first.user_id == second.user_id and first.created_by_id == root.pk
+    assert first.user_id == second.user_id and first.created_by_id == original_creator_id
     assert first.created_at == old_time
     assert article.audience_rules.count() == 2

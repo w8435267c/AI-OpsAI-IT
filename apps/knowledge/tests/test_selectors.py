@@ -11,7 +11,9 @@
 from datetime import timedelta
 
 from django.contrib.auth.models import AnonymousUser
+from django.contrib.auth.models import Group as SystemGroup
 from django.core.exceptions import ValidationError
+from django.core.management import call_command
 from django.db import connection
 from django.test import TestCase, override_settings
 from django.test.utils import CaptureQueriesContext
@@ -331,6 +333,17 @@ class NoRoleBypassTests(TestCase):
 
     def test_author_does_not_bypass(self):
         self.assertNotIn(self.article, visible_articles(self.article.owner))
+
+    def test_space_owner_does_not_bypass(self):
+        self.assertNotIn(self.article, visible_articles(self.article.space.owner))
+
+    def test_system_roles_do_not_bypass(self):
+        call_command("sync_system_roles")
+        for role_name in ("知识编辑员", "知识审核员", "知识库管理员"):
+            with self.subTest(role=role_name):
+                user = _mk_user(is_staff=role_name == "知识库管理员")
+                user.groups.add(SystemGroup.objects.get(name=role_name))
+                self.assertNotIn(self.article, visible_articles(user))
 
 
 class DepartmentTests(TestCase):

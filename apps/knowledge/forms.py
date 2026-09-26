@@ -4,7 +4,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.forms.models import BaseInlineFormSet
 
-from .models import Article, ArticleAudience
+from .models import Article, ArticleAudience, Category
 from .validation_context import joint_validation, pending_article, pending_audience
 
 
@@ -17,6 +17,26 @@ class JointArticleForm(forms.ModelForm):
         # 仅延后这个父实例的“旧数据库受众与策略”比较；其他模型校验照常执行。
         with joint_validation(pending_article, self.instance):
             super()._post_clean()
+
+
+class CategoryAdminForm(forms.ModelForm):
+    """阻止通过 Admin 构造直接或间接的分类父级循环。"""
+
+    class Meta:
+        model = Category
+        fields = "__all__"
+
+    def clean_parent(self):
+        parent = self.cleaned_data.get("parent")
+        seen = set()
+        while parent is not None:
+            if self.instance.pk and parent.pk == self.instance.pk:
+                raise ValidationError("上级分类不能形成循环关系。")
+            if parent.pk in seen:
+                raise ValidationError("上级分类链已存在循环关系。")
+            seen.add(parent.pk)
+            parent = parent.parent
+        return self.cleaned_data.get("parent")
 
 
 class AudienceInlineForm(forms.ModelForm):
@@ -33,7 +53,11 @@ class AudienceInlineFormSet(BaseInlineFormSet):
     allow_add = False
     allow_change = False
     allow_delete = False
-    mutable_fields = ("audience_type", "effect", "department", "user_group", "user", "created_by")
+    mutable_fields = ("audience_type", "effect", "department", "user_group", "user")
+
+    def __init__(self, *args, actor=None, **kwargs):
+        self.actor = actor
+        super().__init__(*args, **kwargs)
 
     def clean(self):
         super().clean()
@@ -68,6 +92,10 @@ class AudienceInlineFormSet(BaseInlineFormSet):
                 continue
             rule = form.instance if old is None or self.allow_change else old
             rule.article = self.instance
+            if old is None and not rule.created_by_id:
+                if self.actor is None:
+                    raise ValidationError("无法确认受众规则创建人，已拒绝保存。")
+                rule.created_by = self.actor
             with joint_validation(pending_audience, rule):
                 rule.full_clean()
             final.append(rule)

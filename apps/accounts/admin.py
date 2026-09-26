@@ -5,7 +5,64 @@ from django.contrib.auth.admin import GroupAdmin as DjangoGroupAdmin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.contrib.auth.models import Group
 
-from .models import Department, User, UserDepartment, UserGroup, UserGroupMembership
+from .forms import DepartmentAdminForm
+from .models import (
+    AccountStatus,
+    Department,
+    User,
+    UserDepartment,
+    UserGroup,
+    UserGroupMembership,
+)
+from .roles import ROLE_KNOWLEDGE_ADMIN, SYSTEM_ROLE_BY_CODE
+
+
+def _is_active_knowledge_admin(user):
+    """知识管理员维护入口的第二层角色与账号状态检查。"""
+    return (
+        user.is_authenticated
+        and user.is_active
+        and user.is_staff
+        and user.account_status == AccountStatus.ACTIVE
+        and user.groups.filter(name=SYSTEM_ROLE_BY_CODE[ROLE_KNOWLEDGE_ADMIN].name).exists()
+    )
+
+
+class KnowledgeMaintenanceAdminMixin:
+    """允许现有知识管理员维护组织对象，不隐式授予硬删除能力。"""
+
+    @staticmethod
+    def _eligible(user):
+        return (
+            user.is_authenticated
+            and user.is_active
+            and user.is_staff
+            and user.account_status == AccountStatus.ACTIVE
+        )
+
+    def has_view_permission(self, request, obj=None):
+        if not self._eligible(request.user):
+            return False
+        return super().has_view_permission(request, obj) or _is_active_knowledge_admin(request.user)
+
+    def has_add_permission(self, request):
+        if not self._eligible(request.user):
+            return False
+        return super().has_add_permission(request) or _is_active_knowledge_admin(request.user)
+
+    def has_change_permission(self, request, obj=None):
+        if not self._eligible(request.user):
+            return False
+        return super().has_change_permission(request, obj) or _is_active_knowledge_admin(
+            request.user
+        )
+
+    def has_delete_permission(self, request, obj=None):
+        if not self._eligible(request.user):
+            return False
+        # 知识管理员角色不获得 delete；只有已有显式 delete 权限的其他受控身份
+        # （默认仅超级管理员）仍按 Django 权限体系处理。
+        return super().has_delete_permission(request, obj)
 
 
 @admin.register(User)
@@ -69,14 +126,16 @@ class GroupAdmin(DjangoGroupAdmin):
 
 
 @admin.register(Department)
-class DepartmentAdmin(admin.ModelAdmin):
+class DepartmentAdmin(KnowledgeMaintenanceAdminMixin, admin.ModelAdmin):
+    form = DepartmentAdminForm
     list_display = ("name", "dingtalk_dept_id", "parent", "is_active", "last_sync_at")
     list_filter = ("is_active",)
     search_fields = ("name", "dingtalk_dept_id")
+    readonly_fields = ("dingtalk_dept_id", "last_sync_at", "created_at", "updated_at")
 
 
 @admin.register(UserDepartment)
-class UserDepartmentAdmin(admin.ModelAdmin):
+class UserDepartmentAdmin(KnowledgeMaintenanceAdminMixin, admin.ModelAdmin):
     list_display = ("user", "department", "is_primary", "effective_at", "expired_at")
     list_filter = ("is_primary", "department")
     search_fields = (
@@ -86,17 +145,19 @@ class UserDepartmentAdmin(admin.ModelAdmin):
         "department__name",
     )
     autocomplete_fields = ("user", "department")
+    readonly_fields = ("created_at",)
 
 
 @admin.register(UserGroup)
-class UserGroupAdmin(admin.ModelAdmin):
+class UserGroupAdmin(KnowledgeMaintenanceAdminMixin, admin.ModelAdmin):
     list_display = ("name", "is_active", "created_at")
     list_filter = ("is_active",)
     search_fields = ("name",)
+    readonly_fields = ("created_at", "updated_at")
 
 
 @admin.register(UserGroupMembership)
-class UserGroupMembershipAdmin(admin.ModelAdmin):
+class UserGroupMembershipAdmin(KnowledgeMaintenanceAdminMixin, admin.ModelAdmin):
     list_display = ("user", "user_group", "created_at")
     list_filter = ("user_group",)
     search_fields = (
@@ -106,3 +167,4 @@ class UserGroupMembershipAdmin(admin.ModelAdmin):
         "user_group__name",
     )
     autocomplete_fields = ("user", "user_group")
+    readonly_fields = ("created_at",)

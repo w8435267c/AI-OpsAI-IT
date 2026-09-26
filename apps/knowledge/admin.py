@@ -2,7 +2,12 @@
 
 from django.contrib import admin
 
-from .forms import AudienceInlineForm, AudienceInlineFormSet, JointArticleForm
+from .forms import (
+    AudienceInlineForm,
+    AudienceInlineFormSet,
+    CategoryAdminForm,
+    JointArticleForm,
+)
 from .models import (
     Article,
     ArticleAudience,
@@ -28,14 +33,27 @@ class KnowledgeSpaceAdmin(admin.ModelAdmin):
     autocomplete_fields = ("owner",)
     readonly_fields = ("created_at", "updated_at")
 
+    def get_readonly_fields(self, request, obj=None):
+        fields = list(super().get_readonly_fields(request, obj))
+        if obj is not None:
+            fields.append("code")
+        return fields
+
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
+    form = CategoryAdminForm
     list_display = ("name", "code", "space", "parent", "sort_order", "is_active")
     list_filter = ("space", "is_active")
     search_fields = ("name", "code")
     autocomplete_fields = ("space", "parent")
     readonly_fields = ("created_at", "updated_at")
+
+    def get_readonly_fields(self, request, obj=None):
+        fields = list(super().get_readonly_fields(request, obj))
+        if obj is not None:
+            fields.extend(("code", "space"))
+        return fields
 
 
 class ArticleAudienceInline(admin.TabularInline):
@@ -43,7 +61,8 @@ class ArticleAudienceInline(admin.TabularInline):
     form = AudienceInlineForm
     formset = AudienceInlineFormSet
     extra = 0
-    autocomplete_fields = ("department", "user_group", "user", "created_by")
+    autocomplete_fields = ("department", "user_group", "user")
+    readonly_fields = ("created_by", "created_at")
 
     def get_formset(self, request, obj=None, **kwargs):
         formset = super().get_formset(request, obj, **kwargs)
@@ -62,6 +81,12 @@ class ArticleAdmin(admin.ModelAdmin):
         if self.get_inline_instances(request, obj):
             kwargs["form"] = JointArticleForm
         return super().get_form(request, obj, **kwargs)
+
+    def get_formset_kwargs(self, request, obj, inline, prefix):
+        kwargs = super().get_formset_kwargs(request, obj, inline, prefix)
+        if isinstance(inline, ArticleAudienceInline):
+            kwargs["actor"] = request.user
+        return kwargs
 
     list_display = (
         "kb_no",
@@ -141,8 +166,13 @@ class ArticleAudienceAdmin(admin.ModelAdmin):
         "user__username",
         "user__display_name",
     )
-    autocomplete_fields = ("article", "department", "user_group", "user", "created_by")
-    readonly_fields = ("created_at",)
+    autocomplete_fields = ("article", "department", "user_group", "user")
+    readonly_fields = ("created_by", "created_at")
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
 
 
 @admin.register(ReviewRecord)
