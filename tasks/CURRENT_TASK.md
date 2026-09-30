@@ -1,245 +1,187 @@
 # OpsAI Current Task
 
-> 当前无新的已授权 `IN_PROGRESS` 任务；本文件保留最近完成的 Task 9，下一任务等待项目负责人指定。
+> 当前唯一已授权 `IN_PROGRESS` 任务为 Task 10。本轮只完成开工状态切换与接力元数据同步，尚未开始页面业务代码开发。
 
 ## 1. 任务身份
 
 | 项目 | 当前值 |
 | --- | --- |
-| 任务编号 | `9` |
-| 任务名称 | 配置 Django Admin 和最小演示数据 |
+| 任务编号 | `10` |
+| 任务名称 | 开发首页、分类页和正式知识详情页 |
 | 优先级 | `MUST` |
-| 当前状态 | `DONE` |
+| 当前状态 | `IN_PROGRESS` |
 | 当前负责人 | `codex` |
-| 开工日期 | `2026-09-26` |
-| 最终验收日期 | `2026-09-30` |
-| 依赖 | 任务 `8`，当前为 `DONE` |
+| 开工日期 | `2026-09-30` |
+| 依赖 | 任务 `9`，当前为 `DONE` |
 | 任务来源 | `tasks/TASKS.yaml` |
-| 选择依据 | 项目负责人在 OPS-H07 明确指定 |
+| 选择依据 | 项目负责人正式选择 Task 10，并授权 `BACKLOG → IN_PROGRESS` |
 
-项目负责人已经在 OPS-H07 阶段明确指定任务 9 为下一根唯一接力棒，并于 2026-09-26 正式指定 Codex 接手。Task 9A 与 Task 9B-1 均已完成实施、自动验证和双端同步；项目负责人已于 2026-09-30 完成最终验收并确认 Task 9 为 `DONE / codex`。
+项目负责人已正式选择 Task 10 作为下一根接力棒，并授权 Codex 接手。当前状态切换只确认任务身份、范围和安全边界，不代表首页、分类页或正式知识详情页已经实现。
 
-## 2. 为什么现在做
+## 2. 任务目标
 
-任务 8 已完成，正式工程已经具备服务端内容受众过滤、拒绝优先和后台联合校验等基础边界。
+使用 Django Templates、Bootstrap 和 HTMX 建立正式员工浏览路径，包括：
 
-在继续开发正式员工首页、分类页和知识详情页之前，需要先建立一个安全、可控的 Django Admin 维护入口，以及一套能够重复生成、不会污染已有数据的最小演示数据。这样后续页面、权限和内容流程才能使用稳定样本进行验证，而不需要依赖临时手工数据或 Wagtail 隔离实验。
+- 首页；
+- 分类页；
+- 正式知识详情页。
 
-## 3. 任务目标
+所有员工页面只能读取当前员工有权访问且已经正式发布的知识。查询必须先执行服务端受众过滤；草稿和未批准版本不得对员工可见。
 
-按既有第 9 步规划完善可控的 Django Admin 与可重复的最小演示数据，为后续正式员工页面和内容流程提供安全样本。
+## 3. 为什么现在做
 
-本任务不得自行增加新的产品能力，也不得借机决定或实施 Wagtail 正式融合。
+- Task 9 已完成最终验收并进入 `DONE / codex`，Task 10 的直接依赖已经满足。
+- Task 9 已完成 Django Admin 安全维护边界和幂等最小演示数据命令。
+- 正式 `knowledge` App 已有服务端受众 Selector，可复用 `visible_articles` 和 `can_read_article` 的账号门槛、文章策略与 deny 优先语义。
+- Task 9 最终正式工程回归为 `414 passed`，Django system check、迁移一致性检查和 Ruff 均通过。
+- 正式员工 Django 首页、分类页和知识详情页尚未建立，员工读取能力还没有正式业务入口。
 
 ## 4. 已知现状
 
-- 任务 `8` 已为 `DONE`，任务 9 的登记依赖已满足。
-- 正式 Django 工程在电脑 B 的 Task 9 最终验证证据为：`414 passed`、Django system check 通过、`makemigrations --check --dry-run` 显示 `No changes detected`、Ruff 检查通过。
-- Python 为 3.13.13，项目根目录 `.venv` 已建立，正式项目依赖已安装并通过 `pip check`。
-- Docker Desktop、WSL 2、Docker Engine 和 Docker Compose 已就绪。
-- 真实 `.env` 尚不存在；未读取、未创建。
-- OpsAI PostgreSQL 容器、命名卷和数据库尚未创建或启动，未执行 `migrate`，未访问或修改持久数据。
-- Wagtail 仍位于 `experiments/wagtail_*` 隔离 PoC，尚未进入正式根 `pyproject.toml`、正式 `INSTALLED_APPS` 或正式根 URL。
-- 正式 Admin 当前注册的账号与组织对象包括 `User`、`Department`、`UserDepartment`、`UserGroup`、`UserGroupMembership`。
-- 正式 Admin 当前注册的知识对象包括 `KnowledgeSpace`、`Category`、`Article`、`ArticleAudience`、`ArticleVersion`、`ReviewRecord`。
-- `ArticleAdmin` 当前禁止新增文章；正式 KB 编号生成服务尚未实现。
-- `ArticleVersion` 对非超级管理员保持只读，`ReviewRecord` 对所有人（包括超级管理员）禁止通过普通 Admin 新增、修改或删除。
-
-### 4.1 任务 9 开工前可视化基线（2026-09-26）
-
-- Django 正式 Admin 可运行。
-- 本地模拟登录可运行。
-- Space / Category / ArticleAudience 当前仅支持后台维护。
-- Article 当前只有列表，无新增入口。
-- ArticleVersion / ReviewRecord 当前为只读。
-- 员工首页、分类页、详情页和搜索尚未实现。
-- 因隔离环境未就绪，Wagtail PoC 未做本轮可视化复核。
-- Task 9A 已完成 Django Admin 维护入口和权限边界加固，Commit 为 `cab3fc74544ae2199eb64be1e2e7c181269994ba`。
-- Task 9B-1 已完成幂等最小演示数据命令，Commit 为 `9f214d30d6b2934302602bc7a152b27f00274968`。
-- 演示数据命令只创建不依赖正式 KB 编号的最小样本；Article demo 因正式 KB 编号服务尚未实现，按规则记为 `N/A - SAFE STOP`，未创建 Article 样本，未伪造编号。
-
-任务 9 不能改变上述 Wagtail 正式融合决策，也不能把 PoC 能力描述为正式上线能力。
+- `apps/knowledge/views.py` 当前只有模块入口说明，尚无正式员工页面 View。
+- 正式根 `config/urls.py` 当前只包含 Admin、健康检查和本地开发模拟登录入口，尚未挂载 knowledge 员工路由。
+- 当前没有 `apps/knowledge/urls.py`，也没有正式 `templates/knowledge/` 页面目录。
+- `apps/knowledge/selectors.py` 已实现 `visible_articles` 和 `can_read_article`，员工读取遵循账号有效状态、文章受众策略和 deny 优先。
+- Task 9 的 Article demo 保持 `N/A - SAFE STOP`：正式 KB 编号服务尚未实现，未创建 Article 样本，未伪造编号。
+- Wagtail F08 的员工详情页仍位于 `experiments/wagtail_f08`，属于隔离 PoC，不能直接作为正式页面或正式 URL。
+- 真实 `.env` 尚不存在；OpsAI PostgreSQL 容器、卷和数据库尚未创建或启动，未执行真实 `migrate`。
+- 任务 8J 继续保持 `BLOCKED / unassigned`；PostgreSQL 持久环境核验不是 Task 10 当前开工的前置条件。
 
 ## 5. 依赖关系
 
-- 直接依赖：任务 `8`——内容受众权限选择器与联合后台边界。
-- 当前依赖状态：`DONE`。
-- 历史选择记录：项目负责人曾选择任务 9 作为唯一接力任务；该任务现已完成，当前没有新的已授权任务。
-- 当前执行状态：Task 9A 与 Task 9B-1 均为 `DONE`；项目负责人已于 2026-09-30 最终验收通过，Task 9 为 `DONE / codex`。当前没有新的 `IN_PROGRESS` 任务，下一任务等待项目负责人指定。
-- PostgreSQL 不是开始编写和测试任务 9 的默认前置条件；如果验收范围要求真实 PostgreSQL 写入，则必须先取得单独授权。
+- 直接依赖：Task 9——配置 Django Admin 和最小演示数据。
+- 依赖状态：`DONE / codex`。
+- 依赖是否满足：是。
+- `tasks/TASKS.yaml` 没有为 Task 10 登记其他依赖。
+- Task 11 依赖 Task 10，但 Task 11 继续保持 `BACKLOG / unassigned`，不得在 Task 10 中提前实现。
 
-## 6. 允许修改范围
+## 6. 后续实施允许范围
 
-项目负责人已于 2026-09-26 正式授权开始任务 9；以下为本任务原则上允许修改范围：
+以下范围基于当前正式项目结构记录，仅在项目负责人允许进入页面实施阶段后使用；本次状态切换不修改这些业务文件：
 
-- Django Admin 直接实现：
-  - `apps/accounts/admin.py`
-  - `apps/knowledge/admin.py`
-- 仅在现有 Admin 表单与事务校验确有需要时：
-  - `apps/accounts/forms.py`
-  - `apps/knowledge/forms.py`
-  - `apps/knowledge/validation_context.py`
-- 最小演示数据生成入口：
-  - 优先复用现有 `apps/accounts/management/commands/` 结构；
-  - 如果演示数据职责属于 knowledge，可在授权后于 `apps/knowledge/management/commands/` 下新增最小命令包和命令文件；该目录当前尚不存在，不得仅为分层美观创建其他架构层；
-  - 若最终采用 fixture 或小型 Service，必须位于对应正式 App 内，并在开始实施前明确具体路径和职责。
-- 与任务 9 直接相关的测试：
-  - `apps/accounts/tests/`
-  - `apps/knowledge/tests/`
-  - 只有跨 App 行为确有必要时才使用根 `tests/`。
-- 状态文档：只有状态流转或负责人验收明确要求时，才同步更新 `tasks/TASKS.yaml`、`tasks/CURRENT_TASK.md` 和 `docs/PROJECT_STATE.md`。
+- 正式员工页面 View：`apps/knowledge/views.py`；
+- knowledge 正式路由：可按最小需要新增 `apps/knowledge/urls.py`；
+- 正式根路由挂载：`config/urls.py`；
+- 正式员工模板：可按最小需要新增 `templates/knowledge/` 下的首页、分类页和详情页模板；
+- 服务端读取：优先直接复用 `apps/knowledge/selectors.py` 中的 `visible_articles` / `can_read_article`，只有页面查询确有必要时才增加少量读取封装；
+- Task 10 直接测试：优先放入 `apps/knowledge/tests/`，只有跨 App 行为确有必要时才使用根 `tests/`；
+- 必要的最小静态页面资源：`static/`；不得引入独立前端工程；
+- 状态流转与验收明确要求的接力元数据文件。
 
-任何超出以上范围的变更都必须先说明原因并取得项目负责人授权。
+任何超出以上范围的修改必须先说明原因并取得项目负责人授权。
 
-## 7. 原则上禁止修改范围
+## 7. 原则上禁止范围
 
-任务 9 原则上禁止修改或接入：
+Task 10 不包含以下工作：
 
-- `experiments/wagtail_*` 及其中的实验模型、路由、Admin、runner 或测试；
-- 根 `pyproject.toml` 中的正式 Wagtail 依赖；
-- 正式 Wagtail settings、`INSTALLED_APPS` 和正式根 URL；
-- 将正式内容模型改成 Wagtail 模型；
-- `deploy/`、Docker 基础架构和生产配置；
-- 真实 `.env` 及任何真实密钥、密码、Token、Cookie 或数据库凭据；
-- 与任务 9 无关的业务 App、页面、搜索、审核发布、附件、钉钉或 IT 服务入口；
-- 现有 `migrations/` 文件；
-- 未经批准的新 migration；
-- 真实数据库数据的批量删除、清空、覆盖或重建；
-- `docs/HANDOFF.md`，该文件属于 OPS-H08。
+- Task 11 的 P0 搜索、排序、高亮、筛选和搜索日志；
+- Task 12 的 Article 创建、KB 编号、草稿编辑、版本保存、自动保存及 Wagtail 正式融合；
+- Task 13 的提交审核、批准、驳回和发布事务；
+- Task 15 的附件上传、私有存储和病毒扫描；
+- Task 17 的钉钉免登、JSAPI、通讯录同步和真实钉钉联调；
+- Task 19 的生产 Docker、Gunicorn、Caddy、备份和恢复配置；
+- 真实 PostgreSQL 环境准备、真实 `.env`、真实 `migrate` 或持久数据操作；
+- `experiments/wagtail_*` 的修改、复用或正式挂载；
+- 新增或修改 migration；
+- Article 假数据、硬编码 KB 编号、临时编号服务或任何绕过 Article 创建规则的方式。
 
-Migration 不是项目永久禁止项，但任务 9 不得自动创建或修改 migration。如果实施中发现确实需要改变数据模型，应立即停止对应实施，说明模型变化、迁移影响和回滚风险，并向项目负责人申请扩大范围。
+## 8. 员工读取安全边界
 
-## 8. 特别保护规则
+- 首页、分类页和详情页的查询必须先执行服务端受众过滤，不能依赖前端隐藏。
+- 无权限时不得泄露文章是否存在、标题、摘要或附件名。
+- 草稿、未批准版本、未发布、下架或归档内容不得进入员工正式页面。
+- `ArticleAudience` 的 deny 继续优先于 allow。
+- 账号失效或不满足员工读取门槛时拒绝访问。
+- `is_staff`、`is_superuser`、编辑员、审核员、知识库管理员、文章作者或 Space 负责人身份都不自动获得员工读取权限。
+- 页面模板必须保持自动转义；如展示普通文本换行，应使用安全的模板表达，不把内容当作可执行 HTML。
+- 员工页面响应和缓存策略不得造成跨用户内容泄露。
 
-### 8.1 Admin 与权限保护
+## 9. Wagtail 边界
 
-- 有权限的管理员只能维护任务规划允许的对象：知识空间 `KnowledgeSpace`、分类 `Category`、用户与组织关系、内容用户组，以及符合现有权限边界的 `ArticleAudience`。
-- Admin 必须继续使用服务端权限、账号状态、系统角色、受众规则、deny 优先和事务边界；按钮是否可见不能代替服务端授权。
-- Admin 身份、`is_staff`、`is_superuser`、编辑员、审核员、知识库管理员、作者或空间负责人身份，都不能自动获得普通员工内容阅读绕过。
-- `User` 和系统操作角色 `Group` 的现有保护不得放宽；非超级管理员保持只读。
-- `ArticleVersion` 的受控只读边界不得放宽；`ReviewRecord` 继续只能由正式审核 Service 在事务中创建，普通 Admin 对任何人都不得增改删。
-- `Article` 的 `kb_no`、`article_status`、正式/工作版本指针、创建人、更新人和时间字段继续按现有规则保护。
-- 正式业务数据不得硬删除；删除能力必须符合项目现有安全规则和模型 `PROTECT` 边界。
+Wagtail 继续保留在 `experiments/wagtail_*` 隔离 PoC 中。Task 10 不得：
 
-### 8.2 最小演示数据
+- 把 Wagtail 加入正式根依赖；
+- 修改正式 `INSTALLED_APPS` 接入 Wagtail；
+- 正式挂载 Wagtail URL；
+- 修改正式内容模型完成 Wagtail 切换；
+- 直接复制实验 URL、View、模板或合成配置作为正式入口。
 
-- 第一次执行应创建任务验收所需的最小样本。
-- 第二次及以后执行不得重复创建同一业务对象，应得到稳定、可说明的幂等结果。
-- 不得先全表删除再重建，不得覆盖或“修正”来源不明的既有人工数据。
-- 不得依赖数据库自增 ID、固定主键或某次运行顺序判断业务对象身份。
-- 数据量只覆盖后续页面、权限和内容流程所需的最小场景，不批量制造无关假数据。
-- 如果已有同名但关键字段不一致的对象，应失败关闭并报告冲突，不得静默覆盖。
+如果正式员工页面必须依赖 Wagtail 才能实现，应停止并报告，不得自行扩大范围。
 
-### 8.3 KB 编号
+## 10. Article 与 KB 编号边界
 
-演示文章必须遵守当前正式 KB 编号规则：全局唯一、不可变，格式为 `KB-000001`。
+Task 10 是员工读取路径，不是文章创建路径。不得为了页面展示实现 KB 编号服务、硬编码 KB 编号、创建 Article 假数据或绕过 Article 创建规则。Article demo 继续保持 `N/A - SAFE STOP`。
 
-正式编号服务尚未实现或尚未获得任务范围授权时，不得通过临时字符串拼接、随机生成、硬编码默认编号、Signal、Admin 直接伪造或跳过模型规则创建文章。遇到该前置能力不足时，停止“演示文章创建”部分并报告；其他已授权且不依赖文章编号的 Admin 或演示数据工作不得被伪装成文章创建完成。
+## 11. PostgreSQL 与敏感配置边界
 
-### 8.4 Wagtail 隔离
+Task 10 当前没有 PostgreSQL、真实 `.env` 或持久数据库前置要求。本任务不得自动读取 `OpsAI.env`、创建真实 `.env`、启动 PostgreSQL、创建容器或卷、执行真实 `migrate` 或访问持久数据。
 
-任务 9 不允许把 `experiments/wagtail_*` 挂入正式 Admin，不允许把 Wagtail 加入正式 `pyproject.toml`、正式 `INSTALLED_APPS` 或正式根 URL，也不允许将正式内容模型替换为 Wagtail 模型。Wagtail 是否以及如何正式融合属于后续专门任务。
+如果后续实施发现必须进行真实数据库验证，应停止对应部分并单独申请授权。任务 8J 继续保持 `BLOCKED / unassigned`。
 
-### 8.5 PostgreSQL 与 `.env`
+## 12. 验收标准
 
-当前真实 `.env` 不存在，PostgreSQL 尚未启动。如果任务 9 的正式实施或验收需要真实 PostgreSQL，必须先同时满足：
+- [ ] 首页、分类页和详情页在 PC 与手机上可用。
+- [ ] 所有查询先执行服务端受众过滤。
+- [ ] 无权限时不泄露文章存在性、标题、摘要或附件名。
+- [ ] 草稿和未批准版本不可见。
+- [ ] 未发布、下架和归档内容不可见。
+- [ ] 正式页面不复用实验 URL 作为生产入口。
+- [ ] 页面请求测试覆盖匿名、失效账号、无受众、deny、下架、草稿隔离和响应缓存。
+- [ ] 浏览器响应式与模板自动转义验收通过。
+- [ ] 正式工程必要回归、Django system check、迁移一致性检查和 Ruff 通过。
 
-1. 项目负责人通过安全方式配置 `.env` 或等价受控配置；
-2. 项目负责人明确授权启动 Compose/PostgreSQL；
-3. 项目负责人明确允许的数据库、表、写入范围和回退方式。
+## 13. 验证计划
 
-在此之前禁止真实数据库写入、创建容器或卷、启动 PostgreSQL、执行 `migrate`，也不得为“先跑起来”填写假凭据或输出真实配置值。
+进入页面实施阶段后，至少验证：
 
-## 9. 验收标准
+1. 首页、分类页和详情页的正常读取路径；
+2. 匿名、失效账号、无受众、显式 deny、不存在、未发布、下架和归档场景；
+3. 草稿、工作版本和未批准版本不会泄露；
+4. 员工读取不因系统操作角色、作者或 Space 负责人身份绕过；
+5. PC 与手机响应式布局、模板自动转义和缓存边界；
+6. 正式 Django 工程相关自动测试与必要回归；
+7. Django system check、`makemigrations --check --dry-run` 和 Ruff。
 
-- [x] Django Admin 可以按权限维护任务范围内的空间、分类、用户、组织关系、内容用户组和受众。
-- [x] Admin 不形成服务端权限、账号状态、角色、deny 优先或事务边界的绕过入口。
-- [x] 系统生成字段、稳定身份字段、关键状态字段、版本指针、审核/发布证据和审计字段受到保护。
-- [x] 删除能力符合正式业务数据不硬删除、历史证据保留和现有 `PROTECT` 规则。
-- [x] 最小演示数据可以通过一个明确入口重复生成。
-- [x] 第二次执行不会重复创建相同业务对象。
-- [x] 不会全表重建、覆盖未知数据或依赖固定数据库 ID。
-- [x] 演示数据规模保持最小并能支持后续页面、权限和内容流程验证。
-- [x] 演示文章遵守正式 KB 编号规则。
-- [x] 没有使用临时、随机、默认、Signal 或 Admin 伪造方式绕过编号规则。
-- [x] 编号前置能力不足时，已停止文章样本创建并如实报告，未伪造完成。
-- [x] Wagtail PoC 没有被接入正式 Admin、依赖、settings、URL 或内容模型。
-- [x] 与任务 9 直接相关的自动测试通过。
-- [x] 正式 Django 工程必要回归通过。
-- [x] Django system check 通过。
-- [x] `makemigrations --check --dry-run` 通过且没有意外模型变化。
-- [x] Ruff 静态检查通过。
-- [x] 所有实际使用的数据环境、验证范围和未执行项均已如实记录。
+本次开工状态切换不运行页面测试，也不把 Task 9 的历史测试冒充为 Task 10 实施结果。
 
-## 10. 验证方式
+## 14. 本次状态切换边界
 
-以下验证类型已在 Task 9 实施阶段执行；最终证据由两个业务 Commit 及其完整提交说明记录：
+- 只更新 `tasks/TASKS.yaml`、`tasks/CURRENT_TASK.md`、`docs/PROJECT_STATE.md` 和 `docs/HANDOFF.md`。
+- 不修改 `apps/`、`templates/`、`static/`、`config/`、`tests/`、`experiments/`、`migrations/`、`deploy/` 或 `pyproject.toml`。
+- 不创建 Commit，不 Push，不启动数据库，不开始页面开发。
+- 状态切换完成并经项目负责人验收后，再按后续明确指令进入 Task 10 页面实施。
 
-1. **相关 Django 自动测试**：覆盖 Admin 查看、新增、修改、删除、只读字段、权限漂移、账号失效、越权请求、受众 deny 优先和事务回滚。
-2. **演示数据首次执行**：记录创建对象类别、数量和业务标识，确认仅产生预期最小样本。
-3. **演示数据第二次执行**：再次运行同一入口，确认对象数量不重复、关键字段不漂移、未知已有数据不被覆盖。
-4. **冲突场景**：准备同业务标识但关键字段不一致的合成数据，确认命令失败关闭并给出可理解原因。
-5. **KB 编号场景**：确认所有演示文章经正式授权的编号入口创建；若编号服务仍缺失，确认文章样本创建被停止。
-6. **正式回归**：运行正式 Django 工程范围测试，不让根目录无限定 pytest 的 Wagtail PoC 收集边界干扰正式结果。
-7. **工程检查**：运行 Django system check、迁移一致性检查和 Ruff 静态检查。
+## 15. 状态流转
 
-命令必须在仓库根目录使用项目 `.venv` 执行，并以任务开始时的 `AGENTS.md`、`README.md`、`pyproject.toml` 和实际 settings 要求为准。当前已有命令入口为：
+### BACKLOG
 
-```powershell
-.\.venv\Scripts\python.exe -m pytest apps tests
-.\.venv\Scripts\python.exe manage.py check --settings=config.settings.test
-.\.venv\Scripts\python.exe manage.py makemigrations --check --dry-run --settings=config.settings.test
-.\.venv\Scripts\ruff.exe check .
-```
-
-如果当前测试设置要求合成环境变量，只能在对应测试进程内提供非秘密测试值，不得创建或读取真实 `.env`。演示数据正式入口为 `seed_demo_data`；实施阶段已在隔离测试数据库中覆盖首次执行、第二次幂等执行和冲突整体回滚。本轮 DONE 状态同步不重新执行命令，也不操作 PostgreSQL 或持久数据。
-
-## 11. 开始任务前必须检查
-
-项目负责人已明确授权并完成 Task 9 实施；以下开工检查均已在业务实施前完成，保留为本任务的审计边界：
-
-1. 依次读取 `AGENTS.md`、`docs/PROJECT.md`、`docs/PROJECT_STATE.md`、`docs/HANDOFF.md`、`tasks/TASKS.yaml`、`tasks/CURRENT_TASK.md`。
-2. 核对实际仓库根目录、当前分支、完整 HEAD 和工作区，保护任何未知修改。
-3. 确认 `TASKS.yaml` 与本文件仍同时记录任务 9，且状态、负责人和依赖一致。
-4. 确认项目负责人已明确授权“开始任务 9”并指定执行 Agent；仅选择接力任务不等于开工授权。
-5. 重新核对 Admin、模型、表单、management command 和相关测试的当前实现，不重复实现已有保护。
-6. 明确本轮具体文件清单、演示数据对象、是否包含文章样本，以及 KB 编号前置能力。
-7. 如果需要 PostgreSQL 或模型变化，先取得对应专项授权；未获授权时停止该部分。
-
-## 12. 完成后的状态更新
-
-### READY
-
-任务 9 在 2026-09-26 获得正式授权前的历史状态；当前已不适用。
+历史状态。Task 9 完成后，Task 10 的依赖已满足，但尚未获得正式开工授权。
 
 ### IN_PROGRESS
 
-历史状态。项目负责人于 2026-09-26 正式授权后，任务进入 `IN_PROGRESS / codex`；Task 9A 与 Task 9B-1 随后完成实施和验证。
+当前状态。项目负责人已正式选择 Task 10，并授权 `BACKLOG → IN_PROGRESS`，负责人为 `codex`。当前只完成开工状态与接力元数据同步，页面业务代码尚未开始。
 
 ### VERIFY
 
-历史状态。Task 9A 与 Task 9B-1 完成实施并取得 `414 passed`、Django system check、迁移一致性检查和 Ruff 通过的最终证据后，任务进入 `VERIFY / codex`；VERIFY 状态 Commit `c1b32334a7f9d3928d8c6722675accbf553b6b6f` 已完成双端同步。
+只有 Task 10 实施、验证和必要状态文档同步完成后，才可由后续明确授权进入。
 
 ### DONE
 
-当前状态。项目负责人已于 2026-09-30 完成最终验收并确认 Task 9 `DONE / codex`。Task 9A 与 Task 9B-1 均已完成；Article demo 保持 `N/A - SAFE STOP`。当前没有新的 `IN_PROGRESS` 任务，下一任务等待项目负责人单独指定。
+只有验收条件满足、实际验证证据完整并经项目负责人最终验收后，才可进入。
 
 ### BLOCKED
 
-只有存在真实阻断条件、当前无法继续时才能使用。必须同时记录阻塞原因、解除条件、已完成内容和未完成内容；“尚未开始”不等于 `BLOCKED`。
+只有出现真实阻断条件且当前无法继续时才能使用，并必须记录阻塞原因和解除条件。
 
 ### HANDOFF
 
-发生 Agent、电脑或人员切换且任务仍未完成时，进入 `HANDOFF`，并按 `docs/HANDOFF.md` 的正式模板记录真实现场。当前没有真实 Agent 切换，文件应继续保持“当前无待处理 AI 交接”。
+只有发生真实 Agent、人员或电脑切换且任务仍未完成时才使用。当前由 Codex 连续执行，不构成交接。
 
-## 13. 当前备注
+## 16. 当前备注
 
-- 最近完成任务为任务 `9`；当前没有新的已授权执行任务。
-- Task 9 状态为 `DONE`，负责人为 `codex`，最终验收日期为 `2026-09-30`。
-- 项目负责人已于 2026-09-26 正式授权 Codex 接手任务 9。
-- OPS-H07 已创建本文件；OPS-H08 已创建 `docs/HANDOFF.md`，当前没有待处理 AI 交接。
-- Task 9A 已完成、测试通过并双端同步；Commit 为 `cab3fc74544ae2199eb64be1e2e7c181269994ba`。
-- Task 9B-1 已完成、测试通过并双端同步；Commit 为 `9f214d30d6b2934302602bc7a152b27f00274968`。
-- VERIFY 状态 Commit 已完成双端同步；Commit 为 `c1b32334a7f9d3928d8c6722675accbf553b6b6f`。
-- Article demo 为 `N/A - SAFE STOP`：正式 KB 编号服务尚未实现，未创建 Article 样本，未伪造编号。
-- 本轮只同步 `VERIFY → DONE` 状态与接力元数据，不修改业务代码，不 Commit，不 Push，不开始 Task 10。
+- 当前唯一 `IN_PROGRESS` 任务为 Task 10，负责人为 `codex`。
+- Task 9 保持 `DONE / codex`。
+- 任务 8J 保持 `BLOCKED / unassigned`。
+- Task 11 及后续业务任务保持 `BACKLOG / unassigned`。
+- 当前仍无待处理 AI 交接。
+- 本轮未开始首页、分类页或正式知识详情页开发。

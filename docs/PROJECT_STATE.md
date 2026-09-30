@@ -9,17 +9,17 @@
 | 快照日期 | 2026-09-30 |
 | 当前工作区 | `D:\Desktop\OpsAI\AI-OpsAI-IT-wagtail-poc` |
 | 当前分支 | `fusion/wagtail-poc` |
-| 当前正式 HEAD | `1a016cf6356d086b4d520a51d01467be8f4200b5` |
+| 当前正式 HEAD | `91c2e587a3e9c3513a7ed3d9674e69162c04809a` |
 | 当前阶段 | OpsAI Django 主项目与 Wagtail 的隔离融合验证阶段 |
 | 正式技术主体 | Python 3.13 + Django 5.2 LTS 模块化单体 |
 | Wagtail 状态 | 融合方向已确认，F02～F08 已形成隔离 PoC 证据，尚未进入正式根依赖、正式 settings 或正式路由 |
 | 电脑 B 环境 | Python、正式项目依赖、WSL 2、Docker Desktop、Docker Engine 和 Docker Compose 已恢复；真实 `.env` 尚未配置 |
-| 当前接力元数据任务 | Task 9 `VERIFY → DONE` 最终状态收口 |
+| 当前接力元数据任务 | Task 10 `BACKLOG → IN_PROGRESS` 开工状态切换 |
 | 最近完成任务 | 任务 9：配置 Django Admin 和最小演示数据；`DONE / codex`，项目负责人已于 2026-09-30 最终验收通过 |
-| 当前进行中任务 | 无；下一任务等待项目负责人指定 |
+| 当前进行中任务 | 任务 10：开发首页、分类页和正式知识详情页；`IN_PROGRESS / codex` |
 | 当前交接状态 | 当前无待处理 AI 交接 |
 
-本快照的总体结论是：Task 9A 的 Django Admin 安全维护边界和 Task 9B-1 的幂等最小演示数据命令均已完成，幂等、冲突失败关闭和事务回滚保护已验证，最终正式回归为 `414 passed`。项目负责人已于 2026-09-30 最终验收通过，Task 9 状态为 `DONE / codex`。Article demo 因正式 KB 编号服务尚未实现而按规则安全停止，未创建 Article 样本、未伪造编号；这是正确边界，不是 Task 9 缺陷。当前没有新的 `IN_PROGRESS` 任务。Wagtail 核心融合链路仍是隔离实验，尚未完成正式接入、PostgreSQL 验证、生产迁移或正式业务路径切换。
+本快照的总体结论是：Task 9A 的 Django Admin 安全维护边界和 Task 9B-1 的幂等最小演示数据命令均已完成，幂等、冲突失败关闭和事务回滚保护已验证，最终正式回归为 `414 passed`。项目负责人已于 2026-09-30 最终验收通过，Task 9 状态为 `DONE / codex`。Article demo 因正式 KB 编号服务尚未实现而按规则安全停止，未创建 Article 样本、未伪造编号；这是正确边界，不是 Task 9 缺陷。项目负责人现已正式选择 Task 10 并授权进入 `IN_PROGRESS / codex`；本次只完成开工状态与接力元数据同步，首页、分类页和正式知识详情页业务代码尚未开始。Wagtail 核心融合链路仍是隔离实验，尚未完成正式接入、PostgreSQL 验证、生产迁移或正式业务路径切换。
 
 ## 2. 状态证据规则
 
@@ -176,8 +176,8 @@ Task 9A 与 Task 9B-1 的实施级结论分别记录在 Commit `cab3fc74544ae219
 ### 9.1 当前阻塞
 
 - 任务 8J 因电脑 B 的真实 `.env` 尚未由项目负责人安全准备，且没有数据库操作授权，保持 `BLOCKED`；当前不能启动本地 PostgreSQL 开发环境或验证真实 Compose 变量。
-- 8J 的阻塞只影响 PostgreSQL 持久环境补充核验，不影响已最终验收通过的 Task 9；Task 9 当前为 `DONE / codex`。
-- Wagtail 正式接入方案和迁移边界仍待后续正式融合任务决定；任务 9 不得借机处理该决策。
+- 8J 的阻塞只影响 PostgreSQL 持久环境补充核验，不影响 Task 10 当前开工；Task 10 没有 PostgreSQL、真实 `.env` 或持久数据库前置要求。
+- Wagtail 正式接入方案和迁移边界仍待后续正式融合任务决定；Task 10 不得借机处理该决策。
 
 ### 9.2 主要风险
 
@@ -203,20 +203,23 @@ Task 9A 与 Task 9B-1 的实施级结论分别记录在 Commit `cab3fc74544ae219
 - Task 9B-1 已完成幂等最小演示数据命令，Commit 为 `9f214d30d6b2934302602bc7a152b27f00274968`。
 - Task 9 VERIFY 状态 Commit `c1b32334a7f9d3928d8c6722675accbf553b6b6f` 已完成 GitHub、Gitee 与本地三端同步。
 - 2026-09-30，项目负责人完成最终验收并确认 `FINAL ACCEPTANCE: PASS`；Task 9 状态为 `DONE`，负责人为 `codex`，任务 8J 单独保持 `BLOCKED`。
-- 当前没有新的 `IN_PROGRESS` 任务，未自动选择或启动 Task 10。
+- Task 9 封板后元数据一致性 Commit `91c2e587a3e9c3513a7ed3d9674e69162c04809a` 已完成 GitHub、Gitee 与本地三端同步。
+- 项目负责人已正式选择 Task 10，并授权 `BACKLOG → IN_PROGRESS`；负责人为 `codex`，直接依赖 Task 9 已满足。
+- 本次只同步 Task 10 开工状态、任务范围和安全边界，尚未修改页面业务代码。
 - 当前无真实 Agent 切换，`docs/HANDOFF.md` 保持“当前无待处理 AI 交接”。
-- 本次只同步 Task 9 `VERIFY → DONE` 最终状态与接力元数据；不修改业务代码，不 Commit，不 Push，不开始 Task 10。
+- Task 11 及后续业务任务保持 `BACKLOG / unassigned`；任务 8J 保持 `BLOCKED / unassigned`。
 
 ## 11. 下一步边界
 
-Task 9 已完成最终验收并进入 `DONE`。当前没有新的已授权执行任务；下一步等待项目负责人指定，不得自行选择或开始 Task 10，也不得自行 Commit 或 Push 本轮状态变更。
+Task 10 已获正式开工授权并进入 `IN_PROGRESS / codex`。本次只完成 `BACKLOG → IN_PROGRESS` 状态切换和接力元数据同步；首页、分类页和正式知识详情页业务代码尚未开始，需等待项目负责人验收本次状态切换后再按后续明确指令实施。
 
-任务 9 的开工授权不包含以下操作，仍不得自动执行：
+Task 10 的实施边界继续禁止自动执行：
 
-- 创建或填写真实 `.env`；
+- 创建或填写真实 `.env`、读取 `OpsAI.env`；
 - 启动 PostgreSQL 或 OpsAI Compose；
-- 执行 `migrate` 或修改持久数据；
+- 执行真实 `migrate` 或修改持久数据；
 - 把 Wagtail 加入正式根依赖、settings 或路由；
-- 开始正式模型切换、数据迁移或生产部署；
-- 开始任务 9 范围外业务或继续修改 Task 9 业务代码；
-- 创建 Commit、Push，或开始 Task 10。
+- 实现 Article 创建、KB 编号、P0 搜索、审核发布、附件、钉钉或生产部署；
+- 创建 Article 假数据或绕过正式编号规则；
+- 提前启动 Task 11 或其他后续任务；
+- 未经单独授权创建 Commit 或 Push。

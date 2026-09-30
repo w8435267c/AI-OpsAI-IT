@@ -258,8 +258,8 @@ tasks:
   - id: "10"
     title: "开发首页、分类页和正式知识详情页"
     priority: MUST
-    status: BACKLOG
-    owner: unassigned
+    status: IN_PROGRESS
+    owner: codex
     dependencies:
       - "9"
     objective: >
