@@ -1,10 +1,10 @@
 project: AI-OpsAI-IT-wagtail-poc
 branch: fusion/wagtail-poc
 version: 1
-updated_at: "2026-09-25"
+updated_at: "2026-09-29"
 
 evidence_boundary:
-  - "正式 Django 工程当前已有 386 passed、Django system check 与 Ruff 通过的电脑 B 证据。"
+  - "正式 Django 工程当前已有 Task 9 最终回归 414 passed、Django system check、迁移一致性检查与 Ruff 通过的电脑 B 证据。"
   - "Wagtail F02～F08 仍位于 experiments/wagtail_*，属于 SQLite 内存库隔离 PoC，不是正式上线能力。"
   - "正式根 pyproject.toml 尚未包含 Wagtail；不得为运行 PoC 而擅自修改正式依赖。"
   - "真实 .env 尚不存在，PostgreSQL 容器、卷和数据库尚未创建或启动，未执行 migrate。"
@@ -221,7 +221,7 @@ tasks:
   - id: "9"
     title: "配置 Django Admin 和最小演示数据"
     priority: MUST
-    status: IN_PROGRESS
+    status: VERIFY
     owner: codex
     dependencies:
       - "8"
@@ -238,9 +238,20 @@ tasks:
       - "计划：按第 9 步任务书执行 Admin 权限、幂等演示数据和异常回滚测试。"
       - "计划：运行正式工程相关测试、Django check、makemigrations --check 和 Ruff。"
     result:
-      commits: []
-      verification: []
-      notes: []
+      commits:
+        - "cab3fc74544ae2199eb64be1e2e7c181269994ba"
+        - "9f214d30d6b2934302602bc7a152b27f00274968"
+      verification:
+        - "Task 9A：Django Admin 维护入口与服务端权限边界已完成；正式回归 405 passed，相关检查通过。"
+        - "Task 9B-1：幂等最小演示数据命令已完成；首次创建 6 项，第二次执行 0 创建、6 项已存在，冲突场景整体回滚。"
+        - "最终正式 Django 工程回归：414 passed。"
+        - "Django system check：PASS。"
+        - "迁移一致性检查：No changes detected。"
+        - "Ruff：PASS。"
+        - "Article demo：N/A - SAFE STOP；正式 KB 编号服务尚未实现，按任务规则未创建 Article 样本，未伪造编号。"
+      notes:
+        - "Task 9A 与 Task 9B-1 已在实施层完成；Task 9 总任务进入 VERIFY，等待项目负责人最终验收。"
+        - "未启动 PostgreSQL，未执行 migrate，未读取或创建真实 .env。"
 
   - id: "10"
     title: "开发首页、分类页和正式知识详情页"
