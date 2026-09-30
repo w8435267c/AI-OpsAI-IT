@@ -9,7 +9,7 @@
 | 快照日期 | 2026-09-30 |
 | 当前工作区 | `D:\Desktop\OpsAI\AI-OpsAI-IT-wagtail-poc` |
 | 当前分支 | `fusion/wagtail-poc` |
-| 当前正式 HEAD | `c1b32334a7f9d3928d8c6722675accbf553b6b6f` |
+| 当前正式 HEAD | `1a016cf6356d086b4d520a51d01467be8f4200b5` |
 | 当前阶段 | OpsAI Django 主项目与 Wagtail 的隔离融合验证阶段 |
 | 正式技术主体 | Python 3.13 + Django 5.2 LTS 模块化单体 |
 | Wagtail 状态 | 融合方向已确认，F02～F08 已形成隔离 PoC 证据，尚未进入正式根依赖、正式 settings 或正式路由 |
