@@ -1,5 +1,7 @@
 # OpsAI Current Task
 
+> 当前无新的已授权 `IN_PROGRESS` 任务；本文件保留最近完成的 Task 9，下一任务等待项目负责人指定。
+
 ## 1. 任务身份
 
 | 项目 | 当前值 |
@@ -7,14 +9,15 @@
 | 任务编号 | `9` |
 | 任务名称 | 配置 Django Admin 和最小演示数据 |
 | 优先级 | `MUST` |
-| 当前状态 | `VERIFY` |
+| 当前状态 | `DONE` |
 | 当前负责人 | `codex` |
 | 开工日期 | `2026-09-26` |
+| 最终验收日期 | `2026-09-30` |
 | 依赖 | 任务 `8`，当前为 `DONE` |
 | 任务来源 | `tasks/TASKS.yaml` |
 | 选择依据 | 项目负责人在 OPS-H07 明确指定 |
 
-项目负责人已经在 OPS-H07 阶段明确指定任务 9 为下一根唯一接力棒，并于 2026-09-26 完成开工前可视化验收、正式指定 Codex 接手。Task 9A 与 Task 9B-1 均已完成实施、自动验证和双端同步；任务状态现为 `VERIFY / codex`，等待项目负责人最终验收。
+项目负责人已经在 OPS-H07 阶段明确指定任务 9 为下一根唯一接力棒，并于 2026-09-26 正式指定 Codex 接手。Task 9A 与 Task 9B-1 均已完成实施、自动验证和双端同步；项目负责人已于 2026-09-30 完成最终验收并确认 Task 9 为 `DONE / codex`。
 
 ## 2. 为什么现在做
 
@@ -61,8 +64,8 @@
 
 - 直接依赖：任务 `8`——内容受众权限选择器与联合后台边界。
 - 当前依赖状态：`DONE`。
-- 当前选择状态：项目负责人已选择任务 9 作为唯一接力任务。
-- 当前执行状态：Task 9A 与 Task 9B-1 已完成，任务 9 当前为 `VERIFY`，由 `codex` 持有并等待项目负责人最终验收。
+- 历史选择记录：项目负责人曾选择任务 9 作为唯一接力任务；该任务现已完成，当前没有新的已授权任务。
+- 当前执行状态：Task 9A 与 Task 9B-1 均为 `DONE`；项目负责人已于 2026-09-30 最终验收通过，Task 9 为 `DONE / codex`。当前没有新的 `IN_PROGRESS` 任务，下一任务等待项目负责人指定。
 - PostgreSQL 不是开始编写和测试任务 9 的默认前置条件；如果验收范围要求真实 PostgreSQL 写入，则必须先取得单独授权。
 
 ## 6. 允许修改范围
@@ -189,7 +192,7 @@ Migration 不是项目永久禁止项，但任务 9 不得自动创建或修改 
 .\.venv\Scripts\ruff.exe check .
 ```
 
-如果当前测试设置要求合成环境变量，只能在对应测试进程内提供非秘密测试值，不得创建或读取真实 `.env`。演示数据正式入口为 `seed_demo_data`；实施阶段已在隔离测试数据库中覆盖首次执行、第二次幂等执行和冲突整体回滚。本轮 VERIFY 状态同步不重新执行命令，也不操作 PostgreSQL 或持久数据。
+如果当前测试设置要求合成环境变量，只能在对应测试进程内提供非秘密测试值，不得创建或读取真实 `.env`。演示数据正式入口为 `seed_demo_data`；实施阶段已在隔离测试数据库中覆盖首次执行、第二次幂等执行和冲突整体回滚。本轮 DONE 状态同步不重新执行命令，也不操作 PostgreSQL 或持久数据。
 
 ## 11. 开始任务前必须检查
 
@@ -215,11 +218,11 @@ Migration 不是项目永久禁止项，但任务 9 不得自动创建或修改 
 
 ### VERIFY
 
-当前状态。Task 9A 与 Task 9B-1 已完成实施并取得 `414 passed`、Django system check、迁移一致性检查和 Ruff 通过的最终证据；`tasks/TASKS.yaml` 与本文件已同步为 `VERIFY / codex`，等待项目负责人最终验收。不得因子阶段完成直接标记 `DONE`。
+历史状态。Task 9A 与 Task 9B-1 完成实施并取得 `414 passed`、Django system check、迁移一致性检查和 Ruff 通过的最终证据后，任务进入 `VERIFY / codex`；VERIFY 状态 Commit `c1b32334a7f9d3928d8c6722675accbf553b6b6f` 已完成双端同步。
 
 ### DONE
 
-项目负责人验收通过后，按实际证据同步更新 `tasks/TASKS.yaml`、`tasks/CURRENT_TASK.md` 和 `docs/PROJECT_STATE.md`，并在明确授权下形成范围单一的 Commit、完成双端 Push 和三端 HEAD 核验。必要检查未完成或失败时不得标记 `DONE`。
+当前状态。项目负责人已于 2026-09-30 完成最终验收并确认 Task 9 `DONE / codex`。Task 9A 与 Task 9B-1 均已完成；Article demo 保持 `N/A - SAFE STOP`。当前没有新的 `IN_PROGRESS` 任务，下一任务等待项目负责人单独指定。
 
 ### BLOCKED
 
@@ -231,11 +234,12 @@ Migration 不是项目永久禁止项，但任务 9 不得自动创建或修改 
 
 ## 13. 当前备注
 
-- 当前唯一接力任务仍是任务 `9`。
-- 当前状态为 `VERIFY`，负责人为 `codex`。
+- 最近完成任务为任务 `9`；当前没有新的已授权执行任务。
+- Task 9 状态为 `DONE`，负责人为 `codex`，最终验收日期为 `2026-09-30`。
 - 项目负责人已于 2026-09-26 正式授权 Codex 接手任务 9。
 - OPS-H07 已创建本文件；OPS-H08 已创建 `docs/HANDOFF.md`，当前没有待处理 AI 交接。
 - Task 9A 已完成、测试通过并双端同步；Commit 为 `cab3fc74544ae2199eb64be1e2e7c181269994ba`。
 - Task 9B-1 已完成、测试通过并双端同步；Commit 为 `9f214d30d6b2934302602bc7a152b27f00274968`。
+- VERIFY 状态 Commit 已完成双端同步；Commit 为 `c1b32334a7f9d3928d8c6722675accbf553b6b6f`。
 - Article demo 为 `N/A - SAFE STOP`：正式 KB 编号服务尚未实现，未创建 Article 样本，未伪造编号。
-- 本轮只同步 VERIFY 状态与接力元数据，不修改业务代码，不 Commit，不 Push，不执行 `VERIFY → DONE`。
+- 本轮只同步 `VERIFY → DONE` 状态与接力元数据，不修改业务代码，不 Commit，不 Push，不开始 Task 10。

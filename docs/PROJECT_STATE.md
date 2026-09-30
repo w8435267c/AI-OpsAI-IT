@@ -6,19 +6,20 @@
 
 | 项目 | 当前状态 |
 | --- | --- |
-| 快照日期 | 2026-09-29 |
+| 快照日期 | 2026-09-30 |
 | 当前工作区 | `D:\Desktop\OpsAI\AI-OpsAI-IT-wagtail-poc` |
 | 当前分支 | `fusion/wagtail-poc` |
-| 当前正式 HEAD | `9f214d30d6b2934302602bc7a152b27f00274968` |
+| 当前正式 HEAD | `c1b32334a7f9d3928d8c6722675accbf553b6b6f` |
 | 当前阶段 | OpsAI Django 主项目与 Wagtail 的隔离融合验证阶段 |
 | 正式技术主体 | Python 3.13 + Django 5.2 LTS 模块化单体 |
 | Wagtail 状态 | 融合方向已确认，F02～F08 已形成隔离 PoC 证据，尚未进入正式根依赖、正式 settings 或正式路由 |
 | 电脑 B 环境 | Python、正式项目依赖、WSL 2、Docker Desktop、Docker Engine 和 Docker Compose 已恢复；真实 `.env` 尚未配置 |
-| 当前接力元数据任务 | Task 9 `IN_PROGRESS → VERIFY` 状态同步 |
-| 当前唯一接力业务任务 | 任务 9：配置 Django Admin 和最小演示数据；`VERIFY / codex`，实施已完成并等待项目负责人最终验收 |
+| 当前接力元数据任务 | Task 9 `VERIFY → DONE` 最终状态收口 |
+| 最近完成任务 | 任务 9：配置 Django Admin 和最小演示数据；`DONE / codex`，项目负责人已于 2026-09-30 最终验收通过 |
+| 当前进行中任务 | 无；下一任务等待项目负责人指定 |
 | 当前交接状态 | 当前无待处理 AI 交接 |
 
-本快照的总体结论是：Task 9A 的 Django Admin 维护边界和 Task 9B-1 的幂等最小演示数据命令均已完成，最终正式回归为 `414 passed`，任务 9 已进入 `VERIFY`。Article demo 因正式 KB 编号服务尚未实现而按规则安全停止，未创建 Article 样本、未伪造编号；这不是 Task 9 失败或未完成缺陷。Wagtail 核心融合链路仍是隔离实验，尚未完成正式接入、PostgreSQL 验证、生产迁移或正式业务路径切换。
+本快照的总体结论是：Task 9A 的 Django Admin 安全维护边界和 Task 9B-1 的幂等最小演示数据命令均已完成，幂等、冲突失败关闭和事务回滚保护已验证，最终正式回归为 `414 passed`。项目负责人已于 2026-09-30 最终验收通过，Task 9 状态为 `DONE / codex`。Article demo 因正式 KB 编号服务尚未实现而按规则安全停止，未创建 Article 样本、未伪造编号；这是正确边界，不是 Task 9 缺陷。当前没有新的 `IN_PROGRESS` 任务。Wagtail 核心融合链路仍是隔离实验，尚未完成正式接入、PostgreSQL 验证、生产迁移或正式业务路径切换。
 
 ## 2. 状态证据规则
 
@@ -175,7 +176,7 @@ Task 9A 与 Task 9B-1 的实施级结论分别记录在 Commit `cab3fc74544ae219
 ### 9.1 当前阻塞
 
 - 任务 8J 因电脑 B 的真实 `.env` 尚未由项目负责人安全准备，且没有数据库操作授权，保持 `BLOCKED`；当前不能启动本地 PostgreSQL 开发环境或验证真实 Compose 变量。
-- 8J 的阻塞只影响 PostgreSQL 持久环境补充核验，不自动等于整个项目或任务 9 被阻塞；任务 9 当前为 `VERIFY / codex`，实施与自动验证已完成。
+- 8J 的阻塞只影响 PostgreSQL 持久环境补充核验，不影响已最终验收通过的 Task 9；Task 9 当前为 `DONE / codex`。
 - Wagtail 正式接入方案和迁移边界仍待后续正式融合任务决定；任务 9 不得借机处理该决策。
 
 ### 9.2 主要风险
@@ -200,13 +201,15 @@ Task 9A 与 Task 9B-1 的实施级结论分别记录在 Commit `cab3fc74544ae219
 - OPS-H08 已建立 `docs/HANDOFF.md`，Commit 为 `78bfda06bf39dc7106529c6c23ad08215087b43c`；OPS-H09 执行前已实时核验本地、GitHub 与 Gitee 三端均为该完整哈希，工作区干净。
 - Task 9A 已完成 Django Admin 维护入口和服务端权限边界加固，Commit 为 `cab3fc74544ae2199eb64be1e2e7c181269994ba`。
 - Task 9B-1 已完成幂等最小演示数据命令，Commit 为 `9f214d30d6b2934302602bc7a152b27f00274968`。
-- 2026-09-29，任务 9 总体验收已取得项目负责人 `PASS / TASK 9 READY FOR VERIFY` 结论；当前任务 9 为 `VERIFY`，负责人为 `codex`，任务 8J 单独保持 `BLOCKED`。
+- Task 9 VERIFY 状态 Commit `c1b32334a7f9d3928d8c6722675accbf553b6b6f` 已完成 GitHub、Gitee 与本地三端同步。
+- 2026-09-30，项目负责人完成最终验收并确认 `FINAL ACCEPTANCE: PASS`；Task 9 状态为 `DONE`，负责人为 `codex`，任务 8J 单独保持 `BLOCKED`。
+- 当前没有新的 `IN_PROGRESS` 任务，未自动选择或启动 Task 10。
 - 当前无真实 Agent 切换，`docs/HANDOFF.md` 保持“当前无待处理 AI 交接”。
-- 本次只同步任务 9 VERIFY 状态与接力元数据；不修改业务代码，不 Commit，不 Push，不执行 `VERIFY → DONE`。
+- 本次只同步 Task 9 `VERIFY → DONE` 最终状态与接力元数据；不修改业务代码，不 Commit，不 Push，不开始 Task 10。
 
 ## 11. 下一步边界
 
-Task 9 已完成业务实施并进入 `VERIFY`。下一步仅等待项目负责人对本轮状态文档变更进行验收；不得自动执行 `VERIFY → DONE`，也不得自行 Commit、Push 或开始 Task 10。
+Task 9 已完成最终验收并进入 `DONE`。当前没有新的已授权执行任务；下一步等待项目负责人指定，不得自行选择或开始 Task 10，也不得自行 Commit 或 Push 本轮状态变更。
 
 任务 9 的开工授权不包含以下操作，仍不得自动执行：
 

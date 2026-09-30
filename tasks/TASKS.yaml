@@ -1,7 +1,7 @@
 project: AI-OpsAI-IT-wagtail-poc
 branch: fusion/wagtail-poc
 version: 1
-updated_at: "2026-09-29"
+updated_at: "2026-09-30"
 
 evidence_boundary:
   - "正式 Django 工程当前已有 Task 9 最终回归 414 passed、Django system check、迁移一致性检查与 Ruff 通过的电脑 B 证据。"
@@ -221,7 +221,7 @@ tasks:
   - id: "9"
     title: "配置 Django Admin 和最小演示数据"
     priority: MUST
-    status: VERIFY
+    status: DONE
     owner: codex
     dependencies:
       - "8"
@@ -241,6 +241,7 @@ tasks:
       commits:
         - "cab3fc74544ae2199eb64be1e2e7c181269994ba"
         - "9f214d30d6b2934302602bc7a152b27f00274968"
+        - "c1b32334a7f9d3928d8c6722675accbf553b6b6f"
       verification:
         - "Task 9A：Django Admin 维护入口与服务端权限边界已完成；正式回归 405 passed，相关检查通过。"
         - "Task 9B-1：幂等最小演示数据命令已完成；首次创建 6 项，第二次执行 0 创建、6 项已存在，冲突场景整体回滚。"
@@ -250,7 +251,8 @@ tasks:
         - "Ruff：PASS。"
         - "Article demo：N/A - SAFE STOP；正式 KB 编号服务尚未实现，按任务规则未创建 Article 样本，未伪造编号。"
       notes:
-        - "Task 9A 与 Task 9B-1 已在实施层完成；Task 9 总任务进入 VERIFY，等待项目负责人最终验收。"
+        - "Task 9A 与 Task 9B-1 已在实施层完成，VERIFY 状态 Commit 已完成双端同步；项目负责人于 2026-09-30 最终验收 PASS，Task 9 状态为 DONE。"
+        - "Article demo：N/A - SAFE STOP；正式 KB 编号服务缺失，未创建或伪造 Article 样本。"
         - "未启动 PostgreSQL，未执行 migrate，未读取或创建真实 .env。"
 
   - id: "10"
