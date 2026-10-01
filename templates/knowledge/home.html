@@ -17,7 +17,9 @@
     {% if categories %}
       <div class="category-list">
         {% for category in categories %}
-          <span class="category-chip">{{ category.name }}</span>
+          <a class="category-chip" href="{% url 'knowledge:category_detail' category.id %}">
+            {{ category.name }}
+          </a>
         {% endfor %}
       </div>
     {% else %}

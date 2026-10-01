@@ -129,12 +129,45 @@ time {
 }
 
 .category-chip {
+  display: inline-block;
   padding: 0.55rem 0.85rem;
   border: 1px solid #b8c8df;
   border-radius: 999px;
   background: var(--surface);
   color: var(--brand-dark);
   font-weight: 600;
+  text-decoration: none;
+}
+
+.category-chip:hover,
+.category-chip:focus-visible {
+  border-color: var(--brand);
+  background: #eaf2ff;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.category-header {
+  padding: clamp(1.25rem, 4vw, 2.25rem);
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: var(--surface);
+  overflow-wrap: anywhere;
+}
+
+.category-header h1 {
+  margin: 0.25rem 0 0.5rem;
+  line-height: 1.2;
+}
+
+.category-header p:last-child {
+  margin: 0;
+  color: var(--muted);
 }
 
 .knowledge-grid {
@@ -187,6 +220,26 @@ time {
   margin-top: 1rem;
 }
 
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding: 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 0.8rem;
+  background: var(--surface);
+}
+
+.pagination a {
+  font-weight: 600;
+}
+
+.pagination [aria-disabled="true"] {
+  color: var(--muted);
+}
+
 .site-footer {
   padding-block: 1.4rem;
   border-top: 1px solid var(--line);
@@ -205,5 +258,11 @@ time {
 
   .header-row {
     padding-block: 0.8rem;
+  }
+
+  .pagination {
+    align-items: stretch;
+    flex-direction: column;
+    text-align: center;
   }
 }

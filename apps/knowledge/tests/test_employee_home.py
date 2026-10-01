@@ -214,7 +214,11 @@ class EmployeeHomeDataTests(TestCase):
         self.assertNotIn("绝密内部空间", html)
         self.assertNotIn("显式拒绝", html)
         self.assertNotIn("仅IT", html)
-        self.assertNotIn("/categories/", html)
+        self.assertIn(
+            f'href="{reverse("knowledge:category_detail", args=[visible_category.pk])}"',
+            html,
+        )
+        self.assertNotIn(str(hidden_category.pk), html)
         self.assertNotIn("/kb/", html)
 
         recent = response.context["recent_articles"]
@@ -264,8 +268,11 @@ class EmployeeHomeDataTests(TestCase):
         )
 
         response = self.client.get(self.url)
+        html = response.content.decode()
 
         self.assertEqual(response.context["categories"], [{"id": active.pk, "name": active.name}])
+        self.assertIn(reverse("knowledge:category_detail", args=[active.pk]), html)
+        self.assertNotIn(reverse("knowledge:category_detail", args=[inactive.pk]), html)
         recent_category_names = {
             article["category_name"] for article in response.context["recent_articles"]
         }
