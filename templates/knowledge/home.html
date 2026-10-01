@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}首页 | OpsAI IT 故障问答知识库{% endblock %}
+
+{% block content %}
+  <section class="hero" aria-labelledby="home-title">
+    <p class="eyebrow">EMPLOYEE KNOWLEDGE</p>
+    <h1 id="home-title">快速查找公司 IT 故障处理知识和操作指引</h1>
+    <p>这里只展示你有权查看、且已经正式发布的知识内容。</p>
+  </section>
+
+  <section class="content-section" aria-labelledby="category-title">
+    <div class="section-heading">
+      <h2 id="category-title">知识分类</h2>
+      <p>按当前可见知识汇总</p>
+    </div>
+    {% if categories %}
+      <div class="category-list">
+        {% for category in categories %}
+          <span class="category-chip">{{ category.name }}</span>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="empty-state">当前暂无可查看的知识分类。</p>
+    {% endif %}
+  </section>
+
+  <section class="content-section" aria-labelledby="recent-title">
+    <div class="section-heading">
+      <h2 id="recent-title">最近正式知识</h2>
+      <p>最多展示 12 条</p>
+    </div>
+    {% if recent_articles %}
+      <div class="knowledge-grid">
+        {% for article in recent_articles %}
+          <article class="knowledge-card">
+            <p class="kb-number">{{ article.kb_no }}</p>
+            <h3>{{ article.title }}</h3>
+            {% if article.summary %}
+              <p>{{ article.summary }}</p>
+            {% else %}
+              <p class="muted">暂无摘要</p>
+            {% endif %}
+            {% if article.published_at %}
+              <time datetime="{{ article.published_at|date:'c' }}">
+                发布于 {{ article.published_at|date:"Y-m-d H:i" }}
+              </time>
+            {% endif %}
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="empty-state">当前暂无可查看的知识。</p>
+    {% endif %}
+  </section>
+{% endblock %}

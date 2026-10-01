@@ -12,3 +12,5 @@ urlpatterns = [
     # 本地开发专用模拟登录入口；生产环境由开关强制关闭（返回 404）。
     path("dev/", include("apps.accounts.urls")),
 ]
+
+urlpatterns += [path("", include("apps.knowledge.urls"))]

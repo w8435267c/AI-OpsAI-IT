@@ -1,0 +1,37 @@
+{% load static %}
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}OpsAI IT 故障问答知识库{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/opsai.css' %}">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">跳到主要内容</a>
+  <header class="site-header">
+    <div class="site-shell header-row">
+      <a class="site-brand" href="{% url 'knowledge:home' %}">OpsAI IT 故障问答知识库</a>
+      <nav aria-label="主要导航">
+        <span class="nav-current" aria-current="page">首页</span>
+      </nav>
+    </div>
+  </header>
+
+  {% if messages %}
+    <section class="site-shell messages" aria-label="系统消息">
+      {% for message in messages %}
+        <p class="message">{{ message }}</p>
+      {% endfor %}
+    </section>
+  {% endif %}
+
+  <main id="main-content" class="site-shell page-main">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-shell">面向员工的正式 IT 知识入口</div>
+  </footer>
+</body>
+</html>
