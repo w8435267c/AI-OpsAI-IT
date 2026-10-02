@@ -1,5 +1,7 @@
 """正式员工知识页面视图。"""
 
+import json
+
 from django.core.paginator import Paginator
 from django.db.models import F
 from django.http import HttpRequest, HttpResponse, HttpResponseNotFound
@@ -7,7 +9,7 @@ from django.shortcuts import render
 
 from apps.knowledge.http import employee_get_page
 from apps.knowledge.models import Article, Category
-from apps.knowledge.readers import employee_visible_articles
+from apps.knowledge.readers import employee_visible_articles, get_employee_article_detail
 
 HOME_RECENT_LIMIT = 12
 CATEGORY_PAGE_SIZE = 20
@@ -21,6 +23,16 @@ def _employee_article_ordering():
         "-updated_at",
         "pk",
     )
+
+
+def _applicable_scope_text(value: object) -> str:
+    """将 Reader 白名单中的 JSON 值确定性地展示为安全普通文本。"""
+
+    if value in (None, "", [], {}):
+        return ""
+    if isinstance(value, str):
+        return value
+    return json.dumps(value, ensure_ascii=False, sort_keys=True)
 
 
 @employee_get_page
@@ -110,5 +122,23 @@ def employee_category_detail(request: HttpRequest, category_id) -> HttpResponse:
             "category": {"name": category.name},
             "articles": articles,
             "pagination": pagination,
+        },
+    )
+
+
+@employee_get_page
+def employee_article_detail(request: HttpRequest, kb_no: str) -> HttpResponse:
+    """按员工侧知识编号展示当前用户可见的正式版本快照。"""
+
+    detail = get_employee_article_detail(request.user, kb_no)
+    if detail is None:
+        return HttpResponseNotFound("未找到可查看的知识。")
+
+    return render(
+        request,
+        "knowledge/article_detail.html",
+        {
+            "detail": detail,
+            "applicable_scope_text": _applicable_scope_text(detail.applicable_scope),
         },
     )

@@ -242,7 +242,14 @@ class EmployeeCategoryDataTests(EmployeeCategoryBase):
         self.assertNotIn(str(department_article.pk), html)
         self.assertNotIn(str(unpublished.pk), html)
         self.assertNotIn(str(offline.pk), html)
-        self.assertNotIn("/kb/", html)
+        self.assertIn(
+            f'href="{reverse("knowledge:article_detail", args=[visible.kb_no])}"',
+            html,
+        )
+        self.assertNotIn(denied.kb_no, html)
+        self.assertNotIn(department_article.kb_no, html)
+        self.assertNotIn(unpublished.kb_no, html)
+        self.assertNotIn(offline.kb_no, html)
         self.assertEqual(
             response.context["articles"],
             [

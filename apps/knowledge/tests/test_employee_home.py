@@ -218,8 +218,14 @@ class EmployeeHomeDataTests(TestCase):
             f'href="{reverse("knowledge:category_detail", args=[visible_category.pk])}"',
             html,
         )
+        self.assertIn(
+            f'href="{reverse("knowledge:article_detail", args=[article.kb_no])}"',
+            html,
+        )
+        self.assertNotIn(str(article.pk), html)
         self.assertNotIn(str(hidden_category.pk), html)
-        self.assertNotIn("/kb/", html)
+        self.assertNotIn(hidden.kb_no, html)
+        self.assertNotIn(denied.kb_no, html)
 
         recent = response.context["recent_articles"]
         self.assertEqual(

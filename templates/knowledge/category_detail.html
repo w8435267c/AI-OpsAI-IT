@@ -24,7 +24,11 @@
         {% for article in articles %}
           <article class="knowledge-card">
             <p class="kb-number">{{ article.kb_no }}</p>
-            <h3>{{ article.title }}</h3>
+            <h3>
+              <a class="card-link" href="{% url 'knowledge:article_detail' article.kb_no %}">
+                {{ article.title }}
+              </a>
+            </h3>
             {% if article.summary %}
               <p>{{ article.summary }}</p>
             {% else %}

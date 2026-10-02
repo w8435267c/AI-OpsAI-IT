@@ -2,7 +2,11 @@
 
 from django.urls import path
 
-from apps.knowledge.views import employee_category_detail, employee_home
+from apps.knowledge.views import (
+    employee_article_detail,
+    employee_category_detail,
+    employee_home,
+)
 
 app_name = "knowledge"
 
@@ -13,4 +17,5 @@ urlpatterns = [
         employee_category_detail,
         name="category_detail",
     ),
+    path("kb/<str:kb_no>/", employee_article_detail, name="article_detail"),
 ]

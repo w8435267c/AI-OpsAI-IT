@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}{{ detail.title }} | OpsAI IT 故障问答知识库{% endblock %}
+
+{% block content %}
+  <nav class="detail-navigation" aria-label="知识详情导航">
+    <a class="back-link" href="{% url 'knowledge:category_detail' detail.category_id %}">
+      ← 返回分类
+    </a>
+    <a class="back-link" href="{% url 'knowledge:home' %}">返回首页</a>
+  </nav>
+
+  <article class="article-detail" aria-labelledby="article-title">
+    <header class="article-header">
+      <p class="kb-number">{{ detail.kb_no }}</p>
+      <h1 id="article-title">{{ detail.title }}</h1>
+      {% if detail.summary %}
+        <p class="article-summary">{{ detail.summary }}</p>
+      {% else %}
+        <p class="article-summary muted">暂无摘要。</p>
+      {% endif %}
+    </header>
+
+    <dl class="article-metadata">
+      <div>
+        <dt>分类</dt>
+        <dd>{{ detail.category_name }}</dd>
+      </div>
+      <div>
+        <dt>知识空间</dt>
+        <dd>{{ detail.space_name }}</dd>
+      </div>
+      <div>
+        <dt>发布时间</dt>
+        <dd>
+          <time datetime="{{ detail.published_at|date:'c' }}">
+            {{ detail.published_at|date:"Y-m-d H:i" }}
+          </time>
+        </dd>
+      </div>
+    </dl>
+
+    <section class="article-section" aria-labelledby="scope-title">
+      <h2 id="scope-title">适用范围</h2>
+      {% if applicable_scope_text %}
+        <p class="plain-text-block">{{ applicable_scope_text }}</p>
+      {% else %}
+        <p class="muted">未指定。</p>
+      {% endif %}
+    </section>
+
+    <section class="article-section" aria-labelledby="body-title">
+      <h2 id="body-title">正文</h2>
+      {% if detail.body_text %}
+        <div class="article-body">{{ detail.body_text }}</div>
+      {% else %}
+        <p class="empty-state">暂无正文内容。</p>
+      {% endif %}
+    </section>
+  </article>
+{% endblock %}
