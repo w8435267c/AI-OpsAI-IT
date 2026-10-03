@@ -1,10 +1,10 @@
 project: AI-OpsAI-IT-wagtail-poc
 branch: fusion/wagtail-poc
 version: 1
-updated_at: "2026-09-30"
+updated_at: "2026-10-03"
 
 evidence_boundary:
-  - "正式 Django 工程当前已有 Task 9 最终回归 414 passed、Django system check、迁移一致性检查与 Ruff 通过的电脑 B 证据。"
+  - "正式 Django 工程当前已有 Task 10 最终回归 460 passed、Django system check、迁移一致性检查、Ruff 与浏览器响应式验收通过的电脑 B 证据。"
   - "Wagtail F02～F08 仍位于 experiments/wagtail_*，属于 SQLite 内存库隔离 PoC，不是正式上线能力。"
   - "正式根 pyproject.toml 尚未包含 Wagtail；不得为运行 PoC 而擅自修改正式依赖。"
   - "真实 .env 尚不存在，PostgreSQL 容器、卷和数据库尚未创建或启动，未执行 migrate。"
@@ -258,23 +258,34 @@ tasks:
   - id: "10"
     title: "开发首页、分类页和正式知识详情页"
     priority: MUST
-    status: IN_PROGRESS
+    status: VERIFY
     owner: codex
     dependencies:
       - "9"
     objective: >
-      使用 Django Templates、Bootstrap 和 HTMX 建立正式员工浏览路径，只展示当前员工可见且已发布的内容。
+      使用 Django Templates 和项目自有 static/css/opsai.css 建立正式员工浏览路径，只展示当前员工
+      可见且已发布的内容；Bootstrap / HTMX 不作为 Task 10 V1 完成条件。
     acceptance:
       - "首页、分类页和详情页在 PC 与手机上可用。"
       - "所有查询先执行服务端受众过滤，无权限时不泄露文章存在性、标题、摘要或附件名。"
       - "正式页面不复用实验 URL 作为生产入口，草稿和未批准修订不可见。"
     verification:
-      - "计划：页面请求测试覆盖匿名、失效账号、无受众、deny、下架、草稿隔离和响应缓存。"
-      - "计划：执行浏览器响应式与自动转义验收，并运行正式工程回归。"
+      - "页面请求测试已覆盖匿名、失效账号、无受众、deny、下架、草稿隔离、404 防泄露和响应缓存。"
+      - "1440×900 桌面与 390×844 手机浏览器响应式、自动转义和完整浏览链验收已通过。"
+      - "页面专项 30 passed、knowledge 310 passed、正式工程回归 460 passed；Django check、迁移检查、Ruff、format 与 diff 检查通过。"
     result:
-      commits: []
-      verification: []
-      notes: []
+      commits:
+        - "cf8bf1ff1692dedd69e5fbf97f0632a460d66c0b"
+        - "9721e2817135a4e6002d9a2d39e151fdc480b8f7"
+        - "8435b4255e459ede018bee2dc6771caf89b6c76e"
+        - "5fb5c1f9cedd6a347e1f240cb41d404b84125dec"
+        - "807028ef3d5c2092fa679c811128acd3c07a30fc"
+      verification:
+        - "10A～10E 均已完成并同步至 GitHub、Gitee；Task 10 开发、自动测试、安全、性能和浏览器视觉验收通过。"
+        - "首页 3 篇与 23 篇均为 4 queries；分类 3 篇与 23 篇均为 5 queries；详情为 3 queries，无异常 N+1。"
+      notes:
+        - "Task 10 当前进入 VERIFY，等待项目负责人最终验收；不得提前标记 DONE 或启动 Task 11。"
+        - "Task 10 V1 正式前端为 Django Templates + 项目自有 CSS；Bootstrap / HTMX 为 NOT REQUIRED FOR TASK 10 V1。"
 
   - id: "11"
     title: "开发 P0 搜索"

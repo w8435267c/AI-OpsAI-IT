@@ -22,7 +22,7 @@
 
 ## 3. 技术栈约束
 
-固定采用 Python 3.13、Django 5.2 LTS、PostgreSQL、Django Templates + Bootstrap + HTMX 和 Docker Compose，整体架构为模块化 Django 单体。
+固定采用 Python 3.13、Django 5.2 LTS、PostgreSQL、Django Templates 和 Docker Compose，整体架构为模块化 Django 单体。Task 10 V1 的正式前端基线为 Django Templates + 项目自有 `static/css/opsai.css`；Bootstrap / HTMX 在本阶段不强制引入，后续如有真实业务需求，只能采用可信来源、固定版本、本地 vendor 的方式单独接入。
 
 融合方向已获用户确认：以 OpsAI-IT 为主项目，Wagtail 作为依赖提供内容编辑、版本和审核基础能力；保留 accounts.User、组织关系、内容受众及各 App 职责，不维护 Wagtail 框架分叉。候选“Article 稳定业务身份 + 一对一 KnowledgeContent Snippet”仍待最小验证，详见 `docs/07-ADR/0002-Wagtail融合基线与最小设计.md`；不得据此删除 ArticleVersion、ReviewRecord 或维护两套可独立编辑的内容及发布状态。
 
@@ -220,14 +220,14 @@ git show -s --format=full HEAD
 - 正式开发数据库目标仍为 PostgreSQL（Compose 内 `POSTGRES_HOST` 覆盖为 `db`）；电脑 B 的真实 `.env` 尚不存在，未执行 `migrate`，测试环境继续使用 SQLite 内存库。
 - 里程碑：第一阶段第 1～6 步已完成，里程碑 B 的代码、数据模型、迁移和测试底座已经建立；第 7 步（本地模拟登录与系统操作角色）已经完成，安全收紧提交 c5f1bbb 已通过第 7C 只读审计（结论 A：完整通过），PostgreSQL 补充只读核验已经完成。
 - accounts：`User`、`Department`、`UserDepartment`、`UserGroup`、`UserGroupMembership` 已正式建立，`0001`、`0002` 已在 PostgreSQL 应用，相关约束和模型测试已通过；`UserGroup` 仅用于内容受众，系统操作角色仍使用 Django `Group`/`Permission`。
-- knowledge：`KnowledgeSpace`、`Category`、`Article`、`ArticleVersion`、`ArticleAudience`、`ReviewRecord` 已接入，`0001`、`0002` 已在 PostgreSQL 应用；核心外键、唯一约束、CHECK、条件唯一索引和模型校验已经建立；当前未实现发布事务、编号生成服务、搜索、API、页面或钉钉功能；内容受众 Selector 已实现。
+- knowledge：`KnowledgeSpace`、`Category`、`Article`、`ArticleVersion`、`ArticleAudience`、`ReviewRecord` 已接入，`0001`、`0002` 已在 PostgreSQL 应用；核心外键、唯一约束、CHECK、条件唯一索引和模型校验已经建立；正式员工首页、分类页和知识详情页已完成并进入 Task 10 `VERIFY`，发布事务、编号生成服务、搜索、附件和钉钉功能仍未实现。
 - Article 编号：数据库只允许 `KB-000001` 格式的知识编号；编号生成服务尚未实现，在其安全接入前 Article Admin 新增入口保持关闭；不得通过 Admin、Signal、随机默认值或临时拼接绕过编号规则。
 - 候选参考：`docs/05-Database/knowledge_models_reference.py` 继续作为设计参考保留；Django 运行时正式模型位于 `apps/knowledge/models.py`，后续开发不得重新复制候选文件覆盖正式模型。
 - 第 8D 步隔离验证：全量 pytest 379 passed、11 subtests passed；Django check、迁移一致性、Ruff 静态与格式检查通过。仅使用 SQLite 内存测试库；未读取真实 .env，未核验 PostgreSQL、容器、持久库数据或数据库注释。
 - 第 8D 步已修复 IT 组配置边界、未保存用户门槛和 base 重复行，并加入受众 Inline 最终状态校验；系统角色权限不变。新增 knowledge.0003 仅修改空间默认策略 db_comment，未应用到持久数据库。
 - 系统操作角色权限矩阵（0/8/6/19）：普通员工 0 项、知识编辑员 8 项、知识审核员 6 项、知识库管理员 19 项；均不含 delete 权限，已移除 accounts.change_user、auth.change_group、knowledge.change_reviewrecord 等危险权限。
 - 本地模拟登录：仅限 DEBUG=True 且显式开启开发开关（DJANGO_DEV_LOGIN_ENABLED，默认关闭，仅识别 1/true/yes/on）；production.py 硬编码强制关闭；固定开发身份为 dev_employee、dev_editor、dev_reviewer、dev_knowledge_admin（均 is_superuser=False、密码不可用、仅属各自系统角色，仅 dev_knowledge_admin 为 staff=True）。
-- Article 编号服务尚未实现，Article Admin 新增入口仍保持关闭；第 8 步内容受众 Selector 已实现（`apps/knowledge/selectors.py` 的 `visible_articles` / `can_read_article`），尚未接入页面、HTTP API、搜索或附件。
+- Article 编号服务尚未实现，Article Admin 新增入口仍保持关闭；员工页面已通过 `employee_visible_articles` 和 `get_employee_article_detail` 接入拒绝优先的正式读取路径，搜索、附件和写入 API 仍未实现。
 - 内容受众语义（第 8B 步，见 `docs/07-ADR/0001`）：账号门槛 → 文章策略（`all_employees` / `it_only` / `restricted`）→ 拒绝优先；员工阅读路径不因 `is_staff` / `is_superuser` / 编辑员 / 审核员 / 知识管理员 / 作者 / 空间负责人越权；`it_only` 通过服务端配置 `KNOWLEDGE_IT_USER_GROUP_ID` 绑定一个启用的内容用户组，未配置时不授予 it_only 阅读权限；读取侧按文章策略计算允许范围，不一致 allow 不扩大范围。
 - 第 8F 步已实现：常规联合编辑、非循环更新链及授权删除／修改／新增混合操作；循环交换首版不支持，在表单阶段中文提示、保留输入、整次不保存。不删除重插既有规则，不改变数据库约束或角色权限，无新增迁移。
 - 以下成绩引用用户提供的此前完成报告，不是第 8H 文档同步时重新执行的结果。第 8F 历史验证：隔离专项 159 passed；完整套件 386 passed、11 subtests passed；Django check、迁移一致性及 Ruff 检查通过。
@@ -235,7 +235,7 @@ git show -s --format=full HEAD
 - 仓库迁移文件：accounts.0001～0002、knowledge.0001～0003 已存在。上文 PostgreSQL 已应用 0001、0002 及 knowledge.0003 未应用的说明属于此前报告；当前持久数据库迁移状态、实际数据库注释仍待核验，不从文件存在推断数据库已更新。
 - PostgreSQL 查询、排序及相关数据库行为待验证。未新增并发协调锁，实际并发及锁行为未验证；并发写入仍可能冲突或覆盖更新，atomic() 不等同于并发安全。
 - 当前阶段：F02～F08 已形成 Wagtail 隔离 PoC 证据，但 Wagtail 仍未进入正式根依赖、正式 settings 或正式路由；不得把实验测试、SQLite 结果或历史成绩写成正式接入、PostgreSQL 或生产验证通过。
-- 第一阶段 AI 接力文件 H01～H08 已建立并完成双端同步；OPS-H09 仅检查和修正接力元数据一致性。任务 9 已完成并经项目负责人最终验收，状态为 `DONE`、负责人为 `codex`；当前没有 `IN_PROGRESS` 任务，下一任务尚未正式授权。
+- Task 10 的 10A～10E 已全部完成并同步至 GitHub、Gitee；当前状态为 `VERIFY / codex`，等待项目负责人最终验收。Task 11 仍为 `BACKLOG / unassigned`，尚未获准开始。
 - 任务 8J 因电脑 B 缺少真实 `.env` 且没有数据库操作授权保持 `BLOCKED`；该阻塞只影响 PostgreSQL 持久环境补充核验，不自动阻塞任务 9 或整个项目。
-- OPS-H09 完成后停止，不自动执行 OPS-H10、任务 9、数据库操作、Commit 或 Push；后续任务按用户明确授权推进。同步状态以对 GitHub、Gitee 的实时核验为准。
+- Task 10 最终验收前不得继续修改其业务代码、不得标记 `DONE`、不得启动 Task 11；后续状态变化、Commit 和 Push 均按项目负责人明确授权执行。
 - 规则文档不得写入密码、个人代理或机器专属临时路径。

@@ -4,20 +4,31 @@
 
 ## 1. 当前交接状态
 
-当前没有真实的 Agent 切换事件，也不存在需要下一位 Agent 接续的中断现场。项目负责人已于 2026-09-30 正式选择 Task 10，并授权进入 `IN_PROGRESS / codex`；仍由 Codex 连续执行。本次只完成开工状态与接力元数据同步，页面业务代码尚未开始，因此不构成 Agent 间交接。
+当前没有真实的 Agent 切换事件，也不存在需要下一位 Agent 接续的中断现场。Task 10 的 10A～10E 已全部完成并同步至 GitHub、Gitee；当前进入 `VERIFY / codex`，开发与验证均已结束，只等待项目负责人最终验收。仍由 Codex 连续执行，因此不构成 Agent 间交接。
 
 | 项目 | 当前值 |
 | --- | --- |
 | 当前任务 | `10` - 开发首页、分类页和正式知识详情页 |
-| 任务状态 | `IN_PROGRESS` |
+| 任务状态 | `VERIFY` |
 | 负责人 | `codex` |
 | 开工日期 | `2026-09-30` |
 | 依赖 | 任务 `9`，状态为 `DONE` |
-| 业务实施状态 | 仅完成 Task 10 开工状态切换；首页、分类页和正式知识详情页代码尚未开始 |
-| 当前已授权执行任务 | Task 10；本轮仅限接力元数据同步 |
+| 业务实施状态 | 首页、分类页和正式知识详情页已完成；10A～10E 均为 `SYNCED` |
+| 当前等待动作 | 项目负责人完成 Task 10 最终验收 |
+| 当前禁止动作 | 不修改 Task 10 业务代码，不标记 `DONE`，不启动 Task 11 |
 | Agent 切换状态 | 未发生 |
 
-Task 9A 的 Commit 为 `cab3fc74544ae2199eb64be1e2e7c181269994ba`，Task 9B-1 的 Commit 为 `9f214d30d6b2934302602bc7a152b27f00274968`，VERIFY 状态 Commit 为 `c1b32334a7f9d3928d8c6722675accbf553b6b6f`，封板后元数据一致性 Commit 为 `91c2e587a3e9c3513a7ed3d9674e69162c04809a`；上述封板节点已完成 GitHub、Gitee 与本地三端同步。Article demo 因正式 KB 编号服务尚未实现而按规则记为 `N/A - SAFE STOP`，未创建 Article 样本、未伪造编号。
+Task 10 的内部阶段和双端同步证据如下：
+
+| 阶段 | Commit | 标题 | 状态 |
+| --- | --- | --- | --- |
+| 10A | `cf8bf1ff1692dedd69e5fbf97f0632a460d66c0b` | `feat(knowledge): add formal employee knowledge readers` | `SYNCED` |
+| 10B | `9721e2817135a4e6002d9a2d39e151fdc480b8f7` | `feat(knowledge): add secure employee knowledge home` | `SYNCED` |
+| 10C | `8435b4255e459ede018bee2dc6771caf89b6c76e` | `feat(knowledge): add audience-filtered category pages` | `SYNCED` |
+| 10D | `5fb5c1f9cedd6a347e1f240cb41d404b84125dec` | `feat(knowledge): add secure published article detail page` | `SYNCED` |
+| 10E | `807028ef3d5c2092fa679c811128acd3c07a30fc` | `test(knowledge): harden employee page final regression` | `SYNCED` |
+
+Task 10 最终验证为页面专项 `30 passed`、knowledge `310 passed`、正式工程回归 `460 passed`；Django check、迁移一致性检查、Ruff、format 和 diff 检查通过。Desktop `1440 × 900` 与 Mobile `390 × 844` 浏览器验收通过，无异常 N+1。Task 10 V1 正式前端为 Django Templates + 项目自有 `static/css/opsai.css`，Bootstrap / HTMX 为 `NOT REQUIRED FOR TASK 10 V1`。
 
 因此，当前不存在真实的“上一执行 Agent → 下一建议 Agent”业务交接记录。本节不填写不存在的上一执行 Agent、交接时间或接管现场，也不把 DONE 状态同步伪装成新的 Agent 交接事件。
 
@@ -175,14 +186,12 @@ Task 9A 的 Commit 为 `cab3fc74544ae2199eb64be1e2e7c181269994ba`，Task 9B-1 �
 
 ## 7. 当前备注
 
-- 当前任务是 Task `10`，状态为 `IN_PROGRESS`，负责人为 `codex`；项目负责人已于 2026-09-30 正式授权开工状态切换。
+- 当前任务是 Task `10`，状态为 `VERIFY`，负责人为 `codex`；10A～10E 已完成并双端同步，等待项目负责人最终验收。
 - Task 9 保持 `DONE / codex`；Task 10 的直接依赖已经满足。
-- Task 9A 已完成、测试通过并双端同步；Commit 为 `cab3fc74544ae2199eb64be1e2e7c181269994ba`。
-- Task 9B-1 已完成、测试通过并双端同步；Commit 为 `9f214d30d6b2934302602bc7a152b27f00274968`。
-- VERIFY 状态 Commit 已完成三端同步；Commit 为 `c1b32334a7f9d3928d8c6722675accbf553b6b6f`。
-- 最终验证为 `414 passed`、Django system check PASS、迁移一致性检查 `No changes detected`、Ruff PASS。
-- Article demo 为 `N/A - SAFE STOP`：正式 KB 编号服务尚未实现，按规则未创建 Article 样本，未伪造编号。
-- 本轮只更新 Task 10 `BACKLOG → IN_PROGRESS` 开工状态与接力元数据，不修改业务代码，不 Commit，不 Push，不开始页面开发。
+- Task 10 正式员工首页、分类页、知识详情页及返回链已完成；安全、缓存、自动转义、响应式和性能验收通过。
+- 正式员工读取来源为 `current_published_version`；列表 Reader 为 `employee_visible_articles`，详情 Reader 为 `get_employee_article_detail`；V1 正文使用 `body_plaintext → body_text`。
+- Task 10 V1 正式前端为 Django Templates + 项目自有 CSS；Bootstrap / HTMX 当前不要求接入。
+- 下一步只有项目负责人最终验收；未获授权不得执行 `Task 10 → DONE` 或开始 Task 11。
 - 当前没有真实 Agent 切换，所以没有上一执行 Agent、下一建议 Agent、交接时间或未完成业务现场可记录。
 - 任务 8J 保持 `BLOCKED / unassigned`；Task 11 及后续业务任务保持 `BACKLOG / unassigned`。
-- 本文件建立统一交接规则和模板，不改变 `tasks/CURRENT_TASK.md` 或 `tasks/TASKS.yaml` 的职责与状态。
+- 本文件保留统一交接规则和模板，并与 `tasks/CURRENT_TASK.md`、`tasks/TASKS.yaml` 的 `VERIFY` 状态保持一致。
