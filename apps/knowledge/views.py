@@ -88,7 +88,7 @@ def employee_category_detail(request: HttpRequest, category_id) -> HttpResponse:
         .first()
     )
     if category is None:
-        return HttpResponseNotFound()
+        return HttpResponseNotFound("未找到可查看的分类。")
 
     base = Article.objects.filter(category_id=category_id)
     visible_articles = employee_visible_articles(request.user, base=base).order_by(

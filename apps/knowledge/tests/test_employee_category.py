@@ -115,7 +115,8 @@ class EmployeeCategoryHttpTests(EmployeeCategoryBase):
 
     def test_missing_inactive_category_and_inactive_space_are_private_404(self):
         missing_url = reverse("knowledge:category_detail", args=[uuid4()])
-        self.assert_private(self.client.get(missing_url), 404)
+        missing_response = self.assert_private(self.client.get(missing_url), 404)
+        self.assertEqual(missing_response.content.decode(), "未找到可查看的分类。")
 
         inactive_category = _mk_category(
             self.space,
@@ -126,7 +127,11 @@ class EmployeeCategoryHttpTests(EmployeeCategoryBase):
             "knowledge:category_detail",
             args=[inactive_category.pk],
         )
-        self.assert_private(self.client.get(inactive_category_url), 404)
+        inactive_category_response = self.assert_private(
+            self.client.get(inactive_category_url),
+            404,
+        )
+        self.assertEqual(inactive_category_response.content, missing_response.content)
 
         inactive_space = _mk_space(name="停用空间", is_active=False)
         category_in_inactive_space = _mk_category(
@@ -137,7 +142,11 @@ class EmployeeCategoryHttpTests(EmployeeCategoryBase):
             "knowledge:category_detail",
             args=[category_in_inactive_space.pk],
         )
-        self.assert_private(self.client.get(inactive_space_url), 404)
+        inactive_space_response = self.assert_private(
+            self.client.get(inactive_space_url),
+            404,
+        )
+        self.assertEqual(inactive_space_response.content, missing_response.content)
 
     def test_category_route_uses_uuid_converter_and_expected_view(self):
         match = resolve(self.url)

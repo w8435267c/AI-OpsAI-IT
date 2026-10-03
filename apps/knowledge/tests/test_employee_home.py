@@ -4,7 +4,9 @@ from datetime import timedelta
 from unittest.mock import patch
 
 from django.contrib.staticfiles import finders
+from django.db import connection
 from django.test import Client, TestCase
+from django.test.utils import CaptureQueriesContext
 from django.urls import resolve, reverse
 from django.utils import timezone
 from django.utils.html import escape
@@ -315,6 +317,32 @@ class EmployeeHomeDataTests(TestCase):
         self.assertEqual(response.context["categories"], [])
         self.assertNotIn("过滤", html)
         self.assertNotIn("数据库共有", html)
+
+
+class EmployeeHomeQueryTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = _mk_user()
+        self.client.force_login(self.user)
+        self.url = reverse("knowledge:home")
+
+    def test_query_count_is_constant_for_three_and_twenty_three_articles(self):
+        for _ in range(3):
+            _publish(_mk_article(policy=AudiencePolicy.ALL_EMPLOYEES))
+        small_count = self.request_query_count()
+
+        for _ in range(20):
+            _publish(_mk_article(policy=AudiencePolicy.ALL_EMPLOYEES))
+        large_count = self.request_query_count()
+
+        self.assertEqual(small_count, large_count)
+        self.assertEqual(large_count, 4)
+
+    def request_query_count(self):
+        with CaptureQueriesContext(connection) as queries:
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        return len(queries.captured_queries)
 
 
 class EmployeeHomeTemplateAndRouteTests(TestCase):
