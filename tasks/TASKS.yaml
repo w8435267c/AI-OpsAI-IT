@@ -7,7 +7,7 @@ evidence_boundary:
   - "正式 Django 工程当前已有 Task 10 最终回归 460 passed、Django system check、迁移一致性检查、Ruff 与浏览器响应式验收通过的电脑 B 证据。"
   - "Wagtail F02～F08 仍位于 experiments/wagtail_*，属于 SQLite 内存库隔离 PoC，不是正式上线能力。"
   - "正式根 pyproject.toml 尚未包含 Wagtail；不得为运行 PoC 而擅自修改正式依赖。"
-  - "真实 .env 尚不存在，PostgreSQL 容器、卷和数据库尚未创建或启动，未执行 migrate。"
+  - "仓库根目录 .env 当前存在、被 Git 忽略且未跟踪；本项目未读取或验证其内容、来源、变量完整性及 PostgreSQL 适用性，PostgreSQL 容器、卷和数据库尚未创建或启动，未执行真实 migrate。"
 
 tasks:
   - id: "8"
@@ -200,10 +200,10 @@ tasks:
     dependencies:
       - "8"
     objective: >
-      在负责人安全配置真实环境并单独授权后，核验当前持久数据库迁移状态、数据库注释、
-      PostgreSQL 查询排序行为和必要的回退边界。
+      在负责人确认根目录 .env 的安全来源和使用范围并单独授权后，核验当前持久数据库迁移状态、
+      数据库注释、PostgreSQL 查询排序行为和必要的回退边界。
     acceptance:
-      - "负责人已安全提供真实 .env 或等价受控配置，并明确授权数据库操作范围。"
+      - "负责人已确认 .env 或等价受控配置的安全来源和使用范围，并明确授权 PostgreSQL 启动、migration 状态检查、持久数据验证范围及回退边界。"
       - "核对实际迁移应用状态和数据库注释，不从迁移文件存在推断数据库已更新。"
       - "验证 PostgreSQL 查询、排序与相关约束，并记录是否访问或修改持久数据。"
       - "如涉及 Wagtail，必须使用独立实验资源，不复用正式开发数据卷。"
@@ -215,8 +215,8 @@ tasks:
       verification: []
       notes: []
     blocking:
-      reason: "电脑 B 的真实 .env 尚不存在，且当前没有启动 PostgreSQL、执行 migrate 或访问持久数据的授权。"
-      unblock_when: "项目负责人安全配置环境并单独授权 8J 的数据库操作与验证范围。"
+      reason: "仓库根目录 .env 已存在、被 Git 忽略且未跟踪，但本项目未读取或验证其内容、来源、变量完整性及 PostgreSQL 适用性；当前也没有 PostgreSQL 启动、真实 migration 或持久数据访问授权。"
+      unblock_when: "项目负责人确认 .env 的安全来源和使用范围，并明确授权 PostgreSQL 启动、migration 状态检查、持久数据验证范围及回退边界。"
 
   - id: "9"
     title: "配置 Django Admin 和最小演示数据"
@@ -298,19 +298,29 @@ tasks:
     dependencies:
       - "10"
     objective: >
-      实现标题、标签、别名、摘要和正文的 P0 搜索，在检索和结果展示前完成服务端权限过滤，
-      并记录必要的搜索与点击数据。
+      基于 employee_visible_articles 返回的当前员工可见正式知识集合，仅搜索
+      current_published_version 的 title、summary 和 body_plaintext，建立关键词搜索、
+      确定性排序、分页、零结果状态和现有 KB 详情跳转；本范围冻结不代表已授权开工。
     acceptance:
-      - "员工只能搜索到本人有权访问且已发布的内容。"
-      - "排序、高亮、筛选和零结果不会泄露无权限内容。"
-      - "搜索词与点击记录遵守隐私、日志和审计边界。"
+      - "必须先通过 employee_visible_articles 完成服务端权限过滤，再搜索、统计、排序、分页和展示；页面只可呈现当前员工可见结果数量。"
+      - "搜索字段仅限 current_published_version.title、summary 和 body_plaintext；latest_working_version、草稿、历史版本、ReviewRecord、受众配置和内部审计字段不得进入搜索。"
+      - "Published A 同时存在 Draft B 时只能命中和展示 Published A；仅存在于 Draft B 的关键词不得暴露 Article。"
+      - "V1 必须包含关键词、分页、零结果状态和现有 /kb/<kb_no>/ 详情跳转；分类筛选仅在复用现有 Category 且不扩大安全边界时可选。"
+      - "当前模型没有已确认可用的标签或别名字段，V1 不实现标签、别名或同义词搜索，不得为其新增 Model 或 Migration。"
+      - "高亮只有在不使用 safe、mark_safe、用户输入 HTML 拼接且能保证转义安全时才可实现，否则 V1 不做 HTML 高亮。"
     verification:
-      - "计划：覆盖命中、零结果、权限隔离、deny、下架、排序与日志的自动测试。"
-      - "计划：在授权后核验 PostgreSQL 下的查询与排序行为。"
+      - "计划：使用 SQLite 测试覆盖标题、摘要、正文命中，零结果，权限隔离，deny，未发布、下架、归档、未来生效，草稿隔离，分页、可见总数、确定性排序和 XSS 边界。"
+      - "计划：覆盖 Published A + Draft B，并证明只存在于 Draft B 的关键词不会返回该 Article。"
+      - "SQLite 只能证明第一阶段通用功能与安全契约；若最终方案依赖 PostgreSQL 全文检索、相关性排序、索引、中文检索或性能，封板前须补齐专项证据，或由项目负责人明确接受分阶段验收。"
     result:
       commits: []
       verification: []
-      notes: []
+      notes:
+        - "Task 11 保持 BACKLOG / unassigned；Task 10 依赖已满足不等于已授权开工。"
+        - "apps/search 与 apps/audit 当前没有可复用的搜索或点击日志模型；如日志需要 SearchLog、ClickLog、AuditEvent、新数据库表或 Migration，必须先提出 SCOPE QUESTION，不得静默扩展。"
+        - "搜索结果点击继续进入 /kb/<kb_no>/ 并由 get_employee_article_detail 重新鉴权；搜索日志不得作为权限凭据。"
+        - "不得修改 apps/knowledge/selectors.py；优先复用 employee_visible_articles，如认为 Reader API 需要扩大，必须先提出 READER DESIGN QUESTION。"
+        - "V1 不包含 Article 创建、KB 编号、草稿或版本写入、审核发布、Wagtail 正式融合、真实 PostgreSQL 操作，以及联想、自动补全、热门词、拼音、纠错、AI/向量搜索、Elasticsearch、OpenSearch、Redis 或运营报表。"
 
   - id: "12"
     title: "开发文章创建、草稿和版本保存"

@@ -13,8 +13,8 @@
 | 当前阶段 | OpsAI Django 主项目与 Wagtail 的隔离融合验证阶段 |
 | 正式技术主体 | Python 3.13 + Django 5.2 LTS 模块化单体 |
 | Wagtail 状态 | 融合方向已确认，F02～F08 已形成隔离 PoC 证据，尚未进入正式根依赖、正式 settings 或正式路由 |
-| 电脑 B 环境 | Python、正式项目依赖、WSL 2、Docker Desktop、Docker Engine 和 Docker Compose 已恢复；真实 `.env` 尚未配置 |
-| 当前接力元数据任务 | Task 10 `VERIFY → DONE` 正式封板 |
+| 电脑 B 环境 | Python、正式项目依赖、WSL 2、Docker Desktop、Docker Engine 和 Docker Compose 已恢复；根目录 `.env` 存在、被 Git 忽略且未跟踪，内容与适用性未验证 |
+| 当前接力元数据任务 | Task 11 开工前范围冻结；仍为 `BACKLOG / unassigned`，未获授权开工 |
 | 最近完成开发 | Task 10 的 10A～10E 均已完成并双端同步 |
 | 当前验证任务 | 无；Task 10 已 `DONE / codex`，当前无 `IN_PROGRESS` 或 `VERIFY` 任务 |
 | Task 10 功能 | PASS |
@@ -65,6 +65,10 @@
 - 正式员工首页 `/`、分类页 `/categories/<category_id>/` 和知识详情页 `/kb/<kb_no>/` 已接入；正式搜索、附件、发布事务、审核事务、审计与 Outbox 闭环尚未接入。
 - 员工列表使用 `employee_visible_articles`，详情使用 `get_employee_article_detail`，正式版本来源为 `current_published_version`；Task 10 V1 正文展示使用 `body_plaintext → body_text`，不直接渲染未知 `body` JSON。
 - Task 10 V1 正式前端基线为 Django Templates + 项目自有 `static/css/opsai.css`；Bootstrap / HTMX 为 `NOT REQUIRED FOR TASK 10 V1`，后续如有真实需求再以可信固定版本本地接入。
+- Task 11 是下一候选任务，但仍为 `BACKLOG / unassigned`，依赖满足不等于已授权开工。V1 仅在 `employee_visible_articles` 返回的当前员工可见正式集合中搜索 `current_published_version.title`、`summary` 和 `body_plaintext`，并在搜索后执行确定性排序、分页和展示；草稿、历史版本、全库匹配总数和无权限内容不得进入该链路。
+- 当前正式模型没有已确认可用的标签或别名字段，Task 11 V1 不实现标签、别名或同义词搜索，也不为其新增 Model / Migration；详情跳转继续使用 `/kb/<kb_no>/` 及 `get_employee_article_detail` 权限链。
+- `apps/search` 与 `apps/audit` 当前没有可复用的搜索或点击日志模型。如后续日志需要 `SearchLog`、`ClickLog`、`AuditEvent`、新数据库表或 Migration，必须先提出 `SCOPE QUESTION`；搜索日志不能作为访问授权凭据。
+- SQLite 可支持 Task 11 第一阶段功能与安全契约开发，但不能证明 PostgreSQL 全文检索、相关性排序、索引、中文检索、性能或排序稳定性；若最终方案依赖 PostgreSQL 专属能力，封板前须补齐专项证据，或由项目负责人明确接受分阶段验收。
 
 ### 3.4 容器化开发声明
 
@@ -116,7 +120,7 @@
 | Docker Engine | 29.8.0，`docker info` 可正常响应 | READY |
 | Docker Compose | v5.5.1 | READY |
 | PostgreSQL Compose 声明 | `postgres:17.11-alpine3.24` 已在配置中定义 | READY TO CREATE |
-| 真实 `.env` | 不存在，未读取、未创建 | WAITING OWNER |
+| 真实 `.env` | 根目录文件存在，被 Git 忽略且未跟踪；未读取或验证内容、来源、变量完整性及 PostgreSQL 适用性 | BLOCKED / WAITING OWNER |
 
 正式工程测试使用 SQLite 内存测试设置。Task 10 最终 `460 passed` 未写入磁盘配置、未创建或读取真实 `.env`、未连接 PostgreSQL，也未访问或修改持久数据；浏览器验收使用的临时 SQLite、临时脚本和 Django 服务已清理。
 
@@ -157,7 +161,7 @@ Task 10 的 10A～10E 分别对应 Commit `cf8bf1ff1692dedd69e5fbf97f0632a460d66
 
 电脑 B 当前只完成 Docker 与 Compose 基础环境恢复：
 
-- 真实 `.env` 尚不存在，等待项目负责人后续安全配置。
+- 仓库根目录 `.env` 当前存在、被 Git 忽略且未跟踪；本项目未读取或验证其内容、来源、变量完整性及 PostgreSQL 适用性。
 - 未为 OPS-H05 创建或复制 `.env`。
 - 未启动 OpsAI Compose 或 PostgreSQL。
 - 未拉取项目 PostgreSQL 镜像。
@@ -166,7 +170,7 @@ Task 10 的 10A～10E 分别对应 Commit `cf8bf1ff1692dedd69e5fbf97f0632a460d66
 - 未查询、访问或修改任何持久数据库数据。
 - 当前电脑 B 的迁移应用状态、数据库注释、PostgreSQL 查询/排序行为和 Wagtail PostgreSQL 行为均未验证。
 
-在负责人安全准备 `.env` 并明确授权数据库操作前，后续 Agent 不得自行填写假密码、启动 PostgreSQL、执行迁移或修改持久数据。
+在项目负责人确认 `.env` 的安全来源和使用范围，并明确授权 PostgreSQL 启动、migration 状态检查、持久数据验证范围及回退边界前，后续 Agent 不得自行填写假密码、启动 PostgreSQL、执行迁移或修改持久数据。
 
 ## 8. 尚未完成或尚未正式接入
 
@@ -184,7 +188,7 @@ Task 10 的 10A～10E 分别对应 Commit `cf8bf1ff1692dedd69e5fbf97f0632a460d66
 
 ### 9.1 当前阻塞
 
-- 任务 8J 因电脑 B 的真实 `.env` 尚未由项目负责人安全准备，且没有数据库操作授权，保持 `BLOCKED`；当前不能启动本地 PostgreSQL 开发环境或验证真实 Compose 变量。
+- 任务 8J 因根目录 `.env` 的内容、来源、变量完整性及 PostgreSQL 适用性尚未验证，且没有 PostgreSQL 启动、真实 migration 或持久数据访问授权，保持 `BLOCKED / unassigned`；当前不能启动本地 PostgreSQL 开发环境或验证真实 Compose 变量。
 - 8J 的阻塞只影响 PostgreSQL 持久环境补充核验，不影响 Task 10 的最终 `DONE` 状态；Task 10 没有 PostgreSQL、真实 `.env` 或持久数据库前置要求。
 - Wagtail 正式接入方案和迁移边界仍待后续正式融合任务决定；Task 10 未改变该边界。
 
@@ -220,7 +224,7 @@ Task 10 的 10A～10E 分别对应 Commit `cf8bf1ff1692dedd69e5fbf97f0632a460d66
 
 ## 11. 下一步边界
 
-Task 10 的 10A～10E 已全部完成并双端同步，项目负责人最终人工视觉验收为 PASS，当前状态为 `DONE / codex`。当前没有新的 `IN_PROGRESS` 或 `VERIFY` 任务；下一任务等待项目负责人正式指定，Task 11 保持 `BACKLOG / unassigned`，不得自行启动。
+Task 10 的 10A～10E 已全部完成并双端同步，项目负责人最终人工视觉验收为 PASS，当前状态为 `DONE / codex`。当前没有新的 `IN_PROGRESS` 或 `VERIFY` 任务；Task 11 已作为下一候选任务完成开工前范围冻结，但保持 `BACKLOG / unassigned`，不得自行启动。
 
 当前边界继续禁止自动执行：
 

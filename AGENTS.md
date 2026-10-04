@@ -217,7 +217,7 @@ git show -s --format=full HEAD
 - V1.1A 文档开发基线已经建立。
 - Django 单体项目骨架已初始化，`/health/live` 与 `/health/ready` 可运行并有自动化测试。
 - 电脑 B 的 Docker Desktop 4.92.0、WSL 2、Docker Engine 29.8.0 和 Docker Compose v5.5.1 已就绪；`deploy/compose.yaml` 已定义 db + web 服务，但当前电脑 B 尚未创建或启动 OpsAI PostgreSQL 容器、命名卷或数据库。
-- 正式开发数据库目标仍为 PostgreSQL（Compose 内 `POSTGRES_HOST` 覆盖为 `db`）；电脑 B 的真实 `.env` 尚不存在，未执行 `migrate`，测试环境继续使用 SQLite 内存库。
+- 正式开发数据库目标仍为 PostgreSQL（Compose 内 `POSTGRES_HOST` 覆盖为 `db`）；仓库根目录 `.env` 当前存在、被 Git 忽略且未跟踪，但本项目未读取或验证其内容、来源、变量完整性及 PostgreSQL 适用性，未执行真实 `migrate`，测试环境继续使用 SQLite 内存库。
 - 里程碑：第一阶段第 1～6 步已完成，里程碑 B 的代码、数据模型、迁移和测试底座已经建立；第 7 步（本地模拟登录与系统操作角色）已经完成，安全收紧提交 c5f1bbb 已通过第 7C 只读审计（结论 A：完整通过），PostgreSQL 补充只读核验已经完成。
 - accounts：`User`、`Department`、`UserDepartment`、`UserGroup`、`UserGroupMembership` 已正式建立，`0001`、`0002` 已在 PostgreSQL 应用，相关约束和模型测试已通过；`UserGroup` 仅用于内容受众，系统操作角色仍使用 Django `Group`/`Permission`。
 - knowledge：`KnowledgeSpace`、`Category`、`Article`、`ArticleVersion`、`ArticleAudience`、`ReviewRecord` 已接入，`0001`、`0002` 已在 PostgreSQL 应用；核心外键、唯一约束、CHECK、条件唯一索引和模型校验已经建立；正式员工首页、分类页和知识详情页已完成，Task 10 已 `DONE`，发布事务、编号生成服务、搜索、附件和钉钉功能仍未实现。
@@ -235,7 +235,7 @@ git show -s --format=full HEAD
 - 仓库迁移文件：accounts.0001～0002、knowledge.0001～0003 已存在。上文 PostgreSQL 已应用 0001、0002 及 knowledge.0003 未应用的说明属于此前报告；当前持久数据库迁移状态、实际数据库注释仍待核验，不从文件存在推断数据库已更新。
 - PostgreSQL 查询、排序及相关数据库行为待验证。未新增并发协调锁，实际并发及锁行为未验证；并发写入仍可能冲突或覆盖更新，atomic() 不等同于并发安全。
 - 当前阶段：F02～F08 已形成 Wagtail 隔离 PoC 证据，但 Wagtail 仍未进入正式根依赖、正式 settings 或正式路由；不得把实验测试、SQLite 结果或历史成绩写成正式接入、PostgreSQL 或生产验证通过。
-- Task 10 的 10A～10E 已全部完成并同步至 GitHub、Gitee；项目负责人于 2026-10-04 完成最终人工视觉验收并确认 PASS，当前状态为 `DONE / codex`。Task 11 仍为 `BACKLOG / unassigned`，尚未获准开始。
-- 任务 8J 因电脑 B 缺少真实 `.env` 且没有数据库操作授权保持 `BLOCKED`；该阻塞只影响 PostgreSQL 持久环境补充核验，不自动阻塞任务 9 或整个项目。
+- Task 10 的 10A～10E 已全部完成并同步至 GitHub、Gitee；项目负责人于 2026-10-04 完成最终人工视觉验收并确认 PASS，当前状态为 `DONE / codex`。Task 11 仍为 `BACKLOG / unassigned`，依赖已满足但尚未获准开始；V1 范围冻结为先经 `employee_visible_articles` 得到员工可见正式集合，再仅搜索 `current_published_version.title`、`summary` 与 `body_plaintext`，不得让草稿、全库总数或无权限内容进入搜索、排序和分页，也不得为标签、别名或搜索日志新增 Model / Migration。
+- 任务 8J 因根目录 `.env` 的内容、来源、变量完整性及 PostgreSQL 适用性尚未验证，且没有 PostgreSQL 启动、真实 migration 或持久数据访问授权，保持 `BLOCKED / unassigned`；只有项目负责人确认 `.env` 的安全来源和使用范围，并明确授权 PostgreSQL 启动、migration 状态检查、持久数据验证范围及回退边界后，才可解除阻塞。
 - 当前没有 `IN_PROGRESS` 或 `VERIFY` 任务；下一任务尚未正式授权，不得自行启动 Task 11。后续状态变化、Commit 和 Push 均按项目负责人明确授权执行。
 - 规则文档不得写入密码、个人代理或机器专属临时路径。
