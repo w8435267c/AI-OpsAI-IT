@@ -6,7 +6,7 @@
 
 | 项目 | 当前状态 |
 | --- | --- |
-| 快照日期 | 2026-10-03 |
+| 快照日期 | 2026-10-04 |
 | 当前工作区 | `D:\Desktop\OpsAI\AI-OpsAI-IT-wagtail-poc` |
 | 当前分支 | `fusion/wagtail-poc` |
 | 当前业务基线 HEAD | `807028ef3d5c2092fa679c811128acd3c07a30fc` |
@@ -14,12 +14,17 @@
 | 正式技术主体 | Python 3.13 + Django 5.2 LTS 模块化单体 |
 | Wagtail 状态 | 融合方向已确认，F02～F08 已形成隔离 PoC 证据，尚未进入正式根依赖、正式 settings 或正式路由 |
 | 电脑 B 环境 | Python、正式项目依赖、WSL 2、Docker Desktop、Docker Engine 和 Docker Compose 已恢复；真实 `.env` 尚未配置 |
-| 当前接力元数据任务 | Task 10 `IN_PROGRESS → VERIFY` 状态收口 |
+| 当前接力元数据任务 | Task 10 `VERIFY → DONE` 正式封板 |
 | 最近完成开发 | Task 10 的 10A～10E 均已完成并双端同步 |
-| 当前验证任务 | 任务 10：开发首页、分类页和正式知识详情页；`VERIFY / codex` |
+| 当前验证任务 | 无；Task 10 已 `DONE / codex`，当前无 `IN_PROGRESS` 或 `VERIFY` 任务 |
+| Task 10 功能 | PASS |
+| Task 10 安全 | PASS |
+| Task 10 视觉 | PASS |
+| Owner Visual Acceptance | PASS |
+| 下一业务任务 | 等待项目负责人选择；Task 11 未授权开始 |
 | 当前交接状态 | 当前无待处理 AI 交接 |
 
-本快照的总体结论是：Task 10 的正式员工首页、受众过滤分类页和 KB 编号知识详情页已经完成；10A～10E 全部同步至 GitHub、Gitee，本地业务基线为 `807028ef3d5c2092fa679c811128acd3c07a30fc`。权限、DENY、草稿和未发布隔离、404 防泄露、缓存、自动转义、桌面与手机响应式以及查询性能均通过验收，正式工程回归为 `460 passed`。Task 10 当前进入 `VERIFY / codex`，等待项目负责人最终验收；Task 11 仍为 `BACKLOG / unassigned`。Wagtail 核心融合链路仍是隔离实验，8J 仍因真实 PostgreSQL / `.env` 操作未获授权而保持 `BLOCKED`。
+本快照的总体结论是：Task 10 的正式员工首页、受众过滤分类页和 KB 编号知识详情页已经完成；10A～10E 全部同步至 GitHub、Gitee，本地业务基线为 `807028ef3d5c2092fa679c811128acd3c07a30fc`。权限、DENY、草稿和未发布隔离、404 防泄露、缓存、自动转义、桌面与手机响应式以及查询性能均通过验收，正式工程回归为 `460 passed`。项目负责人最终人工视觉验收为 PASS，Task 10 已正式 `DONE / codex`；当前无 `IN_PROGRESS` 或 `VERIFY` 任务，Task 11 仍为 `BACKLOG / unassigned`。Wagtail 核心融合链路仍是隔离实验，8J 仍因真实 PostgreSQL / `.env` 操作未获授权而保持 `BLOCKED`。
 
 ## 2. 状态证据规则
 
@@ -93,7 +98,7 @@
 
 ## 5. 电脑 B 开发环境证据
 
-以下环境事实来自 2026-09-24 在电脑 B 上的实际恢复，Task 10 最终验证证据更新于 2026-10-03；它们属于当前机器证据，不自动代表其他电脑或生产环境。
+以下环境事实来自 2026-09-24 在电脑 B 上的实际恢复，Task 10 最终验证与负责人验收证据更新于 2026-10-04；它们属于当前机器证据，不自动代表其他电脑或生产环境。
 
 | 检查项 | 当前证据 | 状态 |
 | --- | --- | --- |
@@ -129,7 +134,7 @@ Task 10 最终结果为 `460 passed`。页面专项为 `30 passed`，knowledge �
 
 Task 9A 与 Task 9B-1 的实施级结论分别记录在 Commit `cab3fc74544ae2199eb64be1e2e7c181269994ba` 和 `9f214d30d6b2934302602bc7a152b27f00274968`。Article demo 因正式 KB 编号服务尚未实现而按规则记为 `N/A - SAFE STOP`；未创建 Article、ArticleAudience、ArticleVersion 或 ReviewRecord 样本，未通过硬编码、随机值或临时拼接伪造编号。
 
-Task 10 的 10A～10E 分别对应 Commit `cf8bf1ff1692dedd69e5fbf97f0632a460d66c0b`、`9721e2817135a4e6002d9a2d39e151fdc480b8f7`、`8435b4255e459ede018bee2dc6771caf89b6c76e`、`5fb5c1f9cedd6a347e1f240cb41d404b84125dec` 和 `807028ef3d5c2092fa679c811128acd3c07a30fc`，均已完成本地、GitHub、Gitee 三端同步。Desktop `1440 × 900` 与 Mobile `390 × 844` 验收通过；首页在 3 篇和 23 篇时均为 4 queries，分类均为 5 queries，详情为 3 queries，无异常 N+1。
+Task 10 的 10A～10E 分别对应 Commit `cf8bf1ff1692dedd69e5fbf97f0632a460d66c0b`、`9721e2817135a4e6002d9a2d39e151fdc480b8f7`、`8435b4255e459ede018bee2dc6771caf89b6c76e`、`5fb5c1f9cedd6a347e1f240cb41d404b84125dec` 和 `807028ef3d5c2092fa679c811128acd3c07a30fc`，均已完成本地、GitHub、Gitee 三端同步。Desktop `1440 × 900` 与 Mobile `390 × 844` 验收通过；首页在 3 篇和 23 篇时均为 4 queries，分类均为 5 queries，详情为 3 queries，无异常 N+1。项目负责人最终人工确认首页、“电脑故障”分类、KB-900001 正式详情和 Published A 均正常，Draft B、隐藏分类及 KB-900003 无权限内容未泄露，统一 404 文案符合预期；临时 8765 服务、SQLite 数据库和验收目录已安全清理，8000 服务未受影响，正式数据库未操作。
 
 ### 6.2 根目录无限定 pytest
 
@@ -180,7 +185,7 @@ Task 10 的 10A～10E 分别对应 Commit `cf8bf1ff1692dedd69e5fbf97f0632a460d66
 ### 9.1 当前阻塞
 
 - 任务 8J 因电脑 B 的真实 `.env` 尚未由项目负责人安全准备，且没有数据库操作授权，保持 `BLOCKED`；当前不能启动本地 PostgreSQL 开发环境或验证真实 Compose 变量。
-- 8J 的阻塞只影响 PostgreSQL 持久环境补充核验，不影响 Task 10 当前 `VERIFY`；Task 10 没有 PostgreSQL、真实 `.env` 或持久数据库前置要求。
+- 8J 的阻塞只影响 PostgreSQL 持久环境补充核验，不影响 Task 10 的最终 `DONE` 状态；Task 10 没有 PostgreSQL、真实 `.env` 或持久数据库前置要求。
 - Wagtail 正式接入方案和迁移边界仍待后续正式融合任务决定；Task 10 未改变该边界。
 
 ### 9.2 主要风险
@@ -208,14 +213,14 @@ Task 10 的 10A～10E 分别对应 Commit `cf8bf1ff1692dedd69e5fbf97f0632a460d66
 - Task 9 VERIFY 状态 Commit `c1b32334a7f9d3928d8c6722675accbf553b6b6f` 已完成 GitHub、Gitee 与本地三端同步。
 - 2026-09-30，项目负责人完成最终验收并确认 `FINAL ACCEPTANCE: PASS`；Task 9 状态为 `DONE`，负责人为 `codex`，任务 8J 单独保持 `BLOCKED`。
 - Task 9 封板后元数据一致性 Commit `91c2e587a3e9c3513a7ed3d9674e69162c04809a` 已完成 GitHub、Gitee 与本地三端同步。
-- Task 10 开工状态 Commit `706ece9e5ba3e86e28410ac5e02011d7d9ee266f` 及 10A～10E 业务 Commit 已完成双端同步。
-- Task 10 的功能、安全、性能、正式工程回归以及桌面和手机视觉验收均已通过，当前进入 `VERIFY / codex` 等待项目负责人最终验收。
+- Task 10 开工状态 Commit `706ece9e5ba3e86e28410ac5e02011d7d9ee266f`、10A～10E 业务 Commit 及 VERIFY 状态 Commit `713bb150d40bcf39cfcaf3be54d6e12a74e68a2e` 已完成双端同步。
+- Task 10 的功能、安全、性能、正式工程回归、桌面和手机视觉验收以及项目负责人最终人工验收均已通过，当前状态为 `DONE / codex`。
 - 当前无真实 Agent 切换，`docs/HANDOFF.md` 保持“当前无待处理 AI 交接”。
 - Task 11 及后续业务任务保持 `BACKLOG / unassigned`；任务 8J 保持 `BLOCKED / unassigned`。
 
 ## 11. 下一步边界
 
-Task 10 的 10A～10E 已全部完成并双端同步，当前进入 `VERIFY / codex`，等待项目负责人最终验收。验收前不得继续修改 Task 10 业务代码、不得执行 `VERIFY → DONE`，也不得启动 Task 11。
+Task 10 的 10A～10E 已全部完成并双端同步，项目负责人最终人工视觉验收为 PASS，当前状态为 `DONE / codex`。当前没有新的 `IN_PROGRESS` 或 `VERIFY` 任务；下一任务等待项目负责人正式指定，Task 11 保持 `BACKLOG / unassigned`，不得自行启动。
 
 当前边界继续禁止自动执行：
 

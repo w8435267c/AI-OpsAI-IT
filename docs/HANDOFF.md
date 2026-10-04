@@ -4,31 +4,34 @@
 
 ## 1. 当前交接状态
 
-当前没有真实的 Agent 切换事件，也不存在需要下一位 Agent 接续的中断现场。Task 10 的 10A～10E 已全部完成并同步至 GitHub、Gitee；当前进入 `VERIFY / codex`，开发与验证均已结束，只等待项目负责人最终验收。仍由 Codex 连续执行，因此不构成 Agent 间交接。
+当前没有真实的 Agent 切换事件，也不存在需要下一位 Agent 接续的中断现场。Task 10 的 10A～10E 已全部完成并同步至 GitHub、Gitee，项目负责人最终人工视觉验收为 PASS；当前状态为 `DONE / codex`，且没有新的 `IN_PROGRESS` 或 `VERIFY` 任务。仍由 Codex 连续执行，因此不构成 Agent 间交接。
 
 | 项目 | 当前值 |
 | --- | --- |
 | 当前任务 | `10` - 开发首页、分类页和正式知识详情页 |
-| 任务状态 | `VERIFY` |
+| 任务状态 | `DONE` |
 | 负责人 | `codex` |
 | 开工日期 | `2026-09-30` |
 | 依赖 | 任务 `9`，状态为 `DONE` |
-| 业务实施状态 | 首页、分类页和正式知识详情页已完成；10A～10E 均为 `SYNCED` |
-| 当前等待动作 | 项目负责人完成 Task 10 最终验收 |
-| 当前禁止动作 | 不修改 Task 10 业务代码，不标记 `DONE`，不启动 Task 11 |
+| VERIFY 状态 Commit | `713bb150d40bcf39cfcaf3be54d6e12a74e68a2e`，已双端同步 |
+| 业务实施状态 | 首页、分类页和正式知识详情页已完成；10A～10E 均为 `DONE / SYNCED` |
+| 当前等待动作 | 项目负责人正式指定下一任务 |
+| 当前禁止动作 | 不修改 Task 10 业务代码，不自行启动 Task 11 |
 | Agent 切换状态 | 未发生 |
 
 Task 10 的内部阶段和双端同步证据如下：
 
 | 阶段 | Commit | 标题 | 状态 |
 | --- | --- | --- | --- |
-| 10A | `cf8bf1ff1692dedd69e5fbf97f0632a460d66c0b` | `feat(knowledge): add formal employee knowledge readers` | `SYNCED` |
-| 10B | `9721e2817135a4e6002d9a2d39e151fdc480b8f7` | `feat(knowledge): add secure employee knowledge home` | `SYNCED` |
-| 10C | `8435b4255e459ede018bee2dc6771caf89b6c76e` | `feat(knowledge): add audience-filtered category pages` | `SYNCED` |
-| 10D | `5fb5c1f9cedd6a347e1f240cb41d404b84125dec` | `feat(knowledge): add secure published article detail page` | `SYNCED` |
-| 10E | `807028ef3d5c2092fa679c811128acd3c07a30fc` | `test(knowledge): harden employee page final regression` | `SYNCED` |
+| 10A | `cf8bf1ff1692dedd69e5fbf97f0632a460d66c0b` | `feat(knowledge): add formal employee knowledge readers` | `DONE / SYNCED` |
+| 10B | `9721e2817135a4e6002d9a2d39e151fdc480b8f7` | `feat(knowledge): add secure employee knowledge home` | `DONE / SYNCED` |
+| 10C | `8435b4255e459ede018bee2dc6771caf89b6c76e` | `feat(knowledge): add audience-filtered category pages` | `DONE / SYNCED` |
+| 10D | `5fb5c1f9cedd6a347e1f240cb41d404b84125dec` | `feat(knowledge): add secure published article detail page` | `DONE / SYNCED` |
+| 10E | `807028ef3d5c2092fa679c811128acd3c07a30fc` | `test(knowledge): harden employee page final regression` | `DONE / SYNCED` |
 
 Task 10 最终验证为页面专项 `30 passed`、knowledge `310 passed`、正式工程回归 `460 passed`；Django check、迁移一致性检查、Ruff、format 和 diff 检查通过。Desktop `1440 × 900` 与 Mobile `390 × 844` 浏览器验收通过，无异常 N+1。Task 10 V1 正式前端为 Django Templates + 项目自有 `static/css/opsai.css`，Bootstrap / HTMX 为 `NOT REQUIRED FOR TASK 10 V1`。
+
+项目负责人最终人工视觉验收为 PASS：首页、分类页、知识详情、返回链路、无权限 404、隐藏知识隔离和 Draft 隔离均通过；员工首页、“电脑故障”分类、KB-900001 正式详情和 Published A 均正常，Draft B、隐藏分类及 KB-900003 无权限内容未泄露，KB-900003 返回统一员工侧 404。临时 8765 服务、`visual.sqlite3` 与验收目录已清理，8000 服务未受影响，正式数据库未操作。
 
 因此，当前不存在真实的“上一执行 Agent → 下一建议 Agent”业务交接记录。本节不填写不存在的上一执行 Agent、交接时间或接管现场，也不把 DONE 状态同步伪装成新的 Agent 交接事件。
 
@@ -186,12 +189,12 @@ Task 10 最终验证为页面专项 `30 passed`、knowledge `310 passed`、正�
 
 ## 7. 当前备注
 
-- 当前任务是 Task `10`，状态为 `VERIFY`，负责人为 `codex`；10A～10E 已完成并双端同步，等待项目负责人最终验收。
+- Task `10` 当前状态为 `DONE`，负责人为 `codex`；10A～10E 已完成并双端同步，项目负责人最终人工视觉验收为 PASS。
 - Task 9 保持 `DONE / codex`；Task 10 的直接依赖已经满足。
 - Task 10 正式员工首页、分类页、知识详情页及返回链已完成；安全、缓存、自动转义、响应式和性能验收通过。
 - 正式员工读取来源为 `current_published_version`；列表 Reader 为 `employee_visible_articles`，详情 Reader 为 `get_employee_article_detail`；V1 正文使用 `body_plaintext → body_text`。
 - Task 10 V1 正式前端为 Django Templates + 项目自有 CSS；Bootstrap / HTMX 当前不要求接入。
-- 下一步只有项目负责人最终验收；未获授权不得执行 `Task 10 → DONE` 或开始 Task 11。
+- 下一步只有项目负责人正式指定下一任务；Task 11 未获授权，不得开始。
 - 当前没有真实 Agent 切换，所以没有上一执行 Agent、下一建议 Agent、交接时间或未完成业务现场可记录。
 - 任务 8J 保持 `BLOCKED / unassigned`；Task 11 及后续业务任务保持 `BACKLOG / unassigned`。
-- 本文件保留统一交接规则和模板，并与 `tasks/CURRENT_TASK.md`、`tasks/TASKS.yaml` 的 `VERIFY` 状态保持一致。
+- 本文件保留统一交接规则和模板，并与 `tasks/CURRENT_TASK.md`、`tasks/TASKS.yaml` 的 `DONE` 状态保持一致。

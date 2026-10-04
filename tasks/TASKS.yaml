@@ -1,7 +1,7 @@
 project: AI-OpsAI-IT-wagtail-poc
 branch: fusion/wagtail-poc
 version: 1
-updated_at: "2026-10-03"
+updated_at: "2026-10-04"
 
 evidence_boundary:
   - "正式 Django 工程当前已有 Task 10 最终回归 460 passed、Django system check、迁移一致性检查、Ruff 与浏览器响应式验收通过的电脑 B 证据。"
@@ -258,7 +258,7 @@ tasks:
   - id: "10"
     title: "开发首页、分类页和正式知识详情页"
     priority: MUST
-    status: VERIFY
+    status: DONE
     owner: codex
     dependencies:
       - "9"
@@ -282,9 +282,12 @@ tasks:
         - "807028ef3d5c2092fa679c811128acd3c07a30fc"
       verification:
         - "10A～10E 均已完成并同步至 GitHub、Gitee；Task 10 开发、自动测试、安全、性能和浏览器视觉验收通过。"
+        - "Task 10 VERIFY 状态 Commit 713bb150d40bcf39cfcaf3be54d6e12a74e68a2e 已完成本地、GitHub、Gitee 三端同步。"
         - "首页 3 篇与 23 篇均为 4 queries；分类 3 篇与 23 篇均为 5 queries；详情为 3 queries，无异常 N+1。"
+        - "项目负责人最终人工视觉验收 PASS：首页、电脑故障分类、KB-900001 和 Published A 正常；Draft B、隐藏分类及 KB-900003 无权限内容未泄露，统一 404 符合预期。"
+        - "临时 8765 服务、visual.sqlite3 与验收目录已安全清理，8000 未受影响；未读取真实 .env，未操作 PostgreSQL。"
       notes:
-        - "Task 10 当前进入 VERIFY，等待项目负责人最终验收；不得提前标记 DONE 或启动 Task 11。"
+        - "项目负责人于 2026-10-04 完成最终验收并确认 PASS；Task 10 状态为 DONE / codex，Task 11 保持 BACKLOG / unassigned 且未授权开始。"
         - "Task 10 V1 正式前端为 Django Templates + 项目自有 CSS；Bootstrap / HTMX 为 NOT REQUIRED FOR TASK 10 V1。"
 
   - id: "11"
