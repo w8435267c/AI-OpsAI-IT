@@ -4,22 +4,33 @@
 
 ## 1. 当前交接状态
 
-当前没有真实的 Agent 切换事件，也不存在需要下一位 Agent 接续的中断现场。Task 10 已完成并双端同步，项目负责人现已正式授权 Task 11“开发 P0 搜索”进入 `IN_PROGRESS / codex`；仍由 Codex 连续执行，因此不构成 Agent 间交接。本轮仅完成开工状态切换，尚未进入 Task 11A 或任何搜索业务实现。
+当前没有真实的 Agent 切换事件，也不存在需要下一位 Agent 接续的中断现场。Task 11A、11B 已完成并双端同步，业务实现与项目负责人视觉验收均已完成；Task 11“开发 P0 搜索”当前为 `VERIFY / codex`，仍由 Codex 连续执行，因此不构成 Agent 间交接。
 
 | 项目 | 当前值 |
 | --- | --- |
 | 当前任务 | `11` - 开发 P0 搜索 |
-| 任务状态 | `IN_PROGRESS` |
+| 任务状态 | `VERIFY` |
 | 负责人 | `codex` |
 | 开工日期 | `2026-10-04` |
 | 依赖 | 任务 `10`，状态为 `DONE / codex` |
 | 范围冻结 Commit | `5266c278803b16a3c0ec4a0eaffdcb16d641580c`，已双端同步 |
-| 业务实施状态 | 仅完成 `BACKLOG / unassigned → IN_PROGRESS / codex` 状态切换；搜索业务实现尚未开始 |
-| 当前等待动作 | 项目负责人单独授权 Task 11 下一实施阶段 |
-| 当前禁止动作 | 不提前实现搜索业务，不扩大标签、别名、日志模型、PostgreSQL、Wagtail 或 Article 创建范围 |
+| 业务实施状态 | Task 11A、11B 已完成并双端同步；V1 必须业务功能与负责人视觉验收已完成，不需要 Task 11C |
+| 当前等待动作 | PostgreSQL 专项验证完成并 PASS，或项目负责人明确接受分阶段验收 |
+| 当前禁止动作 | 不把 Task 11 改为 DONE，不开始 Task 11C 或 Task 12，不扩大标签、别名、日志模型、PostgreSQL、Wagtail 或 Article 创建范围 |
 | Agent 切换状态 | 未发生 |
 
 Task 11 V1 只搜索 `current_published_version.title`、`summary` 和 `body_plaintext`，必须先通过 `employee_visible_articles` 完成权限过滤，再搜索、统计、排序和分页；草稿、历史版本、全库匹配总数和无权限内容不得进入员工搜索。搜索或点击日志如需新增 Model / Migration，必须先提出 `SCOPE QUESTION`；PostgreSQL 操作当前未授权，8J 保持 `BLOCKED / unassigned`。
+
+Task 11 实施与验收证据：
+
+| 阶段 | Commit | 标题 | 状态 |
+| --- | --- | --- | --- |
+| 11A | `6240147054f909c9f88c14d67e99f7c55ccc83d1` | `feat(search): add secure employee article search reader` | `DONE / SYNCED` |
+| 11B | `7ac5cd894db052dc3c7eb7e2721dbcc4f34d7ea6` | `feat(search): add employee search results page` | `DONE / SYNCED` |
+
+Task 11A 专项为 `13 passed / 16 subtests`，Task 11B 专项为 `13 passed / 11 subtests`，knowledge 回归为 `310 passed / 59 subtests`，正式工程回归为 `486 passed / 102 subtests`。Reader 在 3 条和 23 条结果时均为 1 query，搜索页面在 3 条和 23 条结果时均为 4 queries，无 N+1。
+
+项目负责人视觉验收 PASS：网络搜索 21 条并按 20+1 分页，打印机搜索 1 条，不存在关键词和 Draft-only 关键词均为 0 条，隐藏知识未泄露，KB-910001 正式详情链路及桌面、手机页面均通过。当前唯一剩余正式验证项是 PostgreSQL 下当前 V1 ORM 查询、中文 substring、确定性排序、`NULLS LAST`、查询计划、索引利用和典型数据量性能；当前 V1 不要求改为 PostgreSQL FTS。
 
 上一任务 Task 10 的内部阶段和双端同步证据如下：
 
@@ -196,8 +207,8 @@ Task 10 最终验证为页面专项 `30 passed`、knowledge `310 passed`、正�
 - Task 10 正式员工首页、分类页、知识详情页及返回链已完成；安全、缓存、自动转义、响应式和性能验收通过。
 - 正式员工读取来源为 `current_published_version`；列表 Reader 为 `employee_visible_articles`，详情 Reader 为 `get_employee_article_detail`；V1 正文使用 `body_plaintext → body_text`。
 - Task 10 V1 正式前端为 Django Templates + 项目自有 CSS；Bootstrap / HTMX 当前不要求接入。
-- Task 11 已获项目负责人正式开工授权，当前为 `IN_PROGRESS / codex`；本轮仅完成状态切换，业务实现尚未开始。
+- Task 11A、11B 已完成并双端同步，项目负责人视觉验收 PASS；Task 11 当前为 `VERIFY / codex`，业务实现完成，不需要 Task 11C，剩余 PostgreSQL 专项验证。
 - 当前没有真实 Agent 切换，所以没有上一执行 Agent、下一建议 Agent、交接时间或未完成业务现场可记录。
 - 任务 8J 保持 `BLOCKED / unassigned`；Task 12 及后续业务任务保持 `BACKLOG / unassigned`。
 - 如后续发生真实 Agent 切换，下一 Agent 必须先读取 Task 11 已冻结范围，不得自行扩大标签、别名、日志模型、PostgreSQL、Wagtail 或 Article 创建范围。
-- 本文件保留统一交接规则和模板，并与 `tasks/CURRENT_TASK.md`、`tasks/TASKS.yaml` 的 `IN_PROGRESS` 状态保持一致。
+- 本文件保留统一交接规则和模板，并与 `tasks/CURRENT_TASK.md`、`tasks/TASKS.yaml` 的 `VERIFY` 状态保持一致。

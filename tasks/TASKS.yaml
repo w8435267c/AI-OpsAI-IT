@@ -1,10 +1,10 @@
 project: AI-OpsAI-IT-wagtail-poc
 branch: fusion/wagtail-poc
 version: 1
-updated_at: "2026-10-04"
+updated_at: "2026-10-05"
 
 evidence_boundary:
-  - "正式 Django 工程当前已有 Task 10 最终回归 460 passed、Django system check、迁移一致性检查、Ruff 与浏览器响应式验收通过的电脑 B 证据。"
+  - "正式 Django 工程当前已有 Task 11 最终回归 486 passed、102 subtests passed，以及 Django system check、迁移一致性检查、Ruff、format 与浏览器响应式验收通过的电脑 B 证据。"
   - "Wagtail F02～F08 仍位于 experiments/wagtail_*，属于 SQLite 内存库隔离 PoC，不是正式上线能力。"
   - "正式根 pyproject.toml 尚未包含 Wagtail；不得为运行 PoC 而擅自修改正式依赖。"
   - "仓库根目录 .env 当前存在、被 Git 忽略且未跟踪；本项目未读取或验证其内容、来源、变量完整性及 PostgreSQL 适用性，PostgreSQL 容器、卷和数据库尚未创建或启动，未执行真实 migrate。"
@@ -293,7 +293,7 @@ tasks:
   - id: "11"
     title: "开发 P0 搜索"
     priority: MUST
-    status: IN_PROGRESS
+    status: VERIFY
     owner: codex
     dependencies:
       - "10"
@@ -313,14 +313,22 @@ tasks:
       - "计划：覆盖 Published A + Draft B，并证明只存在于 Draft B 的关键词不会返回该 Article。"
       - "SQLite 只能证明第一阶段通用功能与安全契约；若最终方案依赖 PostgreSQL 全文检索、相关性排序、索引、中文检索或性能，封板前须补齐专项证据，或由项目负责人明确接受分阶段验收。"
     result:
-      commits: []
-      verification: []
+      commits:
+        - "6240147054f909c9f88c14d67e99f7c55ccc83d1"
+        - "7ac5cd894db052dc3c7eb7e2721dbcc4f34d7ea6"
+      verification:
+        - "Task 11A 搜索 Reader 专项 13 passed、16 subtests passed；Task 11B 搜索页面专项 13 passed、11 subtests passed。"
+        - "knowledge 回归 310 passed、59 subtests passed；正式工程回归 486 passed、102 subtests passed；Django check、migration 检查、Ruff 和 format 通过。"
+        - "项目负责人视觉验收 PASS：网络搜索 21 条并按 20+1 分页，打印机搜索 1 条，零结果、Draft-only 隔离及 KB-910001 正式详情链路均符合预期。"
+        - "Reader 在 3 条和 23 条结果时均为 1 query；搜索页面在 3 条和 23 条结果时均为 4 queries，无 N+1。"
+        - "PostgreSQL 专项验证 PENDING：当前 V1 ORM 查询、中文 substring、确定性排序、NULLS LAST、查询计划、索引利用和典型数据量性能尚未验证。"
       notes:
-        - "项目负责人已正式授权 Task 11 开工，当前为 IN_PROGRESS / codex；本轮仅完成状态切换，搜索业务实现尚未开始。"
+        - "Task 11A 与 Task 11B 已完成并双端同步，Task 11 V1 必须业务功能和负责人视觉验收均已通过；当前为 VERIFY / codex，不需要 Task 11C。"
         - "apps/search 与 apps/audit 当前没有可复用的搜索或点击日志模型；如日志需要 SearchLog、ClickLog、AuditEvent、新数据库表或 Migration，必须先提出 SCOPE QUESTION，不得静默扩展。"
         - "搜索结果点击继续进入 /kb/<kb_no>/ 并由 get_employee_article_detail 重新鉴权；搜索日志不得作为权限凭据。"
         - "不得修改 apps/knowledge/selectors.py；优先复用 employee_visible_articles，如认为 Reader API 需要扩大，必须先提出 READER DESIGN QUESTION。"
         - "V1 不包含 Article 创建、KB 编号、草稿或版本写入、审核发布、Wagtail 正式融合、真实 PostgreSQL 操作，以及联想、自动补全、热门词、拼音、纠错、AI/向量搜索、Elasticsearch、OpenSearch、Redis 或运营报表。"
+        - "Task 11 只有在 PostgreSQL 专项验证完成并 PASS，或项目负责人明确接受分阶段验收并记录后续验证安排后，才可由负责人授权从 VERIFY 进入 DONE。"
 
   - id: "12"
     title: "开发文章创建、草稿和版本保存"

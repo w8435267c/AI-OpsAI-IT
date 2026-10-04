@@ -1,6 +1,6 @@
 # OpsAI Current Task
 
-> 项目负责人已正式授权 Task 11“开发 P0 搜索”进入 `IN_PROGRESS / codex`。本轮仅完成开工状态切换，尚未进入 Task 11A 或任何搜索业务实现。
+> Task 11“开发 P0 搜索”的 V1 必须业务功能、自动验证和负责人视觉验收已经完成，项目负责人已授权进入 `VERIFY / codex`。当前唯一剩余正式验证项为 PostgreSQL 专项证据。
 
 ## 1. 任务身份
 
@@ -9,14 +9,14 @@
 | 任务编号 | `11` |
 | 任务名称 | 开发 P0 搜索 |
 | 优先级 | `MUST` |
-| 当前状态 | `IN_PROGRESS` |
+| 当前状态 | `VERIFY` |
 | 当前负责人 | `codex` |
 | 开工日期 | `2026-10-04` |
 | 直接依赖 | Task 10，`DONE / codex` |
 | 范围冻结 Commit | `5266c278803b16a3c0ec4a0eaffdcb16d641580c`，已双端同步 |
-| 当前实施状态 | 仅完成任务状态切换；搜索业务代码尚未开始 |
+| 当前实施状态 | Task 11A、11B 已完成并双端同步；业务实现完成，等待 PostgreSQL 专项验证 |
 
-Task 10 已正式封板为 `DONE / codex`，Task 11 的唯一登记依赖已经满足。依赖满足与正式开工授权均已具备，但本轮授权范围只包含状态切换和元数据同步；后续 Task 11 实施阶段仍须由项目负责人单独授权。
+Task 10 已正式封板为 `DONE / codex`，Task 11 的唯一登记依赖已经满足。Task 11 V1 不需要 Task 11C；分类筛选为可选项，标签、别名、同义词和 HTML 高亮按冻结范围延期，搜索/点击日志不是 V1 MUST。
 
 ## 2. V1 搜索范围
 
@@ -62,26 +62,35 @@ Published A 同时存在 Draft B 时，只能命中和展示 Published A；仅�
 - SQLite 结果不能证明 PostgreSQL 全文检索、相关性排序、索引、中文检索行为或性能。
 - PostgreSQL、Docker、真实 migration 和持久数据访问当前均未授权；Task 8J 保持 `BLOCKED / unassigned`。
 
-## 5. 当前边界与下一步
+## 5. 实施与验证证据
+
+- Task 11A：`DONE / SYNCED`，Commit `6240147054f909c9f88c14d67e99f7c55ccc83d1`，搜索 Reader 专项 `13 passed / 16 subtests`。
+- Task 11B：`DONE / SYNCED`，Commit `7ac5cd894db052dc3c7eb7e2721dbcc4f34d7ea6`，搜索页面专项 `13 passed / 11 subtests`。
+- knowledge 回归：`310 passed / 59 subtests`；正式工程回归：`486 passed / 102 subtests`。
+- 项目负责人视觉验收：`PASS`；网络搜索 21 条并按 20+1 分页，打印机搜索 1 条，零结果、Draft-only 隔离和 KB-910001 正式详情链路均通过。
+- Reader 在 3 条和 23 条结果时均为 1 query；页面在 3 条和 23 条结果时均为 4 queries，无 N+1。
+
+## 6. 当前边界与下一步
 
 - Task 10：`DONE / codex`。
-- Task 11：`IN_PROGRESS / codex`，当前唯一进行中任务。
+- Task 11：`VERIFY / codex`，业务实现与负责人视觉验收已完成。
 - Task 8J：`BLOCKED / unassigned`。
 - Task 12：`BACKLOG / unassigned`，不得提前启动。
-- 本轮未创建或修改任何搜索业务代码、路由、模板、测试、Model 或 Migration。
+- PostgreSQL 专项验证为 `PENDING`；需验证当前 V1 ORM 查询、中文 substring、确定性排序、`NULLS LAST`、查询计划、索引利用和典型数据量性能，不要求改为 PostgreSQL FTS。
 - 不读取 `.env` 或 `OpsAI.env`，不启动 PostgreSQL 或 Docker，不执行真实 `migrate`。
-- 下一步必须等待项目负责人单独授权 Task 11 的具体实施阶段，不得自行开始 Task 11A、Task 11B 或扩大冻结范围。
+- Task 11 在 PostgreSQL 专项验证完成并 PASS，或项目负责人明确接受分阶段验收前，不得进入 `DONE`。
+- 下一业务任务尚未授权；不得开始 Task 11C 或 Task 12。
 
-## 6. 状态流转
+## 7. 状态流转
 
 ### IN_PROGRESS
 
-当前状态。项目负责人已正式授权 Task 11 开工，负责人为 `codex`；本轮仅完成状态切换，业务实现尚未开始。
+历史状态。Task 11A、Task 11B 开发期间由 `codex` 负责实施。
 
 ### VERIFY
 
-未来状态。只有 Task 11 获授权范围内的业务实现、自动验证和验收证据齐备后，才可由项目负责人授权进入。
+当前状态。Task 11 V1 必须业务功能、自动验证和负责人视觉验收已通过；当前等待 PostgreSQL 专项验证或负责人明确接受分阶段验收。
 
 ### DONE
 
-未来状态。必须等待项目负责人最终验收，不得由执行 Agent 自行切换。
+未来状态。必须在 PostgreSQL 专项验证完成并 PASS，或项目负责人明确接受分阶段验收后，由项目负责人授权进入；执行 Agent 不得自行切换。
