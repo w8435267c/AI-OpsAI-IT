@@ -4,22 +4,24 @@
 
 ## 1. 当前交接状态
 
-当前没有真实的 Agent 切换事件，也不存在需要下一位 Agent 接续的中断现场。Task 10 的 10A～10E 已全部完成并同步至 GitHub、Gitee，项目负责人最终人工视觉验收为 PASS；当前状态为 `DONE / codex`，且没有新的 `IN_PROGRESS` 或 `VERIFY` 任务。仍由 Codex 连续执行，因此不构成 Agent 间交接。
+当前没有真实的 Agent 切换事件，也不存在需要下一位 Agent 接续的中断现场。Task 10 已完成并双端同步，项目负责人现已正式授权 Task 11“开发 P0 搜索”进入 `IN_PROGRESS / codex`；仍由 Codex 连续执行，因此不构成 Agent 间交接。本轮仅完成开工状态切换，尚未进入 Task 11A 或任何搜索业务实现。
 
 | 项目 | 当前值 |
 | --- | --- |
-| 当前任务 | `10` - 开发首页、分类页和正式知识详情页 |
-| 任务状态 | `DONE` |
+| 当前任务 | `11` - 开发 P0 搜索 |
+| 任务状态 | `IN_PROGRESS` |
 | 负责人 | `codex` |
-| 开工日期 | `2026-09-30` |
-| 依赖 | 任务 `9`，状态为 `DONE` |
-| VERIFY 状态 Commit | `713bb150d40bcf39cfcaf3be54d6e12a74e68a2e`，已双端同步 |
-| 业务实施状态 | 首页、分类页和正式知识详情页已完成；10A～10E 均为 `DONE / SYNCED` |
-| 当前等待动作 | 项目负责人正式指定下一任务 |
-| 当前禁止动作 | 不修改 Task 10 业务代码，不自行启动 Task 11 |
+| 开工日期 | `2026-10-04` |
+| 依赖 | 任务 `10`，状态为 `DONE / codex` |
+| 范围冻结 Commit | `5266c278803b16a3c0ec4a0eaffdcb16d641580c`，已双端同步 |
+| 业务实施状态 | 仅完成 `BACKLOG / unassigned → IN_PROGRESS / codex` 状态切换；搜索业务实现尚未开始 |
+| 当前等待动作 | 项目负责人单独授权 Task 11 下一实施阶段 |
+| 当前禁止动作 | 不提前实现搜索业务，不扩大标签、别名、日志模型、PostgreSQL、Wagtail 或 Article 创建范围 |
 | Agent 切换状态 | 未发生 |
 
-Task 10 的内部阶段和双端同步证据如下：
+Task 11 V1 只搜索 `current_published_version.title`、`summary` 和 `body_plaintext`，必须先通过 `employee_visible_articles` 完成权限过滤，再搜索、统计、排序和分页；草稿、历史版本、全库匹配总数和无权限内容不得进入员工搜索。搜索或点击日志如需新增 Model / Migration，必须先提出 `SCOPE QUESTION`；PostgreSQL 操作当前未授权，8J 保持 `BLOCKED / unassigned`。
+
+上一任务 Task 10 的内部阶段和双端同步证据如下：
 
 | 阶段 | Commit | 标题 | 状态 |
 | --- | --- | --- | --- |
@@ -194,7 +196,8 @@ Task 10 最终验证为页面专项 `30 passed`、knowledge `310 passed`、正�
 - Task 10 正式员工首页、分类页、知识详情页及返回链已完成；安全、缓存、自动转义、响应式和性能验收通过。
 - 正式员工读取来源为 `current_published_version`；列表 Reader 为 `employee_visible_articles`，详情 Reader 为 `get_employee_article_detail`；V1 正文使用 `body_plaintext → body_text`。
 - Task 10 V1 正式前端为 Django Templates + 项目自有 CSS；Bootstrap / HTMX 当前不要求接入。
-- 下一步只有项目负责人正式指定下一任务；Task 11 未获授权，不得开始。
+- Task 11 已获项目负责人正式开工授权，当前为 `IN_PROGRESS / codex`；本轮仅完成状态切换，业务实现尚未开始。
 - 当前没有真实 Agent 切换，所以没有上一执行 Agent、下一建议 Agent、交接时间或未完成业务现场可记录。
-- 任务 8J 保持 `BLOCKED / unassigned`；Task 11 及后续业务任务保持 `BACKLOG / unassigned`。
-- 本文件保留统一交接规则和模板，并与 `tasks/CURRENT_TASK.md`、`tasks/TASKS.yaml` 的 `DONE` 状态保持一致。
+- 任务 8J 保持 `BLOCKED / unassigned`；Task 12 及后续业务任务保持 `BACKLOG / unassigned`。
+- 如后续发生真实 Agent 切换，下一 Agent 必须先读取 Task 11 已冻结范围，不得自行扩大标签、别名、日志模型、PostgreSQL、Wagtail 或 Article 创建范围。
+- 本文件保留统一交接规则和模板，并与 `tasks/CURRENT_TASK.md`、`tasks/TASKS.yaml` 的 `IN_PROGRESS` 状态保持一致。

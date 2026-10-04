@@ -293,8 +293,8 @@ tasks:
   - id: "11"
     title: "开发 P0 搜索"
     priority: MUST
-    status: BACKLOG
-    owner: unassigned
+    status: IN_PROGRESS
+    owner: codex
     dependencies:
       - "10"
     objective: >
@@ -316,7 +316,7 @@ tasks:
       commits: []
       verification: []
       notes:
-        - "Task 11 保持 BACKLOG / unassigned；Task 10 依赖已满足不等于已授权开工。"
+        - "项目负责人已正式授权 Task 11 开工，当前为 IN_PROGRESS / codex；本轮仅完成状态切换，搜索业务实现尚未开始。"
         - "apps/search 与 apps/audit 当前没有可复用的搜索或点击日志模型；如日志需要 SearchLog、ClickLog、AuditEvent、新数据库表或 Migration，必须先提出 SCOPE QUESTION，不得静默扩展。"
         - "搜索结果点击继续进入 /kb/<kb_no>/ 并由 get_employee_article_detail 重新鉴权；搜索日志不得作为权限凭据。"
         - "不得修改 apps/knowledge/selectors.py；优先复用 employee_visible_articles，如认为 Reader API 需要扩大，必须先提出 READER DESIGN QUESTION。"

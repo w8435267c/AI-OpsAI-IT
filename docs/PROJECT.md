@@ -170,7 +170,7 @@ OpsAI 需要可靠的内容编辑、修订历史、草稿与正式版本隔离�
 | `docs/PROJECT.md` | 这个项目是什么？ | 本文件；保存稳定项目身份、边界和技术关系 |
 | `docs/PROJECT_STATE.md` | 项目现在做到哪里？ | 已存在；保存当前阶段、环境、验证、阻塞和风险证据 |
 | `tasks/TASKS.yaml` | 项目有哪些任务、各是什么状态？ | 已存在；登记任务池、依赖、状态和结果证据 |
-| `tasks/CURRENT_TASK.md` | 当前 AI 唯一应该处理什么任务？ | 已存在；Task 10 为 `DONE / codex`，当前没有新的 `IN_PROGRESS` 或 `VERIFY` 任务，下一任务尚未正式授权 |
+| `tasks/CURRENT_TASK.md` | 当前 AI 唯一应该处理什么任务？ | 已存在；Task 11“开发 P0 搜索”为 `IN_PROGRESS / codex`，本轮仅完成开工状态切换，业务实现尚未开始 |
 | `docs/HANDOFF.md` | 上一个 AI 做到哪里，下一 AI 如何继续？ | 已存在；当前无待处理 AI 交接，真实切换时按模板记录 |
 
 `.ai/reports/`、`.ai/runs/`、`outputs/`、`tasks/blocked/` 和 `tasks/completed/` 已预留目录，但目录存在不等于上述状态、任务或交接文件已经创建。

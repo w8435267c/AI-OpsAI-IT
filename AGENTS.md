@@ -235,7 +235,7 @@ git show -s --format=full HEAD
 - 仓库迁移文件：accounts.0001～0002、knowledge.0001～0003 已存在。上文 PostgreSQL 已应用 0001、0002 及 knowledge.0003 未应用的说明属于此前报告；当前持久数据库迁移状态、实际数据库注释仍待核验，不从文件存在推断数据库已更新。
 - PostgreSQL 查询、排序及相关数据库行为待验证。未新增并发协调锁，实际并发及锁行为未验证；并发写入仍可能冲突或覆盖更新，atomic() 不等同于并发安全。
 - 当前阶段：F02～F08 已形成 Wagtail 隔离 PoC 证据，但 Wagtail 仍未进入正式根依赖、正式 settings 或正式路由；不得把实验测试、SQLite 结果或历史成绩写成正式接入、PostgreSQL 或生产验证通过。
-- Task 10 的 10A～10E 已全部完成并同步至 GitHub、Gitee；项目负责人于 2026-10-04 完成最终人工视觉验收并确认 PASS，当前状态为 `DONE / codex`。Task 11 仍为 `BACKLOG / unassigned`，依赖已满足但尚未获准开始；V1 范围冻结为先经 `employee_visible_articles` 得到员工可见正式集合，再仅搜索 `current_published_version.title`、`summary` 与 `body_plaintext`，不得让草稿、全库总数或无权限内容进入搜索、排序和分页，也不得为标签、别名或搜索日志新增 Model / Migration。
+- Task 10 的 10A～10E 已全部完成并同步至 GitHub、Gitee；项目负责人于 2026-10-04 完成最终人工视觉验收并确认 PASS，当前状态为 `DONE / codex`。项目负责人已正式授权 Task 11 进入 `IN_PROGRESS / codex`；V1 范围继续冻结为先经 `employee_visible_articles` 得到员工可见正式集合，再仅搜索 `current_published_version.title`、`summary` 与 `body_plaintext`，不得让草稿、全库总数或无权限内容进入搜索、排序和分页，也不得为标签、别名或搜索日志新增 Model / Migration。
 - 任务 8J 因根目录 `.env` 的内容、来源、变量完整性及 PostgreSQL 适用性尚未验证，且没有 PostgreSQL 启动、真实 migration 或持久数据访问授权，保持 `BLOCKED / unassigned`；只有项目负责人确认 `.env` 的安全来源和使用范围，并明确授权 PostgreSQL 启动、migration 状态检查、持久数据验证范围及回退边界后，才可解除阻塞。
-- 当前没有 `IN_PROGRESS` 或 `VERIFY` 任务；下一任务尚未正式授权，不得自行启动 Task 11。后续状态变化、Commit 和 Push 均按项目负责人明确授权执行。
+- 当前唯一 `IN_PROGRESS` 任务为 Task 11，负责人为 `codex`；本轮仅完成开工状态切换，尚未进入 Task 11A 或任何搜索业务实现。后续实施阶段、状态变化、Commit 和 Push 均须按项目负责人明确授权执行。
 - 规则文档不得写入密码、个人代理或机器专属临时路径。

@@ -14,17 +14,17 @@
 | 正式技术主体 | Python 3.13 + Django 5.2 LTS 模块化单体 |
 | Wagtail 状态 | 融合方向已确认，F02～F08 已形成隔离 PoC 证据，尚未进入正式根依赖、正式 settings 或正式路由 |
 | 电脑 B 环境 | Python、正式项目依赖、WSL 2、Docker Desktop、Docker Engine 和 Docker Compose 已恢复；根目录 `.env` 存在、被 Git 忽略且未跟踪，内容与适用性未验证 |
-| 当前接力元数据任务 | Task 11 开工前范围冻结；仍为 `BACKLOG / unassigned`，未获授权开工 |
+| 当前接力元数据任务 | Task 11 正式开工状态切换；已为 `IN_PROGRESS / codex` |
 | 最近完成开发 | Task 10 的 10A～10E 均已完成并双端同步 |
-| 当前验证任务 | 无；Task 10 已 `DONE / codex`，当前无 `IN_PROGRESS` 或 `VERIFY` 任务 |
+| 当前开发任务 | Task 11 - 开发 P0 搜索，`IN_PROGRESS / codex`；本轮仅切换状态，业务实现尚未开始 |
 | Task 10 功能 | PASS |
 | Task 10 安全 | PASS |
 | Task 10 视觉 | PASS |
 | Owner Visual Acceptance | PASS |
-| 下一业务任务 | 等待项目负责人选择；Task 11 未授权开始 |
+| 当前业务主线 | Task 11 - 开发 P0 搜索；项目负责人已正式授权开工 |
 | 当前交接状态 | 当前无待处理 AI 交接 |
 
-本快照的总体结论是：Task 10 的正式员工首页、受众过滤分类页和 KB 编号知识详情页已经完成；10A～10E 全部同步至 GitHub、Gitee，本地业务基线为 `807028ef3d5c2092fa679c811128acd3c07a30fc`。权限、DENY、草稿和未发布隔离、404 防泄露、缓存、自动转义、桌面与手机响应式以及查询性能均通过验收，正式工程回归为 `460 passed`。项目负责人最终人工视觉验收为 PASS，Task 10 已正式 `DONE / codex`；当前无 `IN_PROGRESS` 或 `VERIFY` 任务，Task 11 仍为 `BACKLOG / unassigned`。Wagtail 核心融合链路仍是隔离实验，8J 仍因真实 PostgreSQL / `.env` 操作未获授权而保持 `BLOCKED`。
+本快照的总体结论是：Task 10 的正式员工首页、受众过滤分类页和 KB 编号知识详情页已经完成；10A～10E 全部同步至 GitHub、Gitee，本地业务基线为 `807028ef3d5c2092fa679c811128acd3c07a30fc`。权限、DENY、草稿和未发布隔离、404 防泄露、缓存、自动转义、桌面与手机响应式以及查询性能均通过验收，正式工程回归为 `460 passed`。项目负责人最终人工视觉验收为 PASS，Task 10 已正式 `DONE / codex`；项目负责人现已授权 Task 11 进入 `IN_PROGRESS / codex`，但本轮只完成状态切换，搜索业务实现尚未开始。Wagtail 核心融合链路仍是隔离实验，8J 仍因真实 PostgreSQL / `.env` 操作未获授权而保持 `BLOCKED / unassigned`。
 
 ## 2. 状态证据规则
 
@@ -65,7 +65,7 @@
 - 正式员工首页 `/`、分类页 `/categories/<category_id>/` 和知识详情页 `/kb/<kb_no>/` 已接入；正式搜索、附件、发布事务、审核事务、审计与 Outbox 闭环尚未接入。
 - 员工列表使用 `employee_visible_articles`，详情使用 `get_employee_article_detail`，正式版本来源为 `current_published_version`；Task 10 V1 正文展示使用 `body_plaintext → body_text`，不直接渲染未知 `body` JSON。
 - Task 10 V1 正式前端基线为 Django Templates + 项目自有 `static/css/opsai.css`；Bootstrap / HTMX 为 `NOT REQUIRED FOR TASK 10 V1`，后续如有真实需求再以可信固定版本本地接入。
-- Task 11 是下一候选任务，但仍为 `BACKLOG / unassigned`，依赖满足不等于已授权开工。V1 仅在 `employee_visible_articles` 返回的当前员工可见正式集合中搜索 `current_published_version.title`、`summary` 和 `body_plaintext`，并在搜索后执行确定性排序、分页和展示；草稿、历史版本、全库匹配总数和无权限内容不得进入该链路。
+- Task 11 已获项目负责人正式开工授权，当前为 `IN_PROGRESS / codex`；本轮尚未进入业务实现。V1 仅在 `employee_visible_articles` 返回的当前员工可见正式集合中搜索 `current_published_version.title`、`summary` 和 `body_plaintext`，并在搜索后执行确定性排序、分页和展示；草稿、历史版本、全库匹配总数和无权限内容不得进入该链路。
 - 当前正式模型没有已确认可用的标签或别名字段，Task 11 V1 不实现标签、别名或同义词搜索，也不为其新增 Model / Migration；详情跳转继续使用 `/kb/<kb_no>/` 及 `get_employee_article_detail` 权限链。
 - `apps/search` 与 `apps/audit` 当前没有可复用的搜索或点击日志模型。如后续日志需要 `SearchLog`、`ClickLog`、`AuditEvent`、新数据库表或 Migration，必须先提出 `SCOPE QUESTION`；搜索日志不能作为访问授权凭据。
 - SQLite 可支持 Task 11 第一阶段功能与安全契约开发，但不能证明 PostgreSQL 全文检索、相关性排序、索引、中文检索、性能或排序稳定性；若最终方案依赖 PostgreSQL 专属能力，封板前须补齐专项证据，或由项目负责人明确接受分阶段验收。
@@ -220,11 +220,11 @@ Task 10 的 10A～10E 分别对应 Commit `cf8bf1ff1692dedd69e5fbf97f0632a460d66
 - Task 10 开工状态 Commit `706ece9e5ba3e86e28410ac5e02011d7d9ee266f`、10A～10E 业务 Commit 及 VERIFY 状态 Commit `713bb150d40bcf39cfcaf3be54d6e12a74e68a2e` 已完成双端同步。
 - Task 10 的功能、安全、性能、正式工程回归、桌面和手机视觉验收以及项目负责人最终人工验收均已通过，当前状态为 `DONE / codex`。
 - 当前无真实 Agent 切换，`docs/HANDOFF.md` 保持“当前无待处理 AI 交接”。
-- Task 11 及后续业务任务保持 `BACKLOG / unassigned`；任务 8J 保持 `BLOCKED / unassigned`。
+- Task 11 已切换为 `IN_PROGRESS / codex`，Task 12 及后续业务任务保持 `BACKLOG / unassigned`；任务 8J 保持 `BLOCKED / unassigned`。
 
 ## 11. 下一步边界
 
-Task 10 的 10A～10E 已全部完成并双端同步，项目负责人最终人工视觉验收为 PASS，当前状态为 `DONE / codex`。当前没有新的 `IN_PROGRESS` 或 `VERIFY` 任务；Task 11 已作为下一候选任务完成开工前范围冻结，但保持 `BACKLOG / unassigned`，不得自行启动。
+Task 10 的 10A～10E 已全部完成并双端同步，项目负责人最终人工视觉验收为 PASS，当前状态为 `DONE / codex`。项目负责人已正式授权 Task 11 进入 `IN_PROGRESS / codex`；本轮仅完成开工状态切换，尚未进入 Task 11A 或任何搜索业务实现，下一实施阶段仍须单独授权。
 
 当前边界继续禁止自动执行：
 
@@ -232,7 +232,7 @@ Task 10 的 10A～10E 已全部完成并双端同步，项目负责人最终人�
 - 启动 PostgreSQL 或 OpsAI Compose；
 - 执行真实 `migrate` 或修改持久数据；
 - 把 Wagtail 加入正式根依赖、settings 或路由；
-- 实现 Article 创建、KB 编号、P0 搜索、审核发布、附件、钉钉或生产部署；
+- 在未获下一实施阶段授权前编写 P0 搜索业务代码，或实现 Article 创建、KB 编号、审核发布、附件、钉钉或生产部署；
 - 创建 Article 假数据或绕过正式编号规则；
-- 提前启动 Task 11 或其他后续任务；
+- 跳过当前 Task 11 自行启动 Task 12 或其他后续任务，或扩大已冻结的 Task 11 V1 范围；
 - 未经单独授权创建 Commit 或 Push。
