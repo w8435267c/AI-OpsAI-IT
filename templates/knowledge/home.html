@@ -7,6 +7,25 @@
     <p class="eyebrow">EMPLOYEE KNOWLEDGE</p>
     <h1 id="home-title">快速查找公司 IT 故障处理知识和操作指引</h1>
     <p>这里只展示你有权查看、且已经正式发布的知识内容。</p>
+
+    <form
+      class="search-form home-search-form"
+      method="get"
+      action="{% url 'search:results' %}"
+      role="search"
+    >
+      <label for="home-search-query">搜索 IT 故障知识</label>
+      <div class="search-controls">
+        <input
+          id="home-search-query"
+          type="search"
+          name="q"
+          placeholder="请输入故障现象或关键词，例如：无法上网"
+          autocomplete="off"
+        >
+        <button type="submit">搜索</button>
+      </div>
+    </form>
   </section>
 
   <section class="content-section" aria-labelledby="category-title">

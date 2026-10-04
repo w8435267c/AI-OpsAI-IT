@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}搜索知识 | OpsAI IT 故障问答知识库{% endblock %}
+
+{% block content %}
+  <a class="back-link" href="{% url 'knowledge:home' %}">← 返回首页</a>
+
+  <header class="search-header" aria-labelledby="search-title">
+    <p class="eyebrow">EMPLOYEE SEARCH</p>
+    <h1 id="search-title">搜索 IT 故障知识</h1>
+    <p>只搜索你有权查看、且已经正式发布的知识。</p>
+
+    <form class="search-form" method="get" action="{% url 'search:results' %}" role="search">
+      <label for="results-search-query">故障现象或关键词</label>
+      <div class="search-controls">
+        <input
+          id="results-search-query"
+          type="search"
+          name="q"
+          value="{{ query }}"
+          placeholder="请输入故障现象或关键词，例如：无法上网"
+          autocomplete="off"
+        >
+        <button type="submit">搜索</button>
+      </div>
+    </form>
+  </header>
+
+  <section class="content-section" aria-labelledby="search-results-title">
+    <div class="section-heading">
+      <h2 id="search-results-title">搜索结果</h2>
+      {% if query %}
+        <p>共 {{ pagination.count }} 条可查看结果</p>
+      {% endif %}
+    </div>
+
+    {% if not query %}
+      <p class="empty-state">请输入关键词开始搜索。</p>
+    {% elif articles %}
+      <div class="knowledge-grid">
+        {% for article in articles %}
+          <article class="knowledge-card">
+            <p class="kb-number">{{ article.kb_no }}</p>
+            <h3>
+              <a class="card-link" href="{% url 'knowledge:article_detail' article.kb_no %}">
+                {{ article.title }}
+              </a>
+            </h3>
+            {% if article.summary %}
+              <p>{{ article.summary }}</p>
+            {% else %}
+              <p class="muted">暂无摘要</p>
+            {% endif %}
+            <p class="result-category">分类：{{ article.category_name }}</p>
+            {% if article.published_at %}
+              <time datetime="{{ article.published_at|date:'c' }}">
+                发布于 {{ article.published_at|date:"Y-m-d H:i" }}
+              </time>
+            {% endif %}
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <p>未找到可查看的相关知识。</p>
+        <p class="muted">尝试更换关键词。</p>
+      </div>
+    {% endif %}
+  </section>
+
+  {% if pagination.num_pages > 1 %}
+    <nav class="pagination" aria-label="搜索结果分页">
+      {% if pagination.has_previous %}
+        <a href="?{{ query_string }}&amp;page={{ pagination.previous_page_number }}">上一页</a>
+      {% else %}
+        <span aria-disabled="true">上一页</span>
+      {% endif %}
+
+      <span>第 {{ pagination.number }} / {{ pagination.num_pages }} 页</span>
+
+      {% if pagination.has_next %}
+        <a href="?{{ query_string }}&amp;page={{ pagination.next_page_number }}">下一页</a>
+      {% else %}
+        <span aria-disabled="true">下一页</span>
+      {% endif %}
+    </nav>
+  {% endif %}
+{% endblock %}

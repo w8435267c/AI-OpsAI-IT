@@ -13,4 +13,7 @@ urlpatterns = [
     path("dev/", include("apps.accounts.urls")),
 ]
 
-urlpatterns += [path("", include("apps.knowledge.urls"))]
+urlpatterns += [
+    path("", include("apps.search.urls")),
+    path("", include("apps.knowledge.urls")),
+]
