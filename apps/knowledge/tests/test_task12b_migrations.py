@@ -76,6 +76,115 @@ class KnowledgeNumberCounterMigrationTests(TransactionTestCase):
         self.executor.migrate([self.migrate_to])
         return self.executor.loader.project_state([self.migrate_to]).apps
 
+    def _create_pointer_roundtrip_fixture(self):
+        """在 0003 历史模型中创建正式版、草稿和两个文章指针。"""
+        User = self.old_apps.get_model("accounts", "User")
+        KnowledgeSpace = self.old_apps.get_model("knowledge", "KnowledgeSpace")
+        Category = self.old_apps.get_model("knowledge", "Category")
+        Article = self.old_apps.get_model("knowledge", "Article")
+        ArticleVersion = self.old_apps.get_model("knowledge", "ArticleVersion")
+
+        owner = User.objects.create(username="roundtrip-owner")
+        submitter = User.objects.create(username="roundtrip-submitter")
+        space = KnowledgeSpace.objects.create(
+            code="roundtrip-space",
+            name="Roundtrip space",
+            space_type="employee",
+            owner=owner,
+        )
+        category = Category.objects.create(
+            space=space,
+            code="roundtrip-category",
+            name="Roundtrip category",
+        )
+        article = Article.objects.create(
+            kb_no="KB-123456",
+            title="Task12B article",
+            space=space,
+            category=category,
+            article_type="guide",
+            owner=owner,
+            created_by=owner,
+            updated_by=owner,
+            review_due_at=timezone.now() + timedelta(days=180),
+        )
+        published_at = timezone.now()
+        published = ArticleVersion.objects.create(
+            article=article,
+            version_no=1,
+            status="published",
+            title="Task12B Published Title",
+            summary="Task12B Published Summary",
+            body={"content": "Task12B Published Body"},
+            body_plaintext="Task12B Published Body",
+            change_summary="published baseline",
+            created_by=owner,
+            submitted_by=submitter,
+            submitted_at=published_at,
+            published_at=published_at,
+        )
+        draft = ArticleVersion.objects.create(
+            article=article,
+            version_no=2,
+            status="draft",
+            title="Task12B Draft Title",
+            summary="Task12B Draft Summary",
+            body={"content": "Task12B Draft Body"},
+            body_plaintext="Task12B Draft Body",
+            change_summary="draft baseline",
+            created_by=owner,
+        )
+        article.current_published_version = published
+        article.latest_working_version = draft
+        article.save(update_fields=["current_published_version", "latest_working_version"])
+        article.refresh_from_db()
+        self.assertEqual(article.current_published_version_id, published.pk)
+        self.assertEqual(article.latest_working_version_id, draft.pk)
+
+        return {
+            "article_id": article.pk,
+            "kb_no": article.kb_no,
+            "published_id": published.pk,
+            "draft_id": draft.pk,
+            "published": {
+                "article_id": article.pk,
+                "version_no": published.version_no,
+                "status": published.status,
+                "title": published.title,
+                "summary": published.summary,
+                "body": published.body,
+                "body_plaintext": published.body_plaintext,
+                "change_summary": published.change_summary,
+                "published_at": published.published_at,
+            },
+            "draft": {
+                "article_id": article.pk,
+                "version_no": draft.version_no,
+                "status": draft.status,
+                "title": draft.title,
+                "summary": draft.summary,
+                "body": draft.body,
+                "body_plaintext": draft.body_plaintext,
+                "change_summary": draft.change_summary,
+            },
+        }
+
+    def _assert_pointer_roundtrip_fixture(self, apps, baseline):
+        Article = apps.get_model("knowledge", "Article")
+        ArticleVersion = apps.get_model("knowledge", "ArticleVersion")
+
+        article = Article.objects.get(pk=baseline["article_id"])
+        published = ArticleVersion.objects.get(pk=baseline["published_id"])
+        draft = ArticleVersion.objects.get(pk=baseline["draft_id"])
+
+        self.assertEqual(article.kb_no, baseline["kb_no"])
+        self.assertEqual(article.current_published_version_id, baseline["published_id"])
+        self.assertEqual(article.latest_working_version_id, baseline["draft_id"])
+        for field, value in baseline["published"].items():
+            self.assertEqual(getattr(published, field), value)
+        for field, value in baseline["draft"].items():
+            self.assertEqual(getattr(draft, field), value)
+
     def test_empty_database_seeds_one(self):
         apps = self._migrate_forward()
         Counter = apps.get_model("knowledge", "KnowledgeNumberCounter")
@@ -124,6 +233,29 @@ class KnowledgeNumberCounterMigrationTests(TransactionTestCase):
         Counter = apps.get_model("knowledge", "KnowledgeNumberCounter")
 
         self.assertEqual(Counter.objects.get(id=1).next_value, 1_000_000)
+
+    def test_task12b_full_roundtrip_preserves_article_version_pointers_and_published_content(
+        self,
+    ):
+        baseline = self._create_pointer_roundtrip_fixture()
+        migration_0004 = ("knowledge", "0004_task12_authoring_schema")
+
+        self.executor = MigrationExecutor(connection)
+        self.executor.migrate([migration_0004])
+
+        self.executor = MigrationExecutor(connection)
+        self.executor.migrate([self.migrate_to])
+        apps = self.executor.loader.project_state([self.migrate_to]).apps
+        Counter = apps.get_model("knowledge", "KnowledgeNumberCounter")
+        self._assert_pointer_roundtrip_fixture(apps, baseline)
+        self.assertEqual(Counter.objects.get(id=1).next_value, 123_457)
+
+        self.executor = MigrationExecutor(connection)
+        self.executor.migrate([migration_0004])
+        self.executor = MigrationExecutor(connection)
+        self.executor.migrate([self.migrate_from])
+        apps = self.executor.loader.project_state([self.migrate_from]).apps
+        self._assert_pointer_roundtrip_fixture(apps, baseline)
 
 
 class InvalidLegacyKbNoMigrationTests(TransactionTestCase):
