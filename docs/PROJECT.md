@@ -137,7 +137,7 @@ OpsAI 需要可靠的内容编辑、修订历史、草稿与正式版本隔离�
 
 ## 11. 当前开发阶段
 
-项目仍处于 OpsAI 与 Wagtail 的融合开发阶段。现有 Django 主项目已经建立账号、知识核心数据模型、权限基础、健康检查、本地开发环境，以及受众过滤后的正式员工首页、分类页、知识详情页和 P0 搜索；Task 10、Task 11 均已完成。Wagtail 方向已经从依赖兼容推进到内容修订、受控审核发布、员工读取、迁移演练和最小页面展示的隔离验证。
+项目仍处于 OpsAI 内容能力建设与 Wagtail 隔离融合验证阶段。现有 Django 主项目已经建立账号、知识核心数据模型、权限基础、健康检查、本地开发环境，以及受众过滤后的正式员工首页、分类页、知识详情页和 P0 搜索；Task 10、Task 11 均已完成。Task 12 当前为 `IN_PROGRESS / codex`，Task 12A 架构冻结已 `DONE / SYNCED`，下一阶段 Task 12B 尚未开始。Task 12 V1 的正式内容权威保持 `Article + ArticleVersion`，不正式接入 Wagtail。
 
 这些实验形成了可继续推进的稳定技术证据，但没有改变正式项目配置和生产数据库边界。员工 P0 搜索已进入正式 Django 业务路径，并完成 PostgreSQL 17.11 临时隔离专项；该专项不等于持久数据库或生产化验证。当前不能声称 Wagtail 融合、钉钉免登、附件、服务跳转或完整内容生命周期已经生产上线。
 
@@ -170,8 +170,8 @@ OpsAI 需要可靠的内容编辑、修订历史、草稿与正式版本隔离�
 | `docs/PROJECT.md` | 这个项目是什么？ | 本文件；保存稳定项目身份、边界和技术关系 |
 | `docs/PROJECT_STATE.md` | 项目现在做到哪里？ | 已存在；保存当前阶段、环境、验证、阻塞和风险证据 |
 | `tasks/TASKS.yaml` | 项目有哪些任务、各是什么状态？ | 已存在；登记任务池、依赖、状态和结果证据 |
-| `tasks/CURRENT_TASK.md` | 当前 AI 唯一应该处理什么任务？ | 已存在；Task 11“开发 P0 搜索”已 `DONE / codex`，当前没有活动任务，下一业务任务尚未授权 |
-| `docs/HANDOFF.md` | 上一个 AI 做到哪里，下一 AI 如何继续？ | 已存在；当前无待处理 AI 交接，真实切换时按模板记录 |
+| `tasks/CURRENT_TASK.md` | 当前 AI 唯一应该处理什么任务？ | 已存在；Task 12“开发文章创建、草稿和版本保存”为 `IN_PROGRESS / codex`，当前阶段为尚未开始实现的 Task 12B |
+| `docs/HANDOFF.md` | 上一个 AI 做到哪里，下一 AI 如何继续？ | 已存在；记录 Task 12A 已完成、Task 12B 待单独授权及后续执行边界 |
 
 `.ai/reports/`、`.ai/runs/`、`outputs/`、`tasks/blocked/` 和 `tasks/completed/` 已预留目录，但目录存在不等于上述状态、任务或交接文件已经创建。
 
@@ -181,11 +181,12 @@ OpsAI 需要可靠的内容编辑、修订历史、草稿与正式版本隔离�
 
 1. `docs/02-PRD/产品需求文档PRD-V1.1A-钉钉集成核心试点版-优化稿.md`：当前产品目标、用户、范围和非功能要求。
 2. `AGENTS.md`：文档优先级、技术栈、App 边界、安全、测试和 Git 规则。
-3. `docs/07-ADR/0002-Wagtail融合基线与最小设计.md`：Django 与 Wagtail 的目标关系、模型候选、安全适配和切换边界。
-4. `docs/07-ADR/0001-内容受众选择器权限语义.md`：员工读取的账号门槛、受众策略和拒绝优先语义。
-5. `README.md` 与两份 `docs/04-Architecture/` 文档：工程定位、模块化 Django 路线、开发环境和目标职责。
-6. 当前 `apps/`、`config/`、`deploy/`、`tests/` 和 `experiments/wagtail_f02`～`wagtail_f08`：实际代码结构、正式路由和融合实验边界。
-7. 当前 Git 历史和各实验 README：项目演进方向、已形成的验证证据及明确限制。
+3. `docs/07-ADR/0003-Task12正式文章写入与版本链架构决策.md`：Task 12 V1 的内容权威、KB 编号、草稿保存、版本链、管理入口及 Wagtail 延期决策。
+4. `docs/07-ADR/0002-Wagtail融合基线与最小设计.md`：Django 与 Wagtail 的长期目标关系、模型候选、安全适配和切换边界。
+5. `docs/07-ADR/0001-内容受众选择器权限语义.md`：员工读取的账号门槛、受众策略和拒绝优先语义。
+6. `README.md` 与两份 `docs/04-Architecture/` 文档：工程定位、模块化 Django 路线、开发环境和目标职责。
+7. 当前 `apps/`、`config/`、`deploy/`、`tests/` 和 `experiments/wagtail_f02`～`wagtail_f08`：实际代码结构、正式路由和融合实验边界。
+8. 当前 Git 历史和各实验 README：项目演进方向、已形成的验证证据及明确限制。
 
 历史聊天不作为本文档的事实依据。提交说明和历史测试报告只用于定位证据；最终成熟度仍以当前文件和实际调用路径判断。
 

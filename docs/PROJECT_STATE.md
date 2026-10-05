@@ -9,23 +9,23 @@
 | 快照日期 | 2026-10-05 |
 | 当前工作区 | `D:\Desktop\OpsAI\AI-OpsAI-IT-wagtail-poc` |
 | 当前分支 | `fusion/wagtail-poc` |
-| 当前业务基线 HEAD | `655f8e60675984354f99d84d89b7d2386f4e25db` |
-| 当前阶段 | OpsAI Django 主项目与 Wagtail 的隔离融合验证阶段 |
+| 当前业务基线 HEAD | `72029527406c17f433c3226475609a291373b55e` |
+| 当前阶段 | Task 12 正式文章创建、草稿与版本保存实施阶段 |
 | 正式技术主体 | Python 3.13 + Django 5.2 LTS 模块化单体 |
 | Wagtail 状态 | 融合方向已确认，F02～F08 已形成隔离 PoC 证据，尚未进入正式根依赖、正式 settings 或正式路由 |
 | 电脑 B 环境 | Python、正式项目依赖、WSL 2、Docker Desktop、Docker Engine 和 Docker Compose 已恢复；根目录 `.env` 存在、被 Git 忽略且未跟踪，内容与适用性未验证 |
-| 当前接力元数据任务 | Task 11 最终验收归档与 `VERIFY → DONE` 状态切换 |
-| 最近完成开发 | Task 11A、11B 均已完成并双端同步 |
-| 当前开发任务 | 无；Task 11 已 `DONE / codex`，下一业务任务尚未授权 |
+| 当前接力元数据任务 | Task 12 `BACKLOG → IN_PROGRESS` 正式开工状态切换 |
+| 最近完成开发 | Task 12A 架构冻结已 `DONE / SYNCED`，ADR 状态为 `Accepted` |
+| 当前开发任务 | Task 12“开发文章创建、草稿和版本保存”，`IN_PROGRESS / codex` |
 | Task 10 功能 | PASS |
 | Task 10 安全 | PASS |
 | Task 10 视觉 | PASS |
 | Task 11 Owner Visual Acceptance | PASS |
 | Task 11 PostgreSQL 隔离专项 | PASS；PostgreSQL 17.11，临时资源已全部清理 |
-| 当前业务主线 | 当前无活动任务；Task 12 保持 `BACKLOG / unassigned`，等待项目负责人选择下一任务 |
-| 当前交接状态 | 当前无待处理 AI 交接 |
+| 当前业务主线 | Task 12A 已完成；Task 12B 为 `NEXT / NOT STARTED`，等待项目负责人单独授权 |
+| 当前交接状态 | 当前活动任务为 Task 12；不得跳过 12B、开始 Task 13 或正式接入 Wagtail |
 
-本快照的总体结论是：Task 10、Task 11 均已正式 `DONE / codex`。Task 11A 安全搜索 Reader 与 Task 11B 员工搜索入口、结果页均已完成并双端同步，项目负责人视觉验收 PASS，正式工程回归为 `486 passed / 102 subtests`；PostgreSQL 17.11 隔离专项的 Migration、11A/11B 测试、中文 substring、权限与状态隔离、稳定排序、查询计划及 1,000 篇合成数据性能验证全部 PASS，临时资源已清理。Task 11C 不需要实施，当前没有 `IN_PROGRESS` 或 `VERIFY` 任务；Wagtail 核心融合链路仍是隔离实验，8J 仍因真实 PostgreSQL / `.env` 操作未获授权而保持 `BLOCKED / unassigned`，Task 12 保持 `BACKLOG / unassigned`。
+本快照的总体结论是：Task 10、Task 11 均已正式 `DONE / codex`。Task 12 已由项目负责人授权进入 `IN_PROGRESS / codex`；Task 12A 架构冻结已 `DONE / SYNCED`，`docs/07-ADR/0003-Task12正式文章写入与版本链架构决策.md` 为 `Accepted`，并作为 Task 12B～12E 的正式实施基线。当前阶段为 Task 12B，但尚未开始业务实现，必须等待单独授权。正式内容权威保持 `Article + ArticleVersion`，Task 12 V1 不正式接入 Wagtail；Task 13 保持 `BACKLOG / unassigned`，8J 仍因真实 PostgreSQL / `.env` 操作未获授权而保持 `BLOCKED / unassigned`。
 
 ## 2. 状态证据规则
 
@@ -70,6 +70,7 @@
 - 当前正式模型没有已确认可用的标签或别名字段，Task 11 V1 不实现标签、别名或同义词搜索，也不为其新增 Model / Migration；详情跳转继续使用 `/kb/<kb_no>/` 及 `get_employee_article_detail` 权限链。
 - `apps/search` 与 `apps/audit` 当前没有可复用的搜索或点击日志模型。如后续日志需要 `SearchLog`、`ClickLog`、`AuditEvent`、新数据库表或 Migration，必须先提出 `SCOPE QUESTION`；搜索日志不能作为访问授权凭据。
 - SQLite 已完成 Task 11 通用功能与安全契约验证；PostgreSQL 17.11 仓库外临时隔离专项进一步确认当前 ORM 查询、中文 substring、特殊字符、权限与状态边界、确定性排序、`NULLS LAST`、count、pagination、查询数量、EXPLAIN/ANALYZE 及 1,000 篇合成数据性能均符合 V1 契约。当前 V1 未使用 PostgreSQL FTS、SearchVector、SearchRank、GIN 或 tsvector；专项结果不替代 8J 的真实持久环境核验。
+- Task 12A 已冻结正式写入架构：`Article + ArticleVersion` 是 V1 单一正式内容权威，`body` 为正文权威、`body_plaintext` 为服务端派生投影；`latest_working_version` 与 `current_published_version` 继续复用。KB 编号、乐观锁、SAVED 节点和历史恢复来源只作为 12B～12D 后续实施合同，本轮尚未实现。
 
 ### 3.4 容器化开发声明
 
@@ -220,12 +221,13 @@ Task 10 的 10A～10E 分别对应 Commit `cf8bf1ff1692dedd69e5fbf97f0632a460d66
 - Task 9 封板后元数据一致性 Commit `91c2e587a3e9c3513a7ed3d9674e69162c04809a` 已完成 GitHub、Gitee 与本地三端同步。
 - Task 10 开工状态 Commit `706ece9e5ba3e86e28410ac5e02011d7d9ee266f`、10A～10E 业务 Commit 及 VERIFY 状态 Commit `713bb150d40bcf39cfcaf3be54d6e12a74e68a2e` 已完成双端同步。
 - Task 10 的功能、安全、性能、正式工程回归、桌面和手机视觉验收以及项目负责人最终人工验收均已通过，当前状态为 `DONE / codex`。
-- 当前无真实 Agent 切换，`docs/HANDOFF.md` 保持“当前无待处理 AI 交接”。
-- Task 11A Commit `6240147054f909c9f88c14d67e99f7c55ccc83d1`、Task 11B Commit `7ac5cd894db052dc3c7eb7e2721dbcc4f34d7ea6` 与 VERIFY 状态归档 Commit `56364d2dbde10d707df8f86aad463e9b1dd3d51c` 已完成双端同步；负责人视觉验收与 Task 11P-1 PostgreSQL 隔离专项均 PASS，Task 11 已正式封板为 `DONE / codex`。Task 12 及后续业务任务保持 `BACKLOG / unassigned`，任务 8J 保持 `BLOCKED / unassigned`。
+- 当前无真实 Agent 切换；`docs/HANDOFF.md` 记录当前活动任务、实施基线与下一阶段安全边界。
+- Task 11A Commit `6240147054f909c9f88c14d67e99f7c55ccc83d1`、Task 11B Commit `7ac5cd894db052dc3c7eb7e2721dbcc4f34d7ea6` 与 VERIFY 状态归档 Commit `56364d2dbde10d707df8f86aad463e9b1dd3d51c` 已完成双端同步；负责人视觉验收与 Task 11P-1 PostgreSQL 隔离专项均 PASS，Task 11 已正式封板为 `DONE / codex`。
+- Task 12A ADR Commit `72029527406c17f433c3226475609a291373b55e` 已完成 LOCAL、GitHub、Gitee 三端同步，ADR 状态为 `Accepted`；Task 12 当前为 `IN_PROGRESS / codex`，Task 12B 为下一阶段但尚未开始。Task 13 保持 `BACKLOG / unassigned`，任务 8J 保持 `BLOCKED / unassigned`。
 
 ## 11. 下一步边界
 
-Task 11A、11B、项目负责人视觉验收及 PostgreSQL 17.11 隔离专项均已完成并 PASS，Task 11 当前为 `DONE / codex`，Task 11C 不需要实施。当前没有活动业务任务，下一业务任务尚未授权；Task 12 保持 `BACKLOG / unassigned`。
+Task 11A、11B、项目负责人视觉验收及 PostgreSQL 17.11 隔离专项均已完成并 PASS，Task 11 当前为 `DONE / codex`，Task 11C 不需要实施。Task 12 已正式进入 `IN_PROGRESS / codex`；Task 12A 已 `DONE / SYNCED`，当前阶段是尚未开始实现的 Task 12B，下一动作是等待项目负责人单独授权。
 
 当前边界继续禁止自动执行：
 
@@ -233,7 +235,7 @@ Task 11A、11B、项目负责人视觉验收及 PostgreSQL 17.11 隔离专项均
 - 启动 PostgreSQL 或 OpsAI Compose；
 - 执行真实 `migrate` 或修改持久数据；
 - 把 Wagtail 加入正式根依赖、settings 或路由；
-- 创建 Task 11C、修改已完成的 Task 11 业务范围，或实现 Article 创建、KB 编号、审核发布、附件、钉钉或生产部署；
+- 创建 Task 11C、修改已完成的 Task 11 业务范围，或在 Task 12B 未授权前实现 Model、Migration、KB 编号、草稿保存、审核发布、附件、钉钉或生产部署；
 - 创建 Article 假数据或绕过正式编号规则；
-- 自行启动 Task 12 或其他后续任务，或扩大已封板的 Task 11 V1 范围；
+- 自行开始 Task 12B、跳过 12B 进入后续阶段、开始 Task 13，或扩大已冻结的 Task 12 V1 范围；
 - 未经单独授权创建 Commit 或 Push。

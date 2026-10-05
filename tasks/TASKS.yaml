@@ -332,13 +332,13 @@ tasks:
         - "搜索结果点击继续进入 /kb/<kb_no>/ 并由 get_employee_article_detail 重新鉴权；搜索日志不得作为权限凭据。"
         - "不得修改 apps/knowledge/selectors.py；优先复用 employee_visible_articles，如认为 Reader API 需要扩大，必须先提出 READER DESIGN QUESTION。"
         - "V1 不包含 Article 创建、KB 编号、草稿或版本写入、审核发布、Wagtail 正式融合、真实 PostgreSQL 操作，以及联想、自动补全、热门词、拼音、纠错、AI/向量搜索、Elasticsearch、OpenSearch、Redis 或运营报表。"
-        - "Task 11P-1 临时 PostgreSQL 验证不解除 8J；8J 继续 BLOCKED / unassigned，Task 12 继续 BACKLOG / unassigned，下一业务任务尚未授权。"
+        - "Task 11P-1 临时 PostgreSQL 验证不解除 8J；Task 11 封板时，8J 继续 BLOCKED / unassigned，Task 12 当时仍为 BACKLOG / unassigned 并等待单独授权。"
 
   - id: "12"
     title: "开发文章创建、草稿和版本保存"
     priority: MUST
-    status: BACKLOG
-    owner: unassigned
+    status: IN_PROGRESS
+    owner: codex
     dependencies:
       - "11"
     objective: >
@@ -353,9 +353,14 @@ tasks:
       - "计划：覆盖新增、保存、自动保存、预览、历史恢复、编号唯一性和草稿隔离测试。"
       - "计划：检查迁移图、正式 settings/URL、依赖锁定和旧历史保持。"
     result:
-      commits: []
-      verification: []
-      notes: []
+      commits:
+        - "72029527406c17f433c3226475609a291373b55e"
+      verification:
+        - "Task 12A 架构 ADR 状态为 Accepted，Commit 72029527406c17f433c3226475609a291373b55e 已在 LOCAL、GitHub、Gitee 三端同步。"
+      notes:
+        - "Task 12A“正式写入契约与融合范围冻结”已 DONE / SYNCED；docs/07-ADR/0003-Task12正式文章写入与版本链架构决策.md 是 Task 12B～12E 的正式实施基线。"
+        - "当前阶段为 Task 12B“最小 Model / Migration 增量”，但业务实现尚未开始，必须等待项目负责人单独授权。"
+        - "正式内容权威保持 Article + ArticleVersion；Wagtail 在 Task 12 V1 延期，不进入正式依赖、settings、路由、模型或 Revision 双写链路。"
 
   - id: "13"
     title: "开发提交审核、批准、驳回和发布事务"

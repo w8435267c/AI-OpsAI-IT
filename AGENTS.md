@@ -237,5 +237,5 @@ git show -s --format=full HEAD
 - 当前阶段：F02～F08 已形成 Wagtail 隔离 PoC 证据，但 Wagtail 仍未进入正式根依赖、正式 settings 或正式路由；不得把实验测试、SQLite 结果或历史成绩写成正式接入、PostgreSQL 或生产验证通过。
 - Task 10 的 10A～10E 已全部完成并同步至 GitHub、Gitee；项目负责人于 2026-10-04 完成最终人工视觉验收并确认 PASS，当前状态为 `DONE / codex`。Task 11A、11B 已完成并双端同步，负责人视觉验收与 PostgreSQL 隔离专项均 PASS，Task 11 当前为 `DONE / codex`；V1 继续限定为先经 `employee_visible_articles` 得到员工可见正式集合，再仅搜索 `current_published_version.title`、`summary` 与 `body_plaintext`，不得让草稿、全库总数或无权限内容进入搜索、排序和分页，也不得为标签、别名或搜索日志新增 Model / Migration。
 - 任务 8J 因根目录 `.env` 的内容、来源、变量完整性及 PostgreSQL 适用性尚未验证，且没有 PostgreSQL 启动、真实 migration 或持久数据访问授权，保持 `BLOCKED / unassigned`；只有项目负责人确认 `.env` 的安全来源和使用范围，并明确授权 PostgreSQL 启动、migration 状态检查、持久数据验证范围及回退边界后，才可解除阻塞。
-- 当前没有 `IN_PROGRESS` 或 `VERIFY` 任务；Task 11 已正式封板为 `DONE / codex`，Task 11C 不需要实施。Task 12 保持 `BACKLOG / unassigned`，下一业务任务尚未授权；不得自动开始 Task 12，后续状态变化、Commit 和 Push 均须按项目负责人明确授权执行。
+- 当前唯一 `IN_PROGRESS` 主任务为 Task 12“开发文章创建、草稿和版本保存”，Owner 为 `codex`；Task 11 已正式封板为 `DONE / codex`。Task 12A 架构冻结已 `DONE / SYNCED`，`docs/07-ADR/0003-Task12正式文章写入与版本链架构决策.md` 是后续实施基线；Task 12B 为下一阶段但尚未开始，必须等待项目负责人单独授权。Task 13 保持 `BACKLOG / unassigned`，8J 保持 `BLOCKED / unassigned`。
 - 规则文档不得写入密码、个人代理或机器专属临时路径。
