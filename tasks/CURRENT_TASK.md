@@ -1,6 +1,6 @@
 # OpsAI Current Task
 
-> Task 11“开发 P0 搜索”的 V1 必须业务功能、自动验证和负责人视觉验收已经完成，项目负责人已授权进入 `VERIFY / codex`。当前唯一剩余正式验证项为 PostgreSQL 专项证据。
+> Task 11“开发 P0 搜索”的业务功能、自动验证、负责人视觉验收和 PostgreSQL 隔离专项均已完成并通过项目负责人最终验收，当前状态为 `DONE / codex`。当前没有活动任务，下一业务任务尚未授权。
 
 ## 1. 任务身份
 
@@ -9,12 +9,12 @@
 | 任务编号 | `11` |
 | 任务名称 | 开发 P0 搜索 |
 | 优先级 | `MUST` |
-| 当前状态 | `VERIFY` |
+| 当前状态 | `DONE` |
 | 当前负责人 | `codex` |
 | 开工日期 | `2026-10-04` |
 | 直接依赖 | Task 10，`DONE / codex` |
 | 范围冻结 Commit | `5266c278803b16a3c0ec4a0eaffdcb16d641580c`，已双端同步 |
-| 当前实施状态 | Task 11A、11B 已完成并双端同步；业务实现完成，等待 PostgreSQL 专项验证 |
+| 当前实施状态 | Task 11A、11B、负责人视觉验收和 PostgreSQL 隔离专项全部 PASS；Task 11 已最终封板 |
 
 Task 10 已正式封板为 `DONE / codex`，Task 11 的唯一登记依赖已经满足。Task 11 V1 不需要 Task 11C；分类筛选为可选项，标签、别名、同义词和 HTML 高亮按冻结范围延期，搜索/点击日志不是 V1 MUST。
 
@@ -58,9 +58,9 @@ Published A 同时存在 Draft B 时，只能命中和展示 Published A；仅�
 
 - `apps/search` 与 `apps/audit` 当前没有已确认可直接复用的正式搜索或点击日志模型。
 - 如搜索或点击日志需要新增 `SearchLog`、`ClickLog`、`AuditEvent`、数据库表或 Migration，必须停止并提出 `SCOPE QUESTION`，等待项目负责人授权。
-- Task 11 第一阶段可使用 Django 与 SQLite 测试数据库验证功能、权限、安全、页面和自动测试。
-- SQLite 结果不能证明 PostgreSQL 全文检索、相关性排序、索引、中文检索行为或性能。
-- PostgreSQL、Docker、真实 migration 和持久数据访问当前均未授权；Task 8J 保持 `BLOCKED / unassigned`。
+- Task 11 通用功能、权限、安全、页面和自动测试已使用 SQLite 完成验证。
+- Task 11P-1 已在仓库外临时 PostgreSQL 17.11 环境补齐当前 `icontains` 方案的 Migration、中文 substring、权限隔离、排序、查询计划和 1,000 篇合成数据性能证据；该结果不等于 PostgreSQL FTS、生产容量或真实持久环境已验证。
+- 真实 PostgreSQL、真实 `.env`、持久 migration 和持久数据访问仍未授权；Task 8J 保持 `BLOCKED / unassigned`。
 
 ## 5. 实施与验证证据
 
@@ -69,16 +69,17 @@ Published A 同时存在 Draft B 时，只能命中和展示 Published A；仅�
 - knowledge 回归：`310 passed / 59 subtests`；正式工程回归：`486 passed / 102 subtests`。
 - 项目负责人视觉验收：`PASS`；网络搜索 21 条并按 20+1 分页，打印机搜索 1 条，零结果、Draft-only 隔离和 KB-910001 正式详情链路均通过。
 - Reader 在 3 条和 23 条结果时均为 1 query；页面在 3 条和 23 条结果时均为 4 queries，无 N+1。
+- PostgreSQL 隔离专项：`PASS`；PostgreSQL 17.11 临时环境中 Migration、Task 11A `13 passed / 16 subtests`、Task 11B `13 passed / 11 subtests`、行为矩阵、EXPLAIN/ANALYZE 和 1,000 篇合成数据性能证据均通过，临时资源已全部清理。
 
 ## 6. 当前边界与下一步
 
 - Task 10：`DONE / codex`。
-- Task 11：`VERIFY / codex`，业务实现与负责人视觉验收已完成。
+- Task 11：`DONE / codex`，最终验收与封板已完成。
 - Task 8J：`BLOCKED / unassigned`。
 - Task 12：`BACKLOG / unassigned`，不得提前启动。
-- PostgreSQL 专项验证为 `PENDING`；需验证当前 V1 ORM 查询、中文 substring、确定性排序、`NULLS LAST`、查询计划、索引利用和典型数据量性能，不要求改为 PostgreSQL FTS。
+- PostgreSQL 隔离专项为 `PASS`；当前 V1 不要求改为 PostgreSQL FTS，也未新增 SearchVector、GIN、Model 或 Migration。
 - 不读取 `.env` 或 `OpsAI.env`，不启动 PostgreSQL 或 Docker，不执行真实 `migrate`。
-- Task 11 在 PostgreSQL 专项验证完成并 PASS，或项目负责人明确接受分阶段验收前，不得进入 `DONE`。
+- 当前不存在 `IN_PROGRESS` 或 `VERIFY` 任务。
 - 下一业务任务尚未授权；不得开始 Task 11C 或 Task 12。
 
 ## 7. 状态流转
@@ -89,8 +90,8 @@ Published A 同时存在 Draft B 时，只能命中和展示 Published A；仅�
 
 ### VERIFY
 
-当前状态。Task 11 V1 必须业务功能、自动验证和负责人视觉验收已通过；当前等待 PostgreSQL 专项验证或负责人明确接受分阶段验收。
+历史状态。Task 11 V1 业务功能和负责人视觉验收通过后，等待 PostgreSQL 隔离专项验证期间处于 `VERIFY / codex`。
 
 ### DONE
 
-未来状态。必须在 PostgreSQL 专项验证完成并 PASS，或项目负责人明确接受分阶段验收后，由项目负责人授权进入；执行 Agent 不得自行切换。
+当前状态。Task 11A、Task 11B、负责人视觉验收和 PostgreSQL 17.11 隔离专项全部 PASS，项目负责人已授权并完成 Task 11 最终封板。

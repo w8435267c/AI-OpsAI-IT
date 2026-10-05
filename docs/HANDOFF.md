@@ -4,22 +4,22 @@
 
 ## 1. 当前交接状态
 
-当前没有真实的 Agent 切换事件，也不存在需要下一位 Agent 接续的中断现场。Task 11A、11B 已完成并双端同步，业务实现与项目负责人视觉验收均已完成；Task 11“开发 P0 搜索”当前为 `VERIFY / codex`，仍由 Codex 连续执行，因此不构成 Agent 间交接。
+当前没有真实的 Agent 切换事件，也不存在需要下一位 Agent 接续的中断现场。Task 11A、11B、项目负责人视觉验收及 PostgreSQL 隔离专项均已完成并 PASS；Task 11“开发 P0 搜索”已正式封板为 `DONE / codex`，当前没有活动中的开发任务。
 
 | 项目 | 当前值 |
 | --- | --- |
-| 当前任务 | `11` - 开发 P0 搜索 |
-| 任务状态 | `VERIFY` |
-| 负责人 | `codex` |
+| 当前任务 | 无；下一业务任务尚未授权 |
+| 最近完成任务 | `11` - 开发 P0 搜索，`DONE / codex` |
+| 当前状态 | 无 `IN_PROGRESS` 或 `VERIFY` 任务 |
 | 开工日期 | `2026-10-04` |
 | 依赖 | 任务 `10`，状态为 `DONE / codex` |
 | 范围冻结 Commit | `5266c278803b16a3c0ec4a0eaffdcb16d641580c`，已双端同步 |
 | 业务实施状态 | Task 11A、11B 已完成并双端同步；V1 必须业务功能与负责人视觉验收已完成，不需要 Task 11C |
-| 当前等待动作 | PostgreSQL 专项验证完成并 PASS，或项目负责人明确接受分阶段验收 |
-| 当前禁止动作 | 不把 Task 11 改为 DONE，不开始 Task 11C 或 Task 12，不扩大标签、别名、日志模型、PostgreSQL、Wagtail 或 Article 创建范围 |
+| 当前等待动作 | 等待项目负责人正式选择并授权下一业务任务 |
+| 当前禁止动作 | 不开始 Task 11C 或 Task 12，不解除 8J，不扩大标签、别名、日志模型、Wagtail 或 Article 创建范围 |
 | Agent 切换状态 | 未发生 |
 
-Task 11 V1 只搜索 `current_published_version.title`、`summary` 和 `body_plaintext`，必须先通过 `employee_visible_articles` 完成权限过滤，再搜索、统计、排序和分页；草稿、历史版本、全库匹配总数和无权限内容不得进入员工搜索。搜索或点击日志如需新增 Model / Migration，必须先提出 `SCOPE QUESTION`；PostgreSQL 操作当前未授权，8J 保持 `BLOCKED / unassigned`。
+Task 11 V1 只搜索 `current_published_version.title`、`summary` 和 `body_plaintext`，必须先通过 `employee_visible_articles` 完成权限过滤，再搜索、统计、排序和分页；草稿、历史版本、全库匹配总数和无权限内容不得进入员工搜索。搜索或点击日志如需新增 Model / Migration，必须先提出 `SCOPE QUESTION`。Task 11 的仓库外临时 PostgreSQL 隔离专项已完成，但不代表真实持久环境获准使用，8J 保持 `BLOCKED / unassigned`。
 
 Task 11 实施与验收证据：
 
@@ -27,10 +27,11 @@ Task 11 实施与验收证据：
 | --- | --- | --- | --- |
 | 11A | `6240147054f909c9f88c14d67e99f7c55ccc83d1` | `feat(search): add secure employee article search reader` | `DONE / SYNCED` |
 | 11B | `7ac5cd894db052dc3c7eb7e2721dbcc4f34d7ea6` | `feat(search): add employee search results page` | `DONE / SYNCED` |
+| VERIFY 归档 | `56364d2dbde10d707df8f86aad463e9b1dd3d51c` | `docs(ai-handoff): move OpsAI task 11 to verify` | `DONE / SYNCED` |
 
 Task 11A 专项为 `13 passed / 16 subtests`，Task 11B 专项为 `13 passed / 11 subtests`，knowledge 回归为 `310 passed / 59 subtests`，正式工程回归为 `486 passed / 102 subtests`。Reader 在 3 条和 23 条结果时均为 1 query，搜索页面在 3 条和 23 条结果时均为 4 queries，无 N+1。
 
-项目负责人视觉验收 PASS：网络搜索 21 条并按 20+1 分页，打印机搜索 1 条，不存在关键词和 Draft-only 关键词均为 0 条，隐藏知识未泄露，KB-910001 正式详情链路及桌面、手机页面均通过。当前唯一剩余正式验证项是 PostgreSQL 下当前 V1 ORM 查询、中文 substring、确定性排序、`NULLS LAST`、查询计划、索引利用和典型数据量性能；当前 V1 不要求改为 PostgreSQL FTS。
+项目负责人视觉验收 PASS：网络搜索 21 条并按 20+1 分页，打印机搜索 1 条，不存在关键词和 Draft-only 关键词均为 0 条，隐藏知识未泄露，KB-910001 正式详情链路及桌面、手机页面均通过。PostgreSQL 17.11 隔离专项同样 PASS：Migration 与 11A/11B 专项测试通过，中文 substring、特殊字符、DENY、Draft、状态边界、稳定排序、`NULLS LAST`、count 和 pagination 与 SQLite 契约一致；1,000 篇合成数据性能无明显异常，临时资源已全部清理。当前 V1 不要求改为 PostgreSQL FTS。
 
 上一任务 Task 10 的内部阶段和双端同步证据如下：
 
@@ -207,8 +208,8 @@ Task 10 最终验证为页面专项 `30 passed`、knowledge `310 passed`、正�
 - Task 10 正式员工首页、分类页、知识详情页及返回链已完成；安全、缓存、自动转义、响应式和性能验收通过。
 - 正式员工读取来源为 `current_published_version`；列表 Reader 为 `employee_visible_articles`，详情 Reader 为 `get_employee_article_detail`；V1 正文使用 `body_plaintext → body_text`。
 - Task 10 V1 正式前端为 Django Templates + 项目自有 CSS；Bootstrap / HTMX 当前不要求接入。
-- Task 11A、11B 已完成并双端同步，项目负责人视觉验收 PASS；Task 11 当前为 `VERIFY / codex`，业务实现完成，不需要 Task 11C，剩余 PostgreSQL 专项验证。
+- Task 11A、11B 已完成并双端同步，项目负责人视觉验收与 PostgreSQL 隔离专项均 PASS；Task 11 当前为 `DONE / codex`，不需要 Task 11C。
 - 当前没有真实 Agent 切换，所以没有上一执行 Agent、下一建议 Agent、交接时间或未完成业务现场可记录。
 - 任务 8J 保持 `BLOCKED / unassigned`；Task 12 及后续业务任务保持 `BACKLOG / unassigned`。
-- 如后续发生真实 Agent 切换，下一 Agent 必须先读取 Task 11 已冻结范围，不得自行扩大标签、别名、日志模型、PostgreSQL、Wagtail 或 Article 创建范围。
-- 本文件保留统一交接规则和模板，并与 `tasks/CURRENT_TASK.md`、`tasks/TASKS.yaml` 的 `VERIFY` 状态保持一致。
+- 如后续发生真实 Agent 切换，下一 Agent 必须先确认当前没有活动任务，不得自动开始 Task 12，也不得自行扩大已封板的 Task 11 范围。
+- 本文件保留统一交接规则和模板，并与 `tasks/CURRENT_TASK.md`、`tasks/TASKS.yaml` 的 Task 11 `DONE` 状态保持一致。

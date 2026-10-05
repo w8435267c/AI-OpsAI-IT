@@ -216,11 +216,11 @@ git show -s --format=full HEAD
 
 - V1.1A 文档开发基线已经建立。
 - Django 单体项目骨架已初始化，`/health/live` 与 `/health/ready` 可运行并有自动化测试。
-- 电脑 B 的 Docker Desktop 4.92.0、WSL 2、Docker Engine 29.8.0 和 Docker Compose v5.5.1 已就绪；`deploy/compose.yaml` 已定义 db + web 服务，但当前电脑 B 尚未创建或启动 OpsAI PostgreSQL 容器、命名卷或数据库。
+- 电脑 B 的 Docker Desktop 4.92.0、WSL 2、Docker Engine 29.8.0 和 Docker Compose v5.5.1 已就绪；`deploy/compose.yaml` 已定义 db + web 服务，当前正式开发容器与持久卷存在并运行，但其数据库内容、实际迁移状态和真实配置仍受 8J 授权边界保护。
 - 正式开发数据库目标仍为 PostgreSQL（Compose 内 `POSTGRES_HOST` 覆盖为 `db`）；仓库根目录 `.env` 当前存在、被 Git 忽略且未跟踪，但本项目未读取或验证其内容、来源、变量完整性及 PostgreSQL 适用性，未执行真实 `migrate`，测试环境继续使用 SQLite 内存库。
 - 里程碑：第一阶段第 1～6 步已完成，里程碑 B 的代码、数据模型、迁移和测试底座已经建立；第 7 步（本地模拟登录与系统操作角色）已经完成，安全收紧提交 c5f1bbb 已通过第 7C 只读审计（结论 A：完整通过），PostgreSQL 补充只读核验已经完成。
 - accounts：`User`、`Department`、`UserDepartment`、`UserGroup`、`UserGroupMembership` 已正式建立，`0001`、`0002` 已在 PostgreSQL 应用，相关约束和模型测试已通过；`UserGroup` 仅用于内容受众，系统操作角色仍使用 Django `Group`/`Permission`。
-- knowledge：`KnowledgeSpace`、`Category`、`Article`、`ArticleVersion`、`ArticleAudience`、`ReviewRecord` 已接入，`0001`、`0002` 已在 PostgreSQL 应用；核心外键、唯一约束、CHECK、条件唯一索引和模型校验已经建立；正式员工首页、分类页、知识详情页和 P0 搜索已完成，Task 10 已 `DONE`，Task 11 已进入 `VERIFY`，发布事务、编号生成服务、附件和钉钉功能仍未实现。
+- knowledge：`KnowledgeSpace`、`Category`、`Article`、`ArticleVersion`、`ArticleAudience`、`ReviewRecord` 已接入，`0001`、`0002` 已在 PostgreSQL 应用；核心外键、唯一约束、CHECK、条件唯一索引和模型校验已经建立；正式员工首页、分类页、知识详情页和 P0 搜索已完成，Task 10、Task 11 均已 `DONE`，发布事务、编号生成服务、附件和钉钉功能仍未实现。
 - Article 编号：数据库只允许 `KB-000001` 格式的知识编号；编号生成服务尚未实现，在其安全接入前 Article Admin 新增入口保持关闭；不得通过 Admin、Signal、随机默认值或临时拼接绕过编号规则。
 - 候选参考：`docs/05-Database/knowledge_models_reference.py` 继续作为设计参考保留；Django 运行时正式模型位于 `apps/knowledge/models.py`，后续开发不得重新复制候选文件覆盖正式模型。
 - 第 8D 步隔离验证：全量 pytest 379 passed、11 subtests passed；Django check、迁移一致性、Ruff 静态与格式检查通过。仅使用 SQLite 内存测试库；未读取真实 .env，未核验 PostgreSQL、容器、持久库数据或数据库注释。
@@ -233,9 +233,9 @@ git show -s --format=full HEAD
 - 以下成绩引用用户提供的此前完成报告，不是第 8H 文档同步时重新执行的结果。第 8F 历史验证：隔离专项 159 passed；完整套件 386 passed、11 subtests passed；Django check、迁移一致性及 Ruff 检查通过。
 - 第 8G 定点复核：A，按调整后的范围通过。项目专项 76 passed、仓库外补充复现 12 passed；Django check、迁移一致性、Ruff 静态与格式、工作区及提交差异空白检查通过；第 8G 未重跑完整套件。第 8F 确定性保存缺陷已按当前契约关闭；PostgreSQL 及持久库迁移仍需另行安排。
 - 仓库迁移文件：accounts.0001～0002、knowledge.0001～0003 已存在。上文 PostgreSQL 已应用 0001、0002 及 knowledge.0003 未应用的说明属于此前报告；当前持久数据库迁移状态、实际数据库注释仍待核验，不从文件存在推断数据库已更新。
-- PostgreSQL 查询、排序及相关数据库行为待验证。未新增并发协调锁，实际并发及锁行为未验证；并发写入仍可能冲突或覆盖更新，atomic() 不等同于并发安全。
+- Task 11 当前 V1 搜索已在 PostgreSQL 17.11 隔离环境完成查询、排序、中文 substring、`NULLS LAST`、查询计划和 1,000 篇合成数据性能验证；该证据不等于持久环境、生产容量或并发写入已验证。未新增并发协调锁，实际并发及锁行为仍未验证；并发写入可能冲突或覆盖更新，atomic() 不等同于并发安全。
 - 当前阶段：F02～F08 已形成 Wagtail 隔离 PoC 证据，但 Wagtail 仍未进入正式根依赖、正式 settings 或正式路由；不得把实验测试、SQLite 结果或历史成绩写成正式接入、PostgreSQL 或生产验证通过。
-- Task 10 的 10A～10E 已全部完成并同步至 GitHub、Gitee；项目负责人于 2026-10-04 完成最终人工视觉验收并确认 PASS，当前状态为 `DONE / codex`。Task 11A、11B 已完成并双端同步，负责人视觉验收 PASS，Task 11 当前为 `VERIFY / codex`；V1 继续限定为先经 `employee_visible_articles` 得到员工可见正式集合，再仅搜索 `current_published_version.title`、`summary` 与 `body_plaintext`，不得让草稿、全库总数或无权限内容进入搜索、排序和分页，也不得为标签、别名或搜索日志新增 Model / Migration。
+- Task 10 的 10A～10E 已全部完成并同步至 GitHub、Gitee；项目负责人于 2026-10-04 完成最终人工视觉验收并确认 PASS，当前状态为 `DONE / codex`。Task 11A、11B 已完成并双端同步，负责人视觉验收与 PostgreSQL 隔离专项均 PASS，Task 11 当前为 `DONE / codex`；V1 继续限定为先经 `employee_visible_articles` 得到员工可见正式集合，再仅搜索 `current_published_version.title`、`summary` 与 `body_plaintext`，不得让草稿、全库总数或无权限内容进入搜索、排序和分页，也不得为标签、别名或搜索日志新增 Model / Migration。
 - 任务 8J 因根目录 `.env` 的内容、来源、变量完整性及 PostgreSQL 适用性尚未验证，且没有 PostgreSQL 启动、真实 migration 或持久数据访问授权，保持 `BLOCKED / unassigned`；只有项目负责人确认 `.env` 的安全来源和使用范围，并明确授权 PostgreSQL 启动、migration 状态检查、持久数据验证范围及回退边界后，才可解除阻塞。
-- 当前没有 `IN_PROGRESS` 任务；Task 11 为 `VERIFY / codex`，V1 必须业务功能已完成且不需要 Task 11C，剩余 PostgreSQL 专项验证。该专项完成并 PASS，或项目负责人明确接受分阶段验收前，不得将 Task 11 改为 `DONE`；不得开始 Task 12，后续状态变化、Commit 和 Push 均须按项目负责人明确授权执行。
+- 当前没有 `IN_PROGRESS` 或 `VERIFY` 任务；Task 11 已正式封板为 `DONE / codex`，Task 11C 不需要实施。Task 12 保持 `BACKLOG / unassigned`，下一业务任务尚未授权；不得自动开始 Task 12，后续状态变化、Commit 和 Push 均须按项目负责人明确授权执行。
 - 规则文档不得写入密码、个人代理或机器专属临时路径。

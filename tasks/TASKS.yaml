@@ -7,7 +7,7 @@ evidence_boundary:
   - "正式 Django 工程当前已有 Task 11 最终回归 486 passed、102 subtests passed，以及 Django system check、迁移一致性检查、Ruff、format 与浏览器响应式验收通过的电脑 B 证据。"
   - "Wagtail F02～F08 仍位于 experiments/wagtail_*，属于 SQLite 内存库隔离 PoC，不是正式上线能力。"
   - "正式根 pyproject.toml 尚未包含 Wagtail；不得为运行 PoC 而擅自修改正式依赖。"
-  - "仓库根目录 .env 当前存在、被 Git 忽略且未跟踪；本项目未读取或验证其内容、来源、变量完整性及 PostgreSQL 适用性，PostgreSQL 容器、卷和数据库尚未创建或启动，未执行真实 migrate。"
+  - "仓库根目录 .env 当前存在、被 Git 忽略且未跟踪；本项目未读取或验证其内容、来源、变量完整性及 PostgreSQL 适用性。Task 11 已完成仓库外临时 PostgreSQL 隔离验证，但不等于真实持久环境已核验，8J 继续 BLOCKED / unassigned。"
 
 tasks:
   - id: "8"
@@ -293,7 +293,7 @@ tasks:
   - id: "11"
     title: "开发 P0 搜索"
     priority: MUST
-    status: VERIFY
+    status: DONE
     owner: codex
     dependencies:
       - "10"
@@ -316,19 +316,23 @@ tasks:
       commits:
         - "6240147054f909c9f88c14d67e99f7c55ccc83d1"
         - "7ac5cd894db052dc3c7eb7e2721dbcc4f34d7ea6"
+        - "56364d2dbde10d707df8f86aad463e9b1dd3d51c"
       verification:
         - "Task 11A 搜索 Reader 专项 13 passed、16 subtests passed；Task 11B 搜索页面专项 13 passed、11 subtests passed。"
         - "knowledge 回归 310 passed、59 subtests passed；正式工程回归 486 passed、102 subtests passed；Django check、migration 检查、Ruff 和 format 通过。"
         - "项目负责人视觉验收 PASS：网络搜索 21 条并按 20+1 分页，打印机搜索 1 条，零结果、Draft-only 隔离及 KB-910001 正式详情链路均符合预期。"
         - "Reader 在 3 条和 23 条结果时均为 1 query；搜索页面在 3 条和 23 条结果时均为 4 queries，无 N+1。"
-        - "PostgreSQL 专项验证 PENDING：当前 V1 ORM 查询、中文 substring、确定性排序、NULLS LAST、查询计划、索引利用和典型数据量性能尚未验证。"
+        - "PostgreSQL isolated verification PASS：PostgreSQL 17.11 临时隔离环境中 Migration 与 showmigrations 通过，Task 11A 为 13 passed / 16 subtests，Task 11B 为 13 passed / 11 subtests，PG 与 SQLite 契约一致。"
+        - "PostgreSQL 行为矩阵 PASS：中文 substring、ASCII 大小写、特殊字符、DENY、Draft、未发布、Future、Archived、Offline、稳定排序、NULLS LAST、count 和 pagination 均符合 V1 契约。"
+        - "PostgreSQL 性能证据 PASS：Reader 3/23 条均为 1 query，Page 3/23 条均为 4 queries；1,000 篇合成数据无明显异常，EXPLAIN/ANALYZE 未发现阻止 V1 使用的问题。"
+        - "Task 11P-1 使用的 15432、临时容器、tmpfs、临时目录和进程环境变量已全部清理；正式 8000、5432 和持久 Volume 未受影响，未读取真实 .env。"
       notes:
-        - "Task 11A 与 Task 11B 已完成并双端同步，Task 11 V1 必须业务功能和负责人视觉验收均已通过；当前为 VERIFY / codex，不需要 Task 11C。"
+        - "Task 11A 与 Task 11B 已完成并双端同步，负责人视觉验收与 PostgreSQL 隔离专项均已通过；项目负责人最终验收后，Task 11 正式封板为 DONE / codex，不需要 Task 11C。"
         - "apps/search 与 apps/audit 当前没有可复用的搜索或点击日志模型；如日志需要 SearchLog、ClickLog、AuditEvent、新数据库表或 Migration，必须先提出 SCOPE QUESTION，不得静默扩展。"
         - "搜索结果点击继续进入 /kb/<kb_no>/ 并由 get_employee_article_detail 重新鉴权；搜索日志不得作为权限凭据。"
         - "不得修改 apps/knowledge/selectors.py；优先复用 employee_visible_articles，如认为 Reader API 需要扩大，必须先提出 READER DESIGN QUESTION。"
         - "V1 不包含 Article 创建、KB 编号、草稿或版本写入、审核发布、Wagtail 正式融合、真实 PostgreSQL 操作，以及联想、自动补全、热门词、拼音、纠错、AI/向量搜索、Elasticsearch、OpenSearch、Redis 或运营报表。"
-        - "Task 11 只有在 PostgreSQL 专项验证完成并 PASS，或项目负责人明确接受分阶段验收并记录后续验证安排后，才可由负责人授权从 VERIFY 进入 DONE。"
+        - "Task 11P-1 临时 PostgreSQL 验证不解除 8J；8J 继续 BLOCKED / unassigned，Task 12 继续 BACKLOG / unassigned，下一业务任务尚未授权。"
 
   - id: "12"
     title: "开发文章创建、草稿和版本保存"
