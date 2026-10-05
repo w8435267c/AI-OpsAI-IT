@@ -17,6 +17,8 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts.models import Department, User, UserGroup
+from apps.knowledge.readers import employee_visible_articles, get_employee_article_detail
+from apps.search.readers import search_employee_articles
 
 from ..admin import ArticleAdmin
 from ..models import (
@@ -26,8 +28,10 @@ from ..models import (
     ArticleType,
     ArticleVersion,
     AudienceEffect,
+    AudiencePolicy,
     AudienceType,
     Category,
+    KnowledgeNumberCounter,
     KnowledgeSpace,
     ReviewDecision,
     ReviewRecord,
@@ -122,6 +126,25 @@ def make_published_version(article: Article | None = None, **kwargs) -> ArticleV
         published_at=now,
         **kwargs,
     )
+
+
+class KnowledgeNumberCounterTests(TestCase):
+    """全局 KB 编号计数器的单例与正整数约束。"""
+
+    def test_seeded_counter_has_singleton_and_next_value_one_for_empty_database(self):
+        counter = KnowledgeNumberCounter.objects.get()
+        self.assertEqual(counter.id, 1)
+        self.assertEqual(counter.next_value, 1)
+
+    def test_counter_rejects_non_singleton_id_in_database(self):
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            KnowledgeNumberCounter.objects.create(id=2)
+
+    def test_counter_rejects_non_positive_next_value_in_database(self):
+        counter = KnowledgeNumberCounter.objects.get()
+        counter.next_value = 0
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            counter.save(update_fields=["next_value"])
 
 
 class KnowledgeSpaceTests(TestCase):
@@ -290,6 +313,46 @@ class ArticleTests(TestCase):
         with self.assertRaises(ValidationError):
             article.full_clean()
 
+    def test_working_pointer_accepts_own_draft(self):
+        article = make_article()
+        draft = make_version(article)
+        article.latest_working_version = draft
+        article.full_clean()
+
+    def test_working_pointer_rejects_saved_review_and_rejected_versions(self):
+        article = make_article()
+        submitter = create_user()
+        now = timezone.now()
+        cases = (
+            make_version(article, status=VersionStatus.SAVED),
+            make_version(
+                article,
+                version_no=2,
+                status=VersionStatus.IN_REVIEW,
+                submitted_by=submitter,
+                submitted_at=now,
+            ),
+            make_version(
+                article,
+                version_no=3,
+                status=VersionStatus.REJECTED,
+                submitted_by=submitter,
+                submitted_at=now,
+            ),
+        )
+        for version in cases:
+            with self.subTest(status=version.status):
+                article.latest_working_version = version
+                with self.assertRaises(ValidationError):
+                    article.full_clean()
+
+    def test_working_pointer_rejects_other_article_draft(self):
+        article = make_article()
+        other = make_article(kb_no="KB-000002")
+        article.latest_working_version = make_version(other)
+        with self.assertRaises(ValidationError):
+            article.full_clean()
+
     def test_deleting_space_with_articles_is_protected(self):
         space = make_space(code="space-a")
         make_article(space=space)
@@ -315,7 +378,46 @@ class ArticleVersionTests(TestCase):
     def test_minimal_version_can_be_created(self):
         version = make_version()
         self.assertEqual(version.status, VersionStatus.DRAFT)
+        self.assertEqual(version.lock_version, 1)
         self.assertIn(version, version.article.versions.all())
+
+    def test_lock_version_must_be_positive_in_database(self):
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            make_version(lock_version=0)
+
+    def test_saved_is_a_choice_and_does_not_require_submitted_information(self):
+        version = make_version(status=VersionStatus.SAVED)
+        self.assertEqual(version.status, VersionStatus.SAVED)
+        self.assertIsNone(version.submitted_by)
+        self.assertIsNone(version.submitted_at)
+
+    def test_multiple_saved_versions_are_allowed_but_two_drafts_are_not(self):
+        article = make_article()
+        make_version(article, status=VersionStatus.SAVED)
+        make_version(article, version_no=2, status=VersionStatus.SAVED)
+        make_version(article, version_no=3, status=VersionStatus.DRAFT)
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            make_version(article, version_no=4, status=VersionStatus.DRAFT)
+
+    def test_restored_from_version_is_optional_and_must_belong_to_same_article(self):
+        article = make_article()
+        source = make_version(article, status=VersionStatus.SAVED)
+        restored = ArticleVersion(
+            article=article,
+            version_no=2,
+            status=VersionStatus.DRAFT,
+            title="恢复草稿",
+            summary="恢复摘要",
+            change_summary="恢复历史版本",
+            created_by=article.created_by,
+            restored_from_version=source,
+        )
+        restored.full_clean()
+
+        other = make_article(kb_no="KB-000002")
+        restored.restored_from_version = make_version(other)
+        with self.assertRaises(ValidationError):
+            restored.full_clean()
 
     def test_version_no_unique_per_article_in_db(self):
         article = make_article()
@@ -330,18 +432,24 @@ class ArticleVersionTests(TestCase):
         other = make_version(article_b, version_no=1)
         self.assertEqual(other.version_no, 1)
 
-    def test_only_one_working_version_per_article(self):
+    def test_only_one_draft_version_per_article(self):
         article = make_article()
         make_version(article, status=VersionStatus.DRAFT)
         submitter = create_user()
         now = timezone.now()
+        review = make_version(
+            article,
+            version_no=2,
+            status=VersionStatus.IN_REVIEW,
+            submitted_by=submitter,
+            submitted_at=now,
+        )
+        self.assertEqual(review.status, VersionStatus.IN_REVIEW)
         with self.assertRaises(IntegrityError), transaction.atomic():
             make_version(
                 article,
-                version_no=2,
-                status=VersionStatus.IN_REVIEW,
-                submitted_by=submitter,
-                submitted_at=now,
+                version_no=3,
+                status=VersionStatus.DRAFT,
             )
 
     def test_working_version_and_published_version_can_coexist(self):
@@ -415,6 +523,53 @@ class ArticleVersionTests(TestCase):
     def test_str_format(self):
         version = make_version(version_no=3)
         self.assertEqual(str(version), f"{version.article.kb_no} v3")
+
+
+class SavedEmployeeIsolationTests(TestCase):
+    """SAVED 与 DRAFT 均不能穿透员工正式读取、详情和搜索边界。"""
+
+    def test_only_current_published_version_is_visible_to_employee(self):
+        employee = create_user("employee")
+        marker = "task12b-visible-marker"
+        published_article = make_article(
+            kb_no="KB-000010",
+            audience_policy=AudiencePolicy.ALL_EMPLOYEES,
+        )
+        published = make_published_version(
+            published_article,
+            title=marker,
+            summary=marker,
+            body_plaintext=marker,
+        )
+        Article.objects.filter(pk=published_article.pk).update(current_published_version=published)
+        saved_article = make_article(
+            kb_no="KB-000011",
+            audience_policy=AudiencePolicy.ALL_EMPLOYEES,
+        )
+        make_version(
+            saved_article,
+            status=VersionStatus.SAVED,
+            title=marker,
+            summary=marker,
+            body_plaintext=marker,
+        )
+        draft_article = make_article(
+            kb_no="KB-000012",
+            audience_policy=AudiencePolicy.ALL_EMPLOYEES,
+        )
+        make_version(
+            draft_article,
+            status=VersionStatus.DRAFT,
+            title=marker,
+            summary=marker,
+            body_plaintext=marker,
+        )
+
+        self.assertEqual(list(employee_visible_articles(employee)), [published_article])
+        self.assertIsNotNone(get_employee_article_detail(employee, published_article.kb_no))
+        self.assertIsNone(get_employee_article_detail(employee, saved_article.kb_no))
+        self.assertIsNone(get_employee_article_detail(employee, draft_article.kb_no))
+        self.assertEqual(list(search_employee_articles(employee, marker)), [published_article])
 
 
 class ArticleAudienceTests(TestCase):

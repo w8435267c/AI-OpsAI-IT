@@ -59,6 +59,7 @@ class ArticleStatus(models.TextChoices):
 
 class VersionStatus(models.TextChoices):
     DRAFT = "draft", _("草稿")
+    SAVED = "saved", _("已保存")
     IN_REVIEW = "in_review", _("待审核")
     REJECTED = "rejected", _("已驳回")
     PUBLISHED = "published", _("已发布")
@@ -269,6 +270,35 @@ class Category(models.Model):
         return self.name
 
 
+class KnowledgeNumberCounter(models.Model):
+    """全局 KB 编号计数器；正式分配由后续 Service 通过行锁完成。"""
+
+    id = models.PositiveSmallIntegerField(
+        primary_key=True,
+        default=1,
+        editable=False,
+        db_comment="固定为 1 的全局知识编号计数器单例主键。",
+    )
+    next_value = models.PositiveIntegerField(
+        default=1,
+        db_comment="下一次可分配 KB 数字；超过六位时由 Service 报告耗尽。",
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        db_comment="计数器最后更新时间。",
+    )
+
+    class Meta:
+        db_table = "kb_number_counter"
+        db_table_comment = "全局 KB 编号计数器；不得作为人工维护入口。"
+        constraints = [
+            models.CheckConstraint(condition=Q(id=1), name="kb_counter_singleton_ck"),
+            models.CheckConstraint(
+                condition=Q(next_value__gt=0), name="kb_counter_next_positive_ck"
+            ),
+        ]
+
+
 class Article(models.Model):
     """文章主记录：保存稳定身份、当前指针和生命周期状态。"""
 
@@ -438,15 +468,10 @@ class Article(models.Model):
 
         if self.latest_working_version_id:
             version = self.latest_working_version
-            allowed_statuses = {
-                VersionStatus.DRAFT,
-                VersionStatus.IN_REVIEW,
-                VersionStatus.REJECTED,
-            }
             if version.article_id != self.id:
                 errors["latest_working_version"] = _("最新工作版本必须属于本文章。")
-            elif version.status not in allowed_statuses:
-                errors["latest_working_version"] = _("最新工作版本只能是草稿、待审核或已驳回状态。")
+            elif version.status != VersionStatus.DRAFT:
+                errors["latest_working_version"] = _("最新工作版本只能是草稿状态。")
 
         # 修改文章策略时检查既有受众规则是否与最终策略一致；DENY 规则不受限。
         if self.pk and pending_article.get() is not self:
@@ -492,7 +517,13 @@ class ArticleVersion(models.Model):
         choices=VersionStatus.choices,
         default=VersionStatus.DRAFT,
         db_index=True,
-        db_comment="版本状态：草稿、待审核、已驳回、已发布或已替代。",
+        db_comment="版本状态：草稿、已保存、待审核、已驳回、已发布或已替代。",
+    )
+    lock_version = models.PositiveIntegerField(
+        _("乐观锁版本"),
+        default=1,
+        editable=False,
+        db_comment="草稿写入的乐观锁版本号；后续保存 Service 必须显式比较并递增。",
     )
     title = models.CharField(
         _("版本标题"),
@@ -525,6 +556,16 @@ class ArticleVersion(models.Model):
         _("版本说明"),
         max_length=500,
         db_comment="作者说明本版本相对上一版本的主要修改。",
+    )
+    restored_from_version = models.ForeignKey(
+        "self",
+        verbose_name=_("恢复来源版本"),
+        on_delete=models.PROTECT,
+        related_name="restored_descendants",
+        null=True,
+        blank=True,
+        editable=False,
+        db_comment="历史恢复创建新草稿时记录的同文章来源版本。",
     )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -592,13 +633,7 @@ class ArticleVersion(models.Model):
             ),
             models.UniqueConstraint(
                 fields=("article",),
-                condition=Q(
-                    status__in=(
-                        VersionStatus.DRAFT,
-                        VersionStatus.IN_REVIEW,
-                        VersionStatus.REJECTED,
-                    )
-                ),
+                condition=Q(status=VersionStatus.DRAFT),
                 name="kb_ver_working_uniq",
             ),
             models.UniqueConstraint(
@@ -612,10 +647,14 @@ class ArticleVersion(models.Model):
             ),
             models.CheckConstraint(
                 condition=(
-                    Q(status=VersionStatus.DRAFT)
+                    Q(status__in=(VersionStatus.DRAFT, VersionStatus.SAVED))
                     | (Q(submitted_by__isnull=False) & Q(submitted_at__isnull=False))
                 ),
                 name="kb_ver_submitted_ck",
+            ),
+            models.CheckConstraint(
+                condition=Q(lock_version__gt=0),
+                name="kb_ver_lock_positive_ck",
             ),
             models.CheckConstraint(
                 condition=(~Q(status=VersionStatus.PUBLISHED) | Q(published_at__isnull=False)),
@@ -635,6 +674,12 @@ class ArticleVersion(models.Model):
 
         if self.status == VersionStatus.PUBLISHED and not self.published_at:
             errors["published_at"] = _("已发布版本必须记录发布时间。")
+
+        if (
+            self.restored_from_version_id
+            and self.restored_from_version.article_id != self.article_id
+        ):
+            errors["restored_from_version"] = _("恢复来源版本必须属于同一篇文章。")
 
         if errors:
             raise ValidationError(errors)
