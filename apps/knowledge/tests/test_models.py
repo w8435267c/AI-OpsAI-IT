@@ -375,6 +375,20 @@ class ArticleTests(TestCase):
 class ArticleVersionTests(TestCase):
     """版本号唯一、工作/发布版本唯一、检查约束与删除策略。"""
 
+    def _make_unsaved_version(self, status: str = VersionStatus.DRAFT, **kwargs) -> ArticleVersion:
+        article = kwargs.pop("article", None) or make_article()
+        defaults = {
+            "article": article,
+            "version_no": 1,
+            "status": status,
+            "title": "版本标题",
+            "summary": "版本摘要",
+            "change_summary": "初始版本",
+            "created_by": article.created_by,
+        }
+        defaults.update(kwargs)
+        return ArticleVersion(**defaults)
+
     def test_minimal_version_can_be_created(self):
         version = make_version()
         self.assertEqual(version.status, VersionStatus.DRAFT)
@@ -509,6 +523,82 @@ class ArticleVersionTests(TestCase):
         )
         with self.assertRaises(ValidationError):
             version.full_clean()
+
+    def test_draft_and_saved_without_submitted_info_pass_full_clean(self):
+        article = make_article()
+        for status in (VersionStatus.DRAFT, VersionStatus.SAVED):
+            with self.subTest(status=status):
+                self._make_unsaved_version(article=article, status=status).full_clean()
+
+    def test_saved_requires_submitted_info_to_be_paired(self):
+        article = make_article()
+        submitter = create_user()
+        now = timezone.now()
+        cases = (
+            ({"submitted_by": submitter}, "submitted_at"),
+            ({"submitted_at": now}, "submitted_by"),
+        )
+
+        for submitted_fields, missing_field in cases:
+            with self.subTest(missing_field=missing_field):
+                version = self._make_unsaved_version(
+                    article=article,
+                    status=VersionStatus.SAVED,
+                    **submitted_fields,
+                )
+                with self.assertRaises(ValidationError) as context:
+                    version.full_clean()
+                self.assertIn(missing_field, context.exception.error_dict)
+
+    def test_saved_with_complete_submitted_info_passes_full_clean(self):
+        self._make_unsaved_version(
+            status=VersionStatus.SAVED,
+            submitted_by=create_user(),
+            submitted_at=timezone.now(),
+        ).full_clean()
+
+    def test_review_lifecycle_statuses_require_complete_submitted_info(self):
+        article = make_article()
+        now = timezone.now()
+        statuses = (
+            VersionStatus.IN_REVIEW,
+            VersionStatus.REJECTED,
+            VersionStatus.PUBLISHED,
+            VersionStatus.SUPERSEDED,
+        )
+
+        for status in statuses:
+            with self.subTest(status=status):
+                version = self._make_unsaved_version(
+                    article=article,
+                    status=status,
+                    published_at=now if status == VersionStatus.PUBLISHED else None,
+                )
+                with self.assertRaises(ValidationError) as context:
+                    version.full_clean()
+                self.assertIn("submitted_by", context.exception.error_dict)
+                self.assertIn("submitted_at", context.exception.error_dict)
+
+    def test_review_lifecycle_statuses_accept_complete_submitted_info(self):
+        article = make_article()
+        submitter = create_user()
+        now = timezone.now()
+        statuses = (
+            VersionStatus.IN_REVIEW,
+            VersionStatus.REJECTED,
+            VersionStatus.PUBLISHED,
+            VersionStatus.SUPERSEDED,
+        )
+
+        for status in statuses:
+            with self.subTest(status=status):
+                self._make_unsaved_version(
+                    article=article,
+                    status=status,
+                    submitted_by=submitter,
+                    submitted_at=now,
+                    published_at=now if status == VersionStatus.PUBLISHED else None,
+                ).full_clean()
 
     def test_deleting_article_with_versions_is_protected(self):
         version = make_version()

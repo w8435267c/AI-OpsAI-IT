@@ -666,7 +666,14 @@ class ArticleVersion(models.Model):
         super().clean()
         errors: dict[str, str] = {}
 
-        if self.status != VersionStatus.DRAFT:
+        requires_submitted_info = self.status not in (
+            VersionStatus.DRAFT,
+            VersionStatus.SAVED,
+        )
+        has_partial_saved_submission = self.status == VersionStatus.SAVED and bool(
+            self.submitted_by_id
+        ) != bool(self.submitted_at)
+        if requires_submitted_info or has_partial_saved_submission:
             if not self.submitted_by_id:
                 errors["submitted_by"] = _("非草稿版本必须记录提交审核人。")
             if not self.submitted_at:
