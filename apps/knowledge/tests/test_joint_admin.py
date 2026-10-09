@@ -267,15 +267,16 @@ def test_cycle_rejected_preserving_input_and_database(setup, size):
     user, client, article, first = setup
     rules = [first] + [_add_audience(article, "user", user=_mk_user()) for _ in range(size - 1)]
     before = list(article.audience_rules.order_by("pk").values())
-    data = payload(user, article, title="保留输入")
+    requested_owner = _mk_user()
+    data = payload(user, article, owner=requested_owner.pk)
     for index, rule in enumerate(rules):
         set_target(data, rule, rules[(index + 1) % size].user)
     response = post(client, article, data)
     assert response.status_code == 200
     assert "循环交换" in str(errors(response))
-    assert response.context["adminform"].form["title"].value() == "保留输入"
+    assert response.context["adminform"].form["owner"].value() == str(requested_owner.pk)
     article.refresh_from_db()
-    assert article.title != "保留输入"
+    assert article.owner_id != requested_owner.pk
     assert list(article.audience_rules.order_by("pk").values()) == before
     from apps.knowledge.validation_context import pending_article, pending_audience
 

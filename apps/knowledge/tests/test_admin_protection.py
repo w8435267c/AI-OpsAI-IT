@@ -136,7 +136,16 @@ class ReviewRecordAdminProtectionTests(_BaseKnowledgeAdminProtectionTests):
 
 @override_settings(DEBUG=True, DEV_LOGIN_ENABLED=True)
 class ArticleVersionAdminProtectionTests(_BaseKnowledgeAdminProtectionTests):
-    """ArticleVersionAdmin：非超级管理员只读；超级管理员保留开发期 break-glass。"""
+    """ArticleVersionAdmin：任何用户（含超级管理员）都只能只读查看。"""
+
+    def test_superuser_has_no_add_change_or_delete_permission(self):
+        request = RequestFactory().get("/admin/knowledge/articleversion/")
+        request.user = self.superuser
+        version_admin = ArticleVersionAdmin(ArticleVersion, admin.site)
+
+        self.assertFalse(version_admin.has_add_permission(request))
+        self.assertFalse(version_admin.has_change_permission(request, self.version))
+        self.assertFalse(version_admin.has_delete_permission(request, self.version))
 
     def test_admin_can_view_version(self):
         response = self._client(self.admin_user).get(
@@ -171,9 +180,7 @@ class ArticleVersionAdminProtectionTests(_BaseKnowledgeAdminProtectionTests):
         self.assertEqual(response.status_code, 403)
         self.assertTrue(ArticleVersion.objects.filter(pk=self.version.pk).exists())
 
-    def test_superuser_break_glass_change_allowed(self):
-        # 开发期 break-glass：超级管理员保留修改能力（报告中明示，
-        # 该能力绝不授予知识库管理员）。
+    def test_superuser_cannot_add_change_or_delete_version(self):
         version_admin = ArticleVersionAdmin(ArticleVersion, admin.site)
         data = build_change_post_data(
             version_admin,
@@ -185,9 +192,40 @@ class ArticleVersionAdminProtectionTests(_BaseKnowledgeAdminProtectionTests):
         response = self._client(self.superuser).post(
             f"/admin/knowledge/articleversion/{self.version.pk}/change/", data
         )
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(
+            self._client(self.superuser).get("/admin/knowledge/articleversion/add/").status_code,
+            403,
+        )
+        self.assertEqual(
+            self._client(self.superuser)
+            .post(
+                f"/admin/knowledge/articleversion/{self.version.pk}/delete/",
+                {"post": "yes"},
+            )
+            .status_code,
+            403,
+        )
         self.version.refresh_from_db()
-        self.assertEqual(self.version.title, "应急修正的版本标题")
+        self.assertEqual(self.version.title, "保护测试版本")
+        self.assertTrue(ArticleVersion.objects.filter(pk=self.version.pk).exists())
+
+    def test_bulk_delete_action_is_not_exposed_or_executable(self):
+        request = RequestFactory().get("/admin/knowledge/articleversion/")
+        request.user = self.superuser
+        version_admin = ArticleVersionAdmin(ArticleVersion, admin.site)
+        self.assertNotIn("delete_selected", version_admin.get_actions(request))
+
+        response = self._client(self.superuser).post(
+            "/admin/knowledge/articleversion/",
+            {
+                "action": "delete_selected",
+                "_selected_action": [str(self.version.pk)],
+                "index": "0",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(ArticleVersion.objects.filter(pk=self.version.pk).exists())
 
 
 @override_settings(DEBUG=True, DEV_LOGIN_ENABLED=True)
@@ -204,6 +242,7 @@ class ArticleAdminLifecycleProtectionTests(_BaseKnowledgeAdminProtectionTests):
         form_cls = ArticleAdmin(Article, admin.site).get_form(request, obj=self.article)
         for field in (
             "kb_no",
+            "title",
             "article_status",
             "current_published_version",
             "latest_working_version",
@@ -211,6 +250,8 @@ class ArticleAdminLifecycleProtectionTests(_BaseKnowledgeAdminProtectionTests):
             "updated_by",
         ):
             self.assertNotIn(field, form_cls.base_fields, f"字段 {field} 不应出现在可编辑表单中")
+        for field in ("space", "category", "article_type", "audience_policy", "owner"):
+            self.assertIn(field, form_cls.base_fields, f"元数据字段 {field} 应继续允许维护")
 
     def test_lifecycle_fields_readonly_via_post(self):
         # 直接 POST 伪造编号/状态/版本指针：即使表单提交成功也不得写入。
@@ -225,6 +266,7 @@ class ArticleAdminLifecycleProtectionTests(_BaseKnowledgeAdminProtectionTests):
             self.admin_user,
             self.article,
             kb_no="KB-999999",
+            title="不得从 Admin 修改的标题",
             article_status=other_status,
             current_published_version=self.version.pk,
             latest_working_version=self.version.pk,
@@ -235,6 +277,7 @@ class ArticleAdminLifecycleProtectionTests(_BaseKnowledgeAdminProtectionTests):
         self.assertEqual(response.status_code, 302)
         self.article.refresh_from_db()
         self.assertEqual(self.article.kb_no, "KB-910001")
+        self.assertEqual(self.article.title, "保护测试文章")
         self.assertNotEqual(self.article.article_status, other_status)
         self.assertIsNone(self.article.current_published_version_id)
         self.assertIsNone(self.article.latest_working_version_id)

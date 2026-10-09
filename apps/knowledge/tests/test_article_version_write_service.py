@@ -6,7 +6,7 @@ from uuid import uuid4
 
 from django.contrib.auth.models import AnonymousUser, Group, Permission
 from django.core.management import call_command
-from django.db import DatabaseError
+from django.db import DatabaseError, IntegrityError
 from django.db.models.query import QuerySet
 from django.test import TestCase
 from django.utils import timezone
@@ -20,6 +20,7 @@ from apps.knowledge.models import (
     AudiencePolicy,
     Category,
     KnowledgeSpace,
+    ReviewRecord,
     VersionStatus,
 )
 from apps.knowledge.readers import employee_visible_articles, get_employee_article_detail
@@ -28,6 +29,7 @@ from apps.knowledge.services import (
     ArticleVersionWriteError,
     KnowledgeServiceError,
     autosave_draft,
+    manual_save_draft,
 )
 from apps.search.readers import search_employee_articles
 
@@ -106,6 +108,17 @@ class ArticleVersionWriteServiceTests(TestCase):
     def assert_write_error(self, code, **overrides):
         with self.assertRaises(ArticleVersionWriteError) as caught:
             autosave_draft(**self.autosave_kwargs(**overrides))
+        self.assertEqual(caught.exception.code, code)
+        return caught.exception
+
+    def manual_save_kwargs(self, **overrides):
+        values = self.autosave_kwargs()
+        values.update(overrides)
+        return values
+
+    def assert_manual_error(self, code, **overrides):
+        with self.assertRaises(ArticleVersionWriteError) as caught:
+            manual_save_draft(**self.manual_save_kwargs(**overrides))
         self.assertEqual(caught.exception.code, code)
         return caught.exception
 
@@ -494,3 +507,327 @@ class ArticleVersionWriteServiceTests(TestCase):
             self.article,
             search_employee_articles(self.employee, "员工可见正式标题"),
         )
+
+    def test_manual_save_freezes_current_draft_and_creates_next_draft(self):
+        published = ArticleVersion.objects.create(
+            article=self.article,
+            version_no=5,
+            status=VersionStatus.PUBLISHED,
+            title="员工正式标题",
+            summary="员工正式摘要",
+            body={"format": "opsai.plaintext/1", "text": "员工正式正文"},
+            body_plaintext="员工正式正文",
+            change_summary="正式发布",
+            created_by=self.article_owner,
+            submitted_by=self.article_owner,
+            submitted_at=timezone.now(),
+            published_at=timezone.now(),
+        )
+        Article.objects.filter(pk=self.article.pk).update(
+            current_published_version=published,
+            updated_by=self.article_owner,
+            updated_at=timezone.now() - timedelta(days=1),
+        )
+        self.article.refresh_from_db()
+        old_article_updated_at = self.article.updated_at
+        old_draft_pk = self.draft.pk
+        before_review_count = ReviewRecord.objects.count()
+
+        saved, new_draft = manual_save_draft(**self.manual_save_kwargs(actor=self.space_owner))
+
+        self.assertEqual(saved.pk, old_draft_pk)
+        self.assertEqual(saved.status, VersionStatus.SAVED)
+        self.assertEqual(saved.version_no, 1)
+        self.assertEqual(saved.lock_version, 2)
+        self.assertEqual(saved.title, "新草稿标题")
+        self.assertEqual(saved.summary, "新摘要")
+        self.assertEqual(
+            saved.applicable_scope,
+            {"systems": ["Windows 11"], "devices": ["PC"]},
+        )
+        self.assertEqual(
+            saved.body,
+            {"format": "opsai.plaintext/1", "text": "第一步：检查网络。"},
+        )
+        self.assertEqual(saved.body_plaintext, "第一步：检查网络。")
+        self.assertEqual(saved.change_summary, "更新排障步骤")
+        self.assertEqual(saved.created_by, self.article_owner)
+        self.assertIsNone(saved.restored_from_version)
+        self.assertIsNone(saved.submitted_by)
+        self.assertIsNone(saved.submitted_at)
+        self.assertIsNone(saved.published_at)
+
+        self.assertNotEqual(new_draft.pk, saved.pk)
+        self.assertEqual(new_draft.article, self.article)
+        self.assertEqual(new_draft.version_no, 6)
+        self.assertEqual(new_draft.status, VersionStatus.DRAFT)
+        self.assertEqual(new_draft.lock_version, 1)
+        for field in ("title", "summary", "applicable_scope", "body", "body_plaintext"):
+            with self.subTest(field=field):
+                self.assertEqual(getattr(new_draft, field), getattr(saved, field))
+        self.assertEqual(new_draft.created_by, self.space_owner)
+        self.assertIsNone(new_draft.restored_from_version)
+        self.assertIsNone(new_draft.submitted_by)
+        self.assertIsNone(new_draft.submitted_at)
+        self.assertIsNone(new_draft.published_at)
+        self.assertEqual(new_draft.change_summary, "基于已保存版本 v1 继续编辑")
+
+        self.article.refresh_from_db()
+        self.assertEqual(self.article.latest_working_version, new_draft)
+        self.assertEqual(self.article.updated_by, self.space_owner)
+        self.assertGreater(self.article.updated_at, old_article_updated_at)
+        self.assertEqual(self.article.title, "发布标题保持不变")
+        self.assertEqual(self.article.current_published_version, published)
+        self.assertEqual(ReviewRecord.objects.count(), before_review_count)
+        self.assertEqual(ArticleVersion.objects.filter(article=self.article).count(), 3)
+        self.assertEqual(
+            list(
+                ArticleVersion.objects.filter(article=self.article)
+                .order_by("version_no")
+                .values_list("version_no", "status")
+            ),
+            [
+                (1, VersionStatus.SAVED),
+                (5, VersionStatus.PUBLISHED),
+                (6, VersionStatus.DRAFT),
+            ],
+        )
+
+        detail = get_employee_article_detail(self.employee, self.article.kb_no)
+        self.assertEqual(detail.title, "员工正式标题")
+        self.assertNotIn(
+            self.article,
+            search_employee_articles(self.employee, "新草稿标题"),
+        )
+        self.assertIn(
+            self.article,
+            search_employee_articles(self.employee, "员工正式标题"),
+        )
+
+    def test_manual_save_uses_max_version_number_not_current_draft_number(self):
+        ArticleVersion.objects.create(
+            article=self.article,
+            version_no=9,
+            status=VersionStatus.SAVED,
+            title="高位历史版本",
+            summary="高位历史摘要",
+            change_summary="高位历史",
+            created_by=self.article_owner,
+        )
+
+        saved, new_draft = manual_save_draft(**self.manual_save_kwargs())
+
+        self.assertEqual(saved.version_no, 1)
+        self.assertEqual(new_draft.version_no, 10)
+
+    def test_manual_save_stale_token_rolls_back_everything(self):
+        self.article.refresh_from_db()
+        before_article = {
+            "latest_working_version_id": self.article.latest_working_version_id,
+            "current_published_version_id": self.article.current_published_version_id,
+            "updated_by_id": self.article.updated_by_id,
+            "updated_at": self.article.updated_at,
+        }
+        before_version_count = ArticleVersion.objects.count()
+
+        self.assert_manual_error("DRAFT_CONFLICT", expected_lock_version=2)
+
+        self.draft.refresh_from_db()
+        self.article.refresh_from_db()
+        self.assertEqual(self.draft.status, VersionStatus.DRAFT)
+        self.assertEqual(self.draft.lock_version, 1)
+        self.assertEqual(self.draft.title, "旧草稿标题")
+        self.assertEqual(ArticleVersion.objects.count(), before_version_count)
+        self.assertEqual(
+            {
+                "latest_working_version_id": self.article.latest_working_version_id,
+                "current_published_version_id": self.article.current_published_version_id,
+                "updated_by_id": self.article.updated_by_id,
+                "updated_at": self.article.updated_at,
+            },
+            before_article,
+        )
+
+    def test_manual_save_rejects_non_current_non_draft_wrong_and_missing_draft(self):
+        Article.objects.filter(pk=self.article.pk).update(latest_working_version=None)
+        self.assert_manual_error("DRAFT_NOT_CURRENT")
+
+        Article.objects.filter(pk=self.article.pk).update(latest_working_version=self.draft)
+        ArticleVersion.objects.filter(pk=self.draft.pk).update(status=VersionStatus.SAVED)
+        self.assert_manual_error("INVALID_DRAFT_STATE")
+
+        other_article, other_draft = self.make_article_version(suffix="200300")
+        wrong = self.assert_manual_error(
+            "DRAFT_NOT_FOUND_OR_INACCESSIBLE",
+            draft_id=other_draft.pk,
+        )
+        missing = self.assert_manual_error(
+            "DRAFT_NOT_FOUND_OR_INACCESSIBLE",
+            draft_id=uuid4(),
+        )
+        self.assertNotEqual(other_article.pk, self.article.pk)
+        self.assertEqual(wrong.public_message, missing.public_message)
+
+    def test_manual_save_rejects_repeated_use_of_frozen_draft(self):
+        saved, _new_draft = manual_save_draft(**self.manual_save_kwargs())
+
+        self.assert_manual_error(
+            "DRAFT_NOT_CURRENT",
+            draft_id=saved.pk,
+            expected_lock_version=saved.lock_version,
+        )
+
+        saved.refresh_from_db()
+        self.assertEqual(saved.status, VersionStatus.SAVED)
+        self.assertEqual(saved.title, "新草稿标题")
+
+    def test_manual_save_authorizes_owner_space_owner_and_admin(self):
+        cases = (
+            (self.article_owner, "200401"),
+            (self.space_owner, "200402"),
+            (self.admin, "200403"),
+        )
+        for actor, suffix in cases:
+            with self.subTest(actor=actor.username):
+                article, draft = self.make_article_version(suffix=suffix)
+                saved, new_draft = manual_save_draft(
+                    **self.manual_save_kwargs(
+                        actor=actor,
+                        article=article,
+                        draft_id=draft.pk,
+                    )
+                )
+                self.assertEqual(saved.status, VersionStatus.SAVED)
+                self.assertEqual(new_draft.created_by, actor)
+
+    def test_manual_save_rejects_unauthorized_and_invalid_accounts(self):
+        staff = User.objects.create_user(username="task12d-manual-staff", is_staff=True)
+        superuser = User.objects.create_superuser(
+            username="task12d-manual-superuser",
+            email="",
+            password="not-used-in-service-test",
+        )
+        inactive = User.objects.create_user(username="task12d-manual-inactive", is_active=False)
+        inactive.groups.add(Group.objects.get(name=SYSTEM_ROLE_BY_CODE[ROLE_EDITOR].name))
+        disabled = User.objects.create_user(
+            username="task12d-manual-disabled",
+            account_status=AccountStatus.DISABLED,
+        )
+        disabled.groups.add(Group.objects.get(name=SYSTEM_ROLE_BY_CODE[ROLE_EDITOR].name))
+
+        cases = (
+            (self.other_editor, "DRAFT_NOT_FOUND_OR_INACCESSIBLE"),
+            (self.employee, "ARTICLE_VERSION_WRITE_PERMISSION_DENIED"),
+            (staff, "ARTICLE_VERSION_WRITE_PERMISSION_DENIED"),
+            (superuser, "ARTICLE_VERSION_WRITE_PERMISSION_DENIED"),
+            (inactive, "ARTICLE_VERSION_WRITE_PERMISSION_DENIED"),
+            (disabled, "ARTICLE_VERSION_WRITE_PERMISSION_DENIED"),
+        )
+        for actor, code in cases:
+            with self.subTest(actor=actor.username):
+                self.assert_manual_error(code, actor=actor)
+
+    def test_manual_save_requires_add_articleversion_permission(self):
+        editor_group = Group.objects.get(name=SYSTEM_ROLE_BY_CODE[ROLE_EDITOR].name)
+        editor_group.permissions.remove(
+            Permission.objects.get(
+                content_type__app_label="knowledge",
+                codename="add_articleversion",
+            )
+        )
+        actor = User.objects.create_user(username="task12d-manual-missing-add")
+        actor.groups.add(editor_group)
+
+        self.assert_manual_error("ARTICLE_VERSION_WRITE_PERMISSION_DENIED", actor=actor)
+
+    def test_manual_save_validates_complete_content_and_token_before_transaction(self):
+        invalid_cases = (
+            {"expected_lock_version": None},
+            {"expected_lock_version": 0},
+            {"expected_lock_version": -1},
+            {"expected_lock_version": True},
+            {"expected_lock_version": "1"},
+            {"title": None},
+            {"title": "x" * 61},
+            {"summary": None},
+            {"summary": "x" * 501},
+            {"applicable_scope": []},
+            {"applicable_scope": {"invalid": {1}}},
+            {"body_text": None},
+            {"body_text": "  \r\n"},
+            {"change_summary": None},
+            {"change_summary": "x" * 501},
+        )
+        for overrides in invalid_cases:
+            with self.subTest(overrides=overrides):
+                self.assert_manual_error("ARTICLE_VERSION_WRITE_INVALID_INPUT", **overrides)
+
+        self.draft.refresh_from_db()
+        self.assertEqual(self.draft.status, VersionStatus.DRAFT)
+        self.assertEqual(self.draft.lock_version, 1)
+        self.assertEqual(ArticleVersion.objects.filter(article=self.article).count(), 1)
+
+    def test_manual_save_version_number_conflict_fails_closed_without_retry(self):
+        original_save = ArticleVersion.save
+        new_draft_save_attempts = []
+
+        def fail_new_draft(instance, *args, **kwargs):
+            if instance.pk != self.draft.pk and instance.status == VersionStatus.DRAFT:
+                new_draft_save_attempts.append(instance.version_no)
+                raise IntegrityError("secret kb_ver_article_no_uniq SQL constraint")
+            return original_save(instance, *args, **kwargs)
+
+        with mock.patch.object(ArticleVersion, "save", autospec=True, side_effect=fail_new_draft):
+            error = self.assert_manual_error("VERSION_NUMBER_CONFLICT")
+
+        self.assertEqual(new_draft_save_attempts, [2])
+        self.assertNotIn("sql", error.public_message.lower())
+        self.assertNotIn("constraint", error.public_message.lower())
+        self.draft.refresh_from_db()
+        self.article.refresh_from_db()
+        self.assertEqual(self.draft.status, VersionStatus.DRAFT)
+        self.assertEqual(self.draft.lock_version, 1)
+        self.assertEqual(self.article.latest_working_version, self.draft)
+        self.assertEqual(ArticleVersion.objects.filter(article=self.article).count(), 1)
+
+    def test_manual_save_new_draft_failure_rolls_back_all_changes(self):
+        original_save = ArticleVersion.save
+
+        def fail_new_draft(instance, *args, **kwargs):
+            if instance.pk != self.draft.pk and instance.status == VersionStatus.DRAFT:
+                raise DatabaseError("secret connection failure after SAVED")
+            return original_save(instance, *args, **kwargs)
+
+        with mock.patch.object(ArticleVersion, "save", autospec=True, side_effect=fail_new_draft):
+            error = self.assert_manual_error("DATABASE_WRITE_FAILED")
+
+        self.assertNotIn("connection", error.public_message.lower())
+        self.draft.refresh_from_db()
+        self.article.refresh_from_db()
+        self.assertEqual(self.draft.status, VersionStatus.DRAFT)
+        self.assertEqual(self.draft.lock_version, 1)
+        self.assertEqual(self.draft.title, "旧草稿标题")
+        self.assertEqual(self.article.latest_working_version, self.draft)
+        self.assertEqual(self.article.updated_by, self.space_owner)
+        self.assertEqual(ArticleVersion.objects.filter(article=self.article).count(), 1)
+
+    def test_manual_save_article_pointer_failure_rolls_back_new_draft_and_saved(self):
+        original_save = Article.save
+
+        def fail_pointer_save(instance, *args, **kwargs):
+            if kwargs.get("update_fields") and "latest_working_version" in kwargs["update_fields"]:
+                raise DatabaseError("secret SQL pointer write failure")
+            return original_save(instance, *args, **kwargs)
+
+        with mock.patch.object(Article, "save", autospec=True, side_effect=fail_pointer_save):
+            error = self.assert_manual_error("DATABASE_WRITE_FAILED")
+
+        self.assertNotIn("sql", error.public_message.lower())
+        self.draft.refresh_from_db()
+        self.article.refresh_from_db()
+        self.assertEqual(self.draft.status, VersionStatus.DRAFT)
+        self.assertEqual(self.draft.lock_version, 1)
+        self.assertEqual(self.draft.title, "旧草稿标题")
+        self.assertEqual(self.article.latest_working_version, self.draft)
+        self.assertEqual(self.article.updated_by, self.space_owner)
+        self.assertEqual(ArticleVersion.objects.filter(article=self.article).count(), 1)

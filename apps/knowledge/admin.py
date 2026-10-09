@@ -103,6 +103,7 @@ class ArticleAdmin(admin.ModelAdmin):
     autocomplete_fields = ("space", "category", "owner")
     readonly_fields = (
         "kb_no",
+        "title",
         "article_status",
         "current_published_version",
         "latest_working_version",
@@ -132,19 +133,36 @@ class ArticleVersionAdmin(admin.ModelAdmin):
     list_filter = ("status",)
     search_fields = ("article__kb_no", "article__title", "title")
     autocomplete_fields = ("article", "created_by", "submitted_by")
-    readonly_fields = ("created_at", "updated_at")
+    readonly_fields = (
+        "article",
+        "version_no",
+        "status",
+        "lock_version",
+        "title",
+        "summary",
+        "applicable_scope",
+        "body",
+        "body_plaintext",
+        "change_summary",
+        "restored_from_version",
+        "created_by",
+        "submitted_by",
+        "submitted_at",
+        "published_at",
+        "created_at",
+        "updated_at",
+    )
 
-    # 版本生命周期受正式版本 Service 保护：Service 落地前，非超级管理员
-    # 只能只读查看，防止通过 Admin 篡改历史版本内容；超级管理员保留
-    # 开发期 break-glass 修改能力，该能力绝不授予知识库管理员。
+    # SAVED 形成后是不可变历史。普通 Admin 不提供任何新增、修改或删除旁路，
+    # 超级管理员也不例外；紧急修复必须另立具备审批与审计的受控 Service。
     def has_add_permission(self, request):
-        return request.user.is_superuser
+        return False
 
     def has_change_permission(self, request, obj=None):
-        return request.user.is_superuser
+        return False
 
     def has_delete_permission(self, request, obj=None):
-        return request.user.is_superuser
+        return False
 
 
 @admin.register(ArticleAudience)

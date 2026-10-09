@@ -1059,7 +1059,7 @@ class ArticleAdminTests(TestCase):
         url = reverse("admin:knowledge_article_change", args=[self.article.id])
         self.assertEqual(self.client.get(url).status_code, 200)
 
-    def test_existing_article_can_be_edited_via_admin(self):
+    def test_existing_article_title_cannot_be_edited_via_admin(self):
         self.client.force_login(self.admin_user)
         url = reverse("admin:knowledge_article_change", args=[self.article.id])
         data = {
@@ -1087,4 +1087,4 @@ class ArticleAdminTests(TestCase):
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, 302)
         self.article.refresh_from_db()
-        self.assertEqual(self.article.title, "Admin 更新后的标题")
+        self.assertEqual(self.article.title, "测试文章")
