@@ -1,10 +1,10 @@
 # OpsAI AI Handoff
 
-> 当前活动任务：Task 12“开发文章创建、草稿和版本保存”，`IN_PROGRESS / codex`。Task 12A 已 `DONE / SYNCED`；Task 12B 为下一阶段但尚未开始。
+> 当前活动任务：Task 12“开发文章创建、草稿和版本保存”，`IN_PROGRESS / codex`。Task 12A～12D 已 `DONE / SYNCED`；Task 12E 为 `NEXT / NOT STARTED`。
 
 ## 1. 当前交接状态
 
-当前没有真实的 Agent 切换事件。Task 11“开发 P0 搜索”已正式封板为 `DONE / codex`；项目负责人已授权 Task 12 进入 `IN_PROGRESS / codex`。Task 12A 架构冻结已完成并三端同步，当前应从 Task 12B 开始，但必须等待项目负责人单独授权后才能实施。
+当前没有真实的 Agent 切换事件。Task 11“开发 P0 搜索”已正式封板为 `DONE / codex`；Task 12 继续为 `IN_PROGRESS / codex`。Task 12A～12D 已完成并同步，当前三端同步 HEAD 为 `1e025b9f9a96f7c63207a196dcfd916553940004`。下一阶段应从 Task 12E 开始，但必须等待项目负责人单独授权后才能实施。
 
 | 项目 | 当前值 |
 | --- | --- |
@@ -14,25 +14,28 @@
 | 开工日期 | `2026-10-05` |
 | 依赖 | 任务 `11`，状态为 `DONE / codex` |
 | 架构基线 | `docs/07-ADR/0003-Task12正式文章写入与版本链架构决策.md`，`Accepted` |
-| 范围冻结 Commit | `72029527406c17f433c3226475609a291373b55e`，LOCAL / GitHub / Gitee 三端同步 |
-| 业务实施状态 | Task 12A `DONE / SYNCED`；Task 12B `NEXT / NOT STARTED` |
-| 当前等待动作 | 等待项目负责人单独授权 Task 12B |
-| 当前禁止动作 | 不跳过 12B，不开始 Task 13，不正式接入 Wagtail，不操作数据库或 Docker，不读取真实 `.env` |
+| 当前同步基线 | `1e025b9f9a96f7c63207a196dcfd916553940004`，LOCAL / GitHub / Gitee 三端同步 |
+| 业务实施状态 | Task 12A～12D `DONE / SYNCED`；Task 12E `NEXT / NOT STARTED` |
+| 当前等待动作 | 等待项目负责人单独授权 Task 12E |
+| 当前禁止动作 | 不提前开始 12E，不开始 Task 13，不正式接入 Wagtail，不操作持久数据库或读取真实 `.env` |
 | Agent 切换状态 | 未发生 |
 
-Task 12 V1 的正式内容权威为 `Article + ArticleVersion`：`body` 是正文权威，`body_plaintext` 是服务端派生投影；`latest_working_version` 与 `current_published_version` 继续复用。Task 12 V1 不正式接入 Wagtail。KB 编号、`lock_version`、`SAVED` 与 `restored_from_version` 只在 ADR 中冻结为后续合同，本轮均未实现。
+Task 12 V1 的正式内容权威为 `Article + ArticleVersion`，Task 12B～12D 已完成模型、原子创建与版本链实现。autosave 使用 `expected_lock_version` 乐观 CAS，过期 token 不会 last-write-wins；manual save 执行 `DRAFT(n) → SAVED(n) + 新 DRAFT`，后续版本号在 Article 行锁下按最大值加一；`SAVED` 历史不可由正式 Writer / Admin 修改；restore 创建带 `restored_from_version` 血缘的新 `DRAFT`，不修改来源历史。`current_published_version` 保持不变，员工仍只读取正式 `PUBLISHED` 版本。
 
 Task 12 当前阶段：
 
 | 阶段 | 基线 / 内容 | 状态 |
 | --- | --- | --- |
 | 12A | ADR-0003 正式写入契约与融合范围冻结 | `DONE / SYNCED` |
-| 12B | 最小 Model / Migration 增量 | `NEXT / NOT STARTED` |
-| 12C | KB 编号服务与原子 Article 创建 | 未开始 |
-| 12D | manual save / autosave / 乐观锁 / 历史恢复 | 未开始 |
-| 12E | 正式编辑页面 / 草稿预览 / Task 12 收口 | 未开始 |
+| 12B | 最小 Model / Migration 增量 | `DONE / SYNCED` |
+| 12C | KB 编号服务与原子 Article 创建 | `DONE / SYNCED` |
+| 12D | manual save / autosave / 乐观锁 / 历史恢复 | `DONE / SYNCED` |
+| 12D-00 | SAVED full_clean 前置修复 | `DONE / SYNCED` |
+| 12D-01 | 版本写入状态机 / 乐观锁 / 历史恢复设计审计 | `DESIGN PASS` |
+| 12D-02～12D-06 | autosave、manual save、restore、SQLite 收口及 PostgreSQL 并发补证 | `DONE / SYNCED` |
+| 12E | 正式编辑页面 / 草稿预览 / Task 12 收口 | `NEXT / NOT STARTED` |
 
-Task 11 V1 已正式封板。其搜索链继续先通过 `employee_visible_articles` 完成权限过滤，再搜索 `current_published_version.title`、`summary` 和 `body_plaintext`；Task 12 的草稿、历史版本和管理预览不得进入员工搜索或正式详情。Task 11 的仓库外临时 PostgreSQL 隔离专项不代表真实持久环境获准使用，8J 保持 `BLOCKED / unassigned`。
+Task 11 V1 已正式封板。员工链继续只读取 `current_published_version`，Task 12 的草稿、`SAVED` 历史和管理预览不得进入员工搜索或正式详情。Task 12D 的 SQLite 整链验证已通过；PostgreSQL 17.11 临时隔离验证使用端口 15432 与 tmpfs，六类真实竞争和 Lock wait 均 PASS，资源已完全清理。该证据不代表真实持久环境获准使用或 8J 已完成，8J 保持 `BLOCKED / unassigned`。
 
 Task 11 实施与验收证据：
 
@@ -222,7 +225,8 @@ Task 10 最终验证为页面专项 `30 passed`、knowledge `310 passed`、正�
 - 正式员工读取来源为 `current_published_version`；列表 Reader 为 `employee_visible_articles`，详情 Reader 为 `get_employee_article_detail`；V1 正文使用 `body_plaintext → body_text`。
 - Task 10 V1 正式前端为 Django Templates + 项目自有 CSS；Bootstrap / HTMX 当前不要求接入。
 - Task 11A、11B 已完成并双端同步，项目负责人视觉验收与 PostgreSQL 隔离专项均 PASS；Task 11 当前为 `DONE / codex`，不需要 Task 11C。
-- Task 12A 已 `DONE / SYNCED`，ADR-0003 为 `Accepted`；Task 12 当前为 `IN_PROGRESS / codex`。
-- 当前没有真实 Agent 切换；如后续切换，下一 Agent 必须先读 ADR-0003，并从尚未开始的 Task 12B 继续，不得跳过 12B。
+- Task 12A～12D 已 `DONE / SYNCED`，ADR-0003 为 `Accepted`；Task 12 当前为 `IN_PROGRESS / codex`。
+- 当前没有真实 Agent 切换；如后续切换，下一 Agent 必须先读 ADR-0003，并从尚未开始的 Task 12E 继续，不得提前开始 Task 13。
 - 任务 8J 保持 `BLOCKED / unassigned`；Task 13 保持 `BACKLOG / unassigned`。
-- 本文件与 `tasks/CURRENT_TASK.md`、`tasks/TASKS.yaml` 的 Task 12 当前状态保持一致；未经单独授权不得开始 Task 12B、正式接入 Wagtail 或操作数据库。
+- Task 13 负责 submit、review、approve、reject、publish 与 republish；这些流程不属于 Task 12E。
+- 本文件与 `tasks/CURRENT_TASK.md`、`tasks/TASKS.yaml` 的 Task 12 当前状态保持一致；未经单独授权不得开始 Task 12E、正式接入 Wagtail 或操作持久数据库。

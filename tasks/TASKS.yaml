@@ -1,13 +1,13 @@
 project: AI-OpsAI-IT-wagtail-poc
 branch: fusion/wagtail-poc
 version: 1
-updated_at: "2026-10-05"
+updated_at: "2026-10-10"
 
 evidence_boundary:
   - "正式 Django 工程当前已有 Task 11 最终回归 486 passed、102 subtests passed，以及 Django system check、迁移一致性检查、Ruff、format 与浏览器响应式验收通过的电脑 B 证据。"
   - "Wagtail F02～F08 仍位于 experiments/wagtail_*，属于 SQLite 内存库隔离 PoC，不是正式上线能力。"
   - "正式根 pyproject.toml 尚未包含 Wagtail；不得为运行 PoC 而擅自修改正式依赖。"
-  - "仓库根目录 .env 当前存在、被 Git 忽略且未跟踪；本项目未读取或验证其内容、来源、变量完整性及 PostgreSQL 适用性。Task 11 已完成仓库外临时 PostgreSQL 隔离验证，但不等于真实持久环境已核验，8J 继续 BLOCKED / unassigned。"
+  - "仓库根目录 .env 当前存在、被 Git 忽略且未跟踪；本项目未读取或验证其内容、来源、变量完整性及 PostgreSQL 适用性。Task 11 与 Task 12D 已完成仓库外临时 PostgreSQL 隔离验证，但均不等于真实持久环境已核验，8J 继续 BLOCKED / unassigned。"
 
 tasks:
   - id: "8"
@@ -355,11 +355,28 @@ tasks:
     result:
       commits:
         - "72029527406c17f433c3226475609a291373b55e"
+        - "91296bf00e9117a1f391e98edda6d5a42fde1e2d"
+        - "fccb59f3421be3e8fcf364191358c6c159044b77"
+        - "73c92a161fbb8a881dcba00e326ca2f08220d6b7"
+        - "2769651b49cd9cbb565cea4d60b051e0c1e0cfff"
+        - "83bb3a57700851d2a7b3f88a136adb217863473f"
+        - "0f883f813030082f32cfed10b56d53f43116684c"
+        - "f02570970bb21c9dc88865aa2d3d94432f063eb2"
+        - "a68b53a2355088460577f39035e7137c202ec87e"
+        - "fde3082a567646f38e435e385d156904a11339b5"
+        - "1e025b9f9a96f7c63207a196dcfd916553940004"
       verification:
         - "Task 12A 架构 ADR 状态为 Accepted，Commit 72029527406c17f433c3226475609a291373b55e 已在 LOCAL、GitHub、Gitee 三端同步。"
+        - "Task 12B、12C、12D 已完成并同步；当前三端同步 HEAD 为 1e025b9f9a96f7c63207a196dcfd916553940004。"
+        - "Task 12D SQLite 版本链整体验证 PASS；PostgreSQL 17.11 临时隔离环境的六类真实竞争与 Lock wait 均 PASS。"
+        - "Task 12D PostgreSQL 验证使用临时端口 15432 与 tmpfs；容器、网络和临时资源已完全清理，未操作正式 5432、持久 Volume 或真实 .env。"
       notes:
         - "Task 12A“正式写入契约与融合范围冻结”已 DONE / SYNCED；docs/07-ADR/0003-Task12正式文章写入与版本链架构决策.md 是 Task 12B～12E 的正式实施基线。"
-        - "当前阶段为 Task 12B“最小 Model / Migration 增量”，但业务实现尚未开始，必须等待项目负责人单独授权。"
+        - "Task 12B“最小 Model / Migration 增量”、Task 12C“KB 编号服务与原子 Article 创建”和 Task 12D“版本写入与历史恢复”均为 DONE / SYNCED。"
+        - "Task 12D-00 为 DONE / SYNCED，Task 12D-01 为 DESIGN PASS，Task 12D-02～12D-06 均为 DONE / SYNCED。"
+        - "Task 12D 已形成 autosave expected_lock_version 乐观 CAS、manual save 的 DRAFT(n) → SAVED(n) + 新 DRAFT、Article 行锁下 max(version_no)+1、SAVED 历史不可变及 restored_from_version 恢复血缘；current_published_version 不变，员工仍只读取 PUBLISHED。"
+        - "下一阶段为 Task 12E“正式编辑页面、草稿预览与 Task 12 收口”，当前仅为 NEXT / NOT STARTED；Task 12 继续 IN_PROGRESS / codex。"
+        - "Task 12D 的临时 PostgreSQL 并发证据不解除 8J；Task 13 继续 BACKLOG / unassigned，并负责 submit、review、approve、reject、publish 与 republish。"
         - "正式内容权威保持 Article + ArticleVersion；Wagtail 在 Task 12 V1 延期，不进入正式依赖、settings、路由、模型或 Revision 双写链路。"
 
   - id: "13"

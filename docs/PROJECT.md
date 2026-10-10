@@ -137,9 +137,9 @@ OpsAI 需要可靠的内容编辑、修订历史、草稿与正式版本隔离�
 
 ## 11. 当前开发阶段
 
-项目仍处于 OpsAI 内容能力建设与 Wagtail 隔离融合验证阶段。现有 Django 主项目已经建立账号、知识核心数据模型、权限基础、健康检查、本地开发环境，以及受众过滤后的正式员工首页、分类页、知识详情页和 P0 搜索；Task 10、Task 11 均已完成。Task 12 当前为 `IN_PROGRESS / codex`，Task 12A 架构冻结已 `DONE / SYNCED`，下一阶段 Task 12B 尚未开始。Task 12 V1 的正式内容权威保持 `Article + ArticleVersion`，不正式接入 Wagtail。
+项目仍处于 OpsAI 内容能力建设与 Wagtail 隔离融合验证阶段。现有 Django 主项目已经建立账号、知识核心数据模型、权限基础、健康检查、本地开发环境，以及受众过滤后的正式员工首页、分类页、知识详情页和 P0 搜索；Task 10、Task 11 均已完成。Task 12 当前为 `IN_PROGRESS / codex`，Task 12A～12D 已 `DONE / SYNCED`，下一阶段 Task 12E 为 `NEXT / NOT STARTED`。Task 12 V1 的正式内容权威保持 `Article + ArticleVersion`，不正式接入 Wagtail。
 
-这些实验形成了可继续推进的稳定技术证据，但没有改变正式项目配置和生产数据库边界。员工 P0 搜索已进入正式 Django 业务路径，并完成 PostgreSQL 17.11 临时隔离专项；该专项不等于持久数据库或生产化验证。当前不能声称 Wagtail 融合、钉钉免登、附件、服务跳转或完整内容生命周期已经生产上线。
+这些实验形成了可继续推进的稳定技术证据，但没有改变正式项目配置和生产数据库边界。员工 P0 搜索已进入正式 Django 业务路径；Task 12D 已完成 SQLite 版本链验证和 PostgreSQL 17.11 临时并发补证。临时专项均不等于持久数据库或生产化验证。当前不能声称 Wagtail 融合、钉钉免登、附件、服务跳转或完整内容生命周期已经生产上线。
 
 根 `README.md` 中部分“当前状态 / 下一步”文字仍保留较早阶段描述；理解当前融合进展时，应以实际代码、验证结果、Git 历史及 `docs/PROJECT_STATE.md` 为准。该差异属于动态状态文档滞后，不改变 V1.1A 产品基线和长期安全规则。
 
@@ -147,7 +147,7 @@ OpsAI 需要可靠的内容编辑、修订历史、草稿与正式版本隔离�
 
 - 主要开发环境是 Windows，项目虚拟环境固定在工作区根目录 `.venv`，不全局安装项目依赖。
 - 正式工程通过 Django 分环境设置运行；本地开发数据库使用 Docker Compose 提供的 PostgreSQL，Django 可在容器或宿主机虚拟环境中运行。
-- 默认自动测试继续使用 SQLite 内存库；Task 11 另有 PostgreSQL 17.11 仓库外临时隔离验证证据，但该结果仍须与持久库、并发和生产部署验证明确区分。
+- 默认自动测试继续使用 SQLite 内存库；Task 11 搜索和 Task 12D 版本链另有 PostgreSQL 17.11 仓库外临时隔离验证证据，但这些结果仍须与持久库和生产部署验证明确区分。
 - Wagtail PoC 使用隔离 settings、环境白名单和合成数据，不读取真实 `.env`，不复用正式开发数据卷。
 - 详细启动、迁移和测试命令以 `README.md`、各实验 README 及当前任务说明为准；执行前应先核验实际分支、依赖和工作区状态。
 
@@ -170,8 +170,8 @@ OpsAI 需要可靠的内容编辑、修订历史、草稿与正式版本隔离�
 | `docs/PROJECT.md` | 这个项目是什么？ | 本文件；保存稳定项目身份、边界和技术关系 |
 | `docs/PROJECT_STATE.md` | 项目现在做到哪里？ | 已存在；保存当前阶段、环境、验证、阻塞和风险证据 |
 | `tasks/TASKS.yaml` | 项目有哪些任务、各是什么状态？ | 已存在；登记任务池、依赖、状态和结果证据 |
-| `tasks/CURRENT_TASK.md` | 当前 AI 唯一应该处理什么任务？ | 已存在；Task 12“开发文章创建、草稿和版本保存”为 `IN_PROGRESS / codex`，当前阶段为尚未开始实现的 Task 12B |
-| `docs/HANDOFF.md` | 上一个 AI 做到哪里，下一 AI 如何继续？ | 已存在；记录 Task 12A 已完成、Task 12B 待单独授权及后续执行边界 |
+| `tasks/CURRENT_TASK.md` | 当前 AI 唯一应该处理什么任务？ | 已存在；Task 12“开发文章创建、草稿和版本保存”为 `IN_PROGRESS / codex`，Task 12A～12D 已完成，下一阶段为尚未开始的 Task 12E |
+| `docs/HANDOFF.md` | 上一个 AI 做到哪里，下一 AI 如何继续？ | 已存在；记录 Task 12D 已完成、Task 12E 待单独授权及后续执行边界 |
 
 `.ai/reports/`、`.ai/runs/`、`outputs/`、`tasks/blocked/` 和 `tasks/completed/` 已预留目录，但目录存在不等于上述状态、任务或交接文件已经创建。
 
