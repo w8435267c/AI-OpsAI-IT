@@ -46,6 +46,8 @@ DRAFT_CONFLICT = "DRAFT_CONFLICT"
 DRAFT_NOT_CURRENT = "DRAFT_NOT_CURRENT"
 INVALID_DRAFT_STATE = "INVALID_DRAFT_STATE"
 VERSION_NUMBER_CONFLICT = "VERSION_NUMBER_CONFLICT"
+RESTORE_SOURCE_INVALID = "RESTORE_SOURCE_INVALID"
+RESTORE_SOURCE_WRONG_ARTICLE = "RESTORE_SOURCE_WRONG_ARTICLE"
 
 _MAX_KB_NUMBER = 999_999
 _REQUIRED_PERMISSIONS = (
@@ -69,6 +71,13 @@ _VERSION_WRITE_REQUIRED_PERMISSIONS = (
 _MANUAL_SAVE_REQUIRED_PERMISSIONS = (
     *_VERSION_WRITE_REQUIRED_PERMISSIONS,
     "knowledge.add_articleversion",
+)
+_RESTORE_SOURCE_STATUSES = (
+    VersionStatus.SAVED,
+    VersionStatus.IN_REVIEW,
+    VersionStatus.REJECTED,
+    VersionStatus.PUBLISHED,
+    VersionStatus.SUPERSEDED,
 )
 
 
@@ -476,11 +485,19 @@ def _validate_article_version_write_access(
 ) -> None:
     if not article.space.is_active:
         _raise_version_write_invalid("文章所属知识空间未启用。")
-    if not is_admin and (article.owner_id != actor.pk and article.space.owner_id != actor.pk):
+    if not _has_article_version_object_access(
+        actor=actor,
+        article=article,
+        is_admin=is_admin,
+    ):
         raise ArticleVersionWriteError(
             DRAFT_NOT_FOUND_OR_INACCESSIBLE,
             "草稿不存在或不可访问。",
         )
+
+
+def _has_article_version_object_access(*, actor: User, article: Article, is_admin: bool) -> bool:
+    return is_admin or article.owner_id == actor.pk or article.space.owner_id == actor.pk
 
 
 def _resolve_article_version_write_context(
@@ -529,6 +546,16 @@ def _normalize_draft_id(draft_id):
         ) from exc
 
 
+def _normalize_restore_source_id(source_version_id):
+    try:
+        return ArticleVersion._meta.pk.to_python(source_version_id)
+    except (TypeError, ValueError, ValidationError) as exc:
+        raise ArticleVersionWriteError(
+            RESTORE_SOURCE_INVALID,
+            "历史版本不存在或不可恢复。",
+        ) from exc
+
+
 def _validate_version_write_inputs(
     *,
     draft_id,
@@ -557,6 +584,169 @@ def _validate_version_write_inputs(
         raise_invalid=_raise_version_write_invalid,
     )
     return _normalize_draft_id(draft_id), body, body_plaintext
+
+
+def _lock_article_for_version_write(
+    *,
+    current_article: Article,
+    current_actor: User,
+    is_admin: bool,
+) -> Article:
+    try:
+        locked_article = (
+            Article.objects.select_for_update().select_related("space").get(pk=current_article.pk)
+        )
+    except Article.DoesNotExist as exc:
+        raise ArticleVersionWriteError(
+            DRAFT_NOT_FOUND_OR_INACCESSIBLE,
+            "草稿不存在或不可访问。",
+        ) from exc
+
+    _validate_article_version_write_access(
+        actor=current_actor,
+        article=locked_article,
+        is_admin=is_admin,
+    )
+    return locked_article
+
+
+def _lock_current_draft(
+    *,
+    locked_article: Article,
+    draft_id,
+    expected_lock_version: int,
+) -> ArticleVersion:
+    if locked_article.latest_working_version_id != draft_id:
+        if ArticleVersion.objects.filter(
+            pk=draft_id,
+            article_id=locked_article.pk,
+        ).exists():
+            raise ArticleVersionWriteError(
+                DRAFT_NOT_CURRENT,
+                "该版本已不是当前工作草稿。",
+            )
+        raise ArticleVersionWriteError(
+            DRAFT_NOT_FOUND_OR_INACCESSIBLE,
+            "草稿不存在或不可访问。",
+        )
+
+    try:
+        draft = ArticleVersion.objects.select_for_update().get(
+            pk=draft_id,
+            article_id=locked_article.pk,
+        )
+    except ArticleVersion.DoesNotExist as exc:
+        raise ArticleVersionWriteError(
+            DRAFT_NOT_FOUND_OR_INACCESSIBLE,
+            "草稿不存在或不可访问。",
+        ) from exc
+
+    if draft.status != VersionStatus.DRAFT:
+        raise ArticleVersionWriteError(
+            INVALID_DRAFT_STATE,
+            "该版本不是可编辑草稿。",
+        )
+    if draft.lock_version != expected_lock_version:
+        raise ArticleVersionWriteError(
+            DRAFT_CONFLICT,
+            "草稿已被其他操作更新，请刷新后重试。",
+        )
+    return draft
+
+
+def _freeze_current_draft(
+    *,
+    draft: ArticleVersion,
+    title: str,
+    summary: str,
+    applicable_scope: dict,
+    body: dict,
+    body_plaintext: str,
+    change_summary: str,
+) -> ArticleVersion:
+    draft.title = title
+    draft.summary = summary
+    draft.applicable_scope = applicable_scope
+    draft.body = body
+    draft.body_plaintext = body_plaintext
+    draft.change_summary = change_summary
+    draft.lock_version += 1
+    draft.status = VersionStatus.SAVED
+    draft.submitted_by = None
+    draft.submitted_at = None
+    draft.published_at = None
+    draft.full_clean()
+    draft.save(
+        update_fields=(
+            "title",
+            "summary",
+            "applicable_scope",
+            "body",
+            "body_plaintext",
+            "change_summary",
+            "lock_version",
+            "status",
+            "submitted_by",
+            "submitted_at",
+            "published_at",
+            "updated_at",
+        )
+    )
+    return draft
+
+
+def _next_article_version_no(*, locked_article: Article) -> int:
+    max_version_no = locked_article.versions.aggregate(max_no=Max("version_no"))["max_no"]
+    if not isinstance(max_version_no, int) or isinstance(max_version_no, bool):
+        raise ArticleVersionWriteError(
+            MODEL_CONSISTENCY_FAILED,
+            "文章版本号未通过一致性校验。",
+        )
+    return max_version_no + 1
+
+
+def _insert_new_draft(*, new_draft: ArticleVersion) -> ArticleVersion:
+    new_draft.full_clean(validate_unique=False, validate_constraints=False)
+    try:
+        new_draft.save(force_insert=True)
+    except IntegrityError as exc:
+        raise ArticleVersionWriteError(
+            VERSION_NUMBER_CONFLICT,
+            "文章版本号冲突，已拒绝保存。",
+        ) from exc
+    return new_draft
+
+
+def _switch_latest_working_version(
+    *,
+    locked_article: Article,
+    new_draft: ArticleVersion,
+    current_actor: User,
+    published_version_id,
+) -> None:
+    locked_article.latest_working_version = new_draft
+    locked_article.updated_by = current_actor
+    locked_article.full_clean()
+    current_published_version_id = (
+        Article.objects.filter(pk=locked_article.pk)
+        .values_list(
+            "current_published_version_id",
+            flat=True,
+        )
+        .get()
+    )
+    if current_published_version_id != published_version_id:
+        raise ArticleVersionWriteError(
+            MODEL_CONSISTENCY_FAILED,
+            "文章发布版本指针未通过一致性校验。",
+        )
+    locked_article.save(
+        update_fields=(
+            "latest_working_version",
+            "updated_by",
+            "updated_at",
+        )
+    )
 
 
 def _raise_cas_zero_result(*, article: Article, draft_id, expected_lock_version: int) -> None:
@@ -738,100 +928,30 @@ def _manual_save_draft(
     )
 
     with transaction.atomic():
-        try:
-            locked_article = (
-                Article.objects.select_for_update()
-                .select_related("space")
-                .get(pk=current_article.pk)
-            )
-        except Article.DoesNotExist as exc:
-            raise ArticleVersionWriteError(
-                DRAFT_NOT_FOUND_OR_INACCESSIBLE,
-                "草稿不存在或不可访问。",
-            ) from exc
-
-        _validate_article_version_write_access(
-            actor=current_actor,
-            article=locked_article,
+        locked_article = _lock_article_for_version_write(
+            current_article=current_article,
+            current_actor=current_actor,
             is_admin=is_admin,
         )
         published_version_id = locked_article.current_published_version_id
-
-        if locked_article.latest_working_version_id != normalized_draft_id:
-            if ArticleVersion.objects.filter(
-                pk=normalized_draft_id,
-                article_id=locked_article.pk,
-            ).exists():
-                raise ArticleVersionWriteError(
-                    DRAFT_NOT_CURRENT,
-                    "该版本已不是当前工作草稿。",
-                )
-            raise ArticleVersionWriteError(
-                DRAFT_NOT_FOUND_OR_INACCESSIBLE,
-                "草稿不存在或不可访问。",
-            )
-
-        try:
-            saved_version = ArticleVersion.objects.select_for_update().get(
-                pk=normalized_draft_id,
-                article_id=locked_article.pk,
-            )
-        except ArticleVersion.DoesNotExist as exc:
-            raise ArticleVersionWriteError(
-                DRAFT_NOT_FOUND_OR_INACCESSIBLE,
-                "草稿不存在或不可访问。",
-            ) from exc
-
-        if saved_version.status != VersionStatus.DRAFT:
-            raise ArticleVersionWriteError(
-                INVALID_DRAFT_STATE,
-                "该版本不是可编辑草稿。",
-            )
-        if saved_version.lock_version != expected_lock_version:
-            raise ArticleVersionWriteError(
-                DRAFT_CONFLICT,
-                "草稿已被其他操作更新，请刷新后重试。",
-            )
-
-        saved_version.title = title
-        saved_version.summary = summary
-        saved_version.applicable_scope = applicable_scope
-        saved_version.body = body
-        saved_version.body_plaintext = body_plaintext
-        saved_version.change_summary = change_summary
-        saved_version.lock_version += 1
-        saved_version.status = VersionStatus.SAVED
-        saved_version.submitted_by = None
-        saved_version.submitted_at = None
-        saved_version.published_at = None
-        saved_version.full_clean()
-        saved_version.save(
-            update_fields=(
-                "title",
-                "summary",
-                "applicable_scope",
-                "body",
-                "body_plaintext",
-                "change_summary",
-                "lock_version",
-                "status",
-                "submitted_by",
-                "submitted_at",
-                "published_at",
-                "updated_at",
-            )
+        saved_version = _lock_current_draft(
+            locked_article=locked_article,
+            draft_id=normalized_draft_id,
+            expected_lock_version=expected_lock_version,
+        )
+        _freeze_current_draft(
+            draft=saved_version,
+            title=title,
+            summary=summary,
+            applicable_scope=applicable_scope,
+            body=body,
+            body_plaintext=body_plaintext,
+            change_summary=change_summary,
         )
 
-        max_version_no = locked_article.versions.aggregate(max_no=Max("version_no"))["max_no"]
-        if not isinstance(max_version_no, int) or isinstance(max_version_no, bool):
-            raise ArticleVersionWriteError(
-                MODEL_CONSISTENCY_FAILED,
-                "文章版本号未通过一致性校验。",
-            )
-        next_version_no = max_version_no + 1
         new_draft = ArticleVersion(
             article=locked_article,
-            version_no=next_version_no,
+            version_no=_next_article_version_no(locked_article=locked_article),
             status=VersionStatus.DRAFT,
             lock_version=1,
             title=saved_version.title,
@@ -846,37 +966,12 @@ def _manual_save_draft(
             submitted_at=None,
             published_at=None,
         )
-        new_draft.full_clean(validate_unique=False, validate_constraints=False)
-        try:
-            new_draft.save(force_insert=True)
-        except IntegrityError as exc:
-            raise ArticleVersionWriteError(
-                VERSION_NUMBER_CONFLICT,
-                "文章版本号冲突，已拒绝保存。",
-            ) from exc
-
-        locked_article.latest_working_version = new_draft
-        locked_article.updated_by = current_actor
-        locked_article.full_clean()
-        current_published_version_id = (
-            Article.objects.filter(pk=locked_article.pk)
-            .values_list(
-                "current_published_version_id",
-                flat=True,
-            )
-            .get()
-        )
-        if current_published_version_id != published_version_id:
-            raise ArticleVersionWriteError(
-                MODEL_CONSISTENCY_FAILED,
-                "文章发布版本指针未通过一致性校验。",
-            )
-        locked_article.save(
-            update_fields=(
-                "latest_working_version",
-                "updated_by",
-                "updated_at",
-            )
+        _insert_new_draft(new_draft=new_draft)
+        _switch_latest_working_version(
+            locked_article=locked_article,
+            new_draft=new_draft,
+            current_actor=current_actor,
+            published_version_id=published_version_id,
         )
         return saved_version, new_draft
 
@@ -917,4 +1012,141 @@ def manual_save_draft(
         raise ArticleVersionWriteError(
             DATABASE_WRITE_FAILED,
             "草稿保存失败，请稍后重试。",
+        ) from exc
+
+
+def _restore_article_version(
+    *,
+    actor,
+    article,
+    source_version_id,
+    draft_id,
+    expected_lock_version,
+    current_title,
+    current_summary,
+    current_applicable_scope,
+    current_body_text,
+    current_change_summary,
+) -> ArticleVersion:
+    normalized_draft_id, current_body, current_body_plaintext = _validate_version_write_inputs(
+        draft_id=draft_id,
+        expected_lock_version=expected_lock_version,
+        title=current_title,
+        summary=current_summary,
+        applicable_scope=current_applicable_scope,
+        body_text=current_body_text,
+        change_summary=current_change_summary,
+    )
+    normalized_source_id = _normalize_restore_source_id(source_version_id)
+    current_actor, current_article, is_admin = _resolve_article_version_write_context(
+        actor=actor,
+        article=article,
+        required_permissions=_MANUAL_SAVE_REQUIRED_PERMISSIONS,
+    )
+
+    with transaction.atomic():
+        locked_article = _lock_article_for_version_write(
+            current_article=current_article,
+            current_actor=current_actor,
+            is_admin=is_admin,
+        )
+        published_version_id = locked_article.current_published_version_id
+        current_draft = _lock_current_draft(
+            locked_article=locked_article,
+            draft_id=normalized_draft_id,
+            expected_lock_version=expected_lock_version,
+        )
+
+        try:
+            source_version = ArticleVersion.objects.get(pk=normalized_source_id)
+        except ArticleVersion.DoesNotExist as exc:
+            raise ArticleVersionWriteError(
+                RESTORE_SOURCE_INVALID,
+                "历史版本不存在或不可恢复。",
+            ) from exc
+        if source_version.article_id != locked_article.pk:
+            raise ArticleVersionWriteError(
+                RESTORE_SOURCE_WRONG_ARTICLE,
+                "历史版本不存在或不可恢复。",
+            )
+        if source_version.status not in _RESTORE_SOURCE_STATUSES:
+            raise ArticleVersionWriteError(
+                RESTORE_SOURCE_INVALID,
+                "历史版本不存在或不可恢复。",
+            )
+
+        _freeze_current_draft(
+            draft=current_draft,
+            title=current_title,
+            summary=current_summary,
+            applicable_scope=current_applicable_scope,
+            body=current_body,
+            body_plaintext=current_body_plaintext,
+            change_summary=current_change_summary,
+        )
+        new_draft = ArticleVersion(
+            article=locked_article,
+            version_no=_next_article_version_no(locked_article=locked_article),
+            status=VersionStatus.DRAFT,
+            lock_version=1,
+            title=source_version.title,
+            summary=source_version.summary,
+            applicable_scope=deepcopy(source_version.applicable_scope),
+            body=deepcopy(source_version.body),
+            body_plaintext=source_version.body_plaintext,
+            change_summary=f"从版本 v{source_version.version_no} 恢复",
+            restored_from_version=source_version,
+            created_by=current_actor,
+            submitted_by=None,
+            submitted_at=None,
+            published_at=None,
+        )
+        _insert_new_draft(new_draft=new_draft)
+        _switch_latest_working_version(
+            locked_article=locked_article,
+            new_draft=new_draft,
+            current_actor=current_actor,
+            published_version_id=published_version_id,
+        )
+        return new_draft
+
+
+def restore_article_version(
+    *,
+    actor,
+    article,
+    source_version_id,
+    draft_id,
+    expected_lock_version,
+    current_title,
+    current_summary,
+    current_applicable_scope,
+    current_body_text,
+    current_change_summary,
+) -> ArticleVersion:
+    """冻结当前完整 DRAFT，并从指定不可变历史版本创建全新工作 DRAFT。"""
+    try:
+        return _restore_article_version(
+            actor=actor,
+            article=article,
+            source_version_id=source_version_id,
+            draft_id=draft_id,
+            expected_lock_version=expected_lock_version,
+            current_title=current_title,
+            current_summary=current_summary,
+            current_applicable_scope=current_applicable_scope,
+            current_body_text=current_body_text,
+            current_change_summary=current_change_summary,
+        )
+    except ArticleVersionWriteError:
+        raise
+    except ValidationError as exc:
+        raise ArticleVersionWriteError(
+            MODEL_CONSISTENCY_FAILED,
+            "版本恢复数据未通过一致性校验。",
+        ) from exc
+    except DatabaseError as exc:
+        raise ArticleVersionWriteError(
+            DATABASE_WRITE_FAILED,
+            "版本恢复失败，请稍后重试。",
         ) from exc
