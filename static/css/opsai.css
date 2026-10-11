@@ -443,7 +443,11 @@ time {
   outline-offset: 2px;
 }
 
-.editor-write-notice {
+.editor-autosave {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  justify-content: space-between;
   margin: 1.5rem 0 0;
   padding: 0.9rem 1rem;
   border: 1px solid #b8c8df;
@@ -451,6 +455,10 @@ time {
   background: #eaf2ff;
   color: var(--brand-dark);
   font-weight: 650;
+}
+
+.editor-autosave p {
+  margin: 0;
 }
 
 .site-footer {

@@ -1,4 +1,5 @@
 {% extends "knowledge/manage/base.html" %}
+{% load static %}
 
 {% block title %}{{ detail.title }} | 知识管理{% endblock %}
 
@@ -47,9 +48,11 @@
       class="article-section draft-editor"
       data-kb-no="{{ detail.kb_no }}"
       data-version-no="{{ detail.version_no }}"
+      data-autosave-url="{% url 'knowledge_manage:autosave' detail.kb_no %}"
       aria-labelledby="draft-editor-title"
     >
       <h2 id="draft-editor-title">工作版本内容</h2>
+      {% csrf_token %}
       <input type="hidden" name="draft_id" value="{{ detail.draft_id }}">
       <input type="hidden" name="expected_lock_version" value="{{ detail.lock_version }}">
 
@@ -77,9 +80,14 @@
         </div>
       </div>
 
-      <p class="editor-write-notice" role="note">
-        当前阶段尚未接入保存功能，页面修改不会提交到服务器。
-      </p>
+      <div class="editor-autosave" role="status">
+        <p id="autosave-status" aria-live="polite" data-state="idle">未修改</p>
+        <a id="autosave-reload" href="{% url 'knowledge_manage:edit' detail.kb_no %}" hidden>
+          重新加载页面
+        </a>
+      </div>
     </section>
   </article>
+
+  <script src="{% static 'js/knowledge_editor.js' %}" defer></script>
 {% endblock %}

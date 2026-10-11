@@ -2,7 +2,9 @@
 
 from datetime import timedelta
 from io import StringIO
+from pathlib import Path
 
+from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core.management import call_command
 from django.test import Client, SimpleTestCase, TestCase
@@ -147,6 +149,78 @@ class ArticleDraftFormTests(SimpleTestCase):
                 invalid = ArticleDraftForm(data=self.valid_data(**{field: value}))
                 self.assertFalse(invalid.is_valid())
                 self.assertIn(field, invalid.errors)
+
+
+class KnowledgeEditorJavaScriptContractTests(SimpleTestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.source = (Path(settings.BASE_DIR) / "static" / "js" / "knowledge_editor.js").read_text(
+            encoding="utf-8"
+        )
+
+    def test_debounce_and_single_flight_state_are_explicit(self):
+        self.assertIn("const DEBOUNCE_MS = 2000", self.source)
+        self.assertIn("let debounceTimer", self.source)
+        self.assertIn("let inFlight = false", self.source)
+        self.assertIn("let dirty = false", self.source)
+        self.assertIn("let blocked = false", self.source)
+        self.assertIn("if (blocked || inFlight || !dirty)", self.source)
+
+    def test_request_is_full_json_snapshot_with_csrf(self):
+        for field in (
+            "draft_id",
+            "expected_lock_version",
+            "title",
+            "summary",
+            "applicable_scope",
+            "body_text",
+            "change_summary",
+        ):
+            with self.subTest(field=field):
+                self.assertIn(field, self.source)
+        self.assertIn('"Content-Type": "application/json"', self.source)
+        self.assertIn('"X-CSRFToken": csrfToken.value', self.source)
+        self.assertIn("JSON.stringify(snapshot)", self.source)
+
+    def test_success_uses_server_token_and_validates_draft_identity(self):
+        self.assertIn("payload.draft.id !== snapshot.draft_id", self.source)
+        self.assertIn("payload.draft.version_no !== pageVersion", self.source)
+        self.assertIn(
+            "lockVersion.value = String(payload.draft.lock_version)",
+            self.source,
+        )
+        self.assertNotIn("expected_lock_version +=", self.source)
+        self.assertNotIn("lockVersion.value++", self.source)
+
+    def test_conflict_network_and_server_failures_block_without_retry(self):
+        self.assertIn("response.status === 409", self.source)
+        self.assertIn("response.status >= 500", self.source)
+        self.assertIn("catch (error)", self.source)
+        self.assertIn("blockAutosave", self.source)
+        self.assertNotIn("fetchWithRetry", self.source)
+
+    def test_scope_requires_a_plain_json_object_before_fetch(self):
+        self.assertIn("JSON.parse(scope.value)", self.source)
+        self.assertIn("Array.isArray(parsedScope)", self.source)
+        self.assertIn("parsedScope === null", self.source)
+        self.assertIn("适用范围不是有效的 JSON 对象", self.source)
+
+    def test_browser_storage_html_injection_and_unload_writes_are_absent(self):
+        for forbidden in (
+            "localStorage",
+            "sessionStorage",
+            "IndexedDB",
+            "indexedDB",
+            "innerHTML",
+            "beforeunload",
+            "sendBeacon",
+            "eval(",
+            "new Function",
+        ):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, self.source)
+        self.assertIn("status.textContent = message", self.source)
 
 
 class ManageArticleEditPageTests(TestCase):
@@ -407,21 +481,28 @@ class ManageArticleEditPageTests(TestCase):
                 self.assertEqual(response["Allow"], "GET")
                 self.assertEqual(response["Cache-Control"], "private, no-store")
 
-    def test_page_has_no_submit_storage_script_or_future_controls(self):
+    def test_page_loads_autosave_contract_without_future_controls(self):
         page = self.get_as(self.article_owner)
+        autosave_url = reverse("knowledge_manage:autosave", args=[self.article.kb_no])
 
         self.assertNotContains(page, "<form", html=False)
         self.assertNotContains(page, 'type="submit"', html=False)
         self.assertNotContains(page, "<button", html=False)
-        self.assertNotContains(page, "localStorage")
-        self.assertNotContains(page, "sessionStorage")
-        self.assertNotContains(page, "indexedDB")
-        self.assertNotContains(page, "autosave")
+        self.assertContains(
+            page,
+            f'data-autosave-url="{autosave_url}"',
+        )
+        self.assertContains(page, 'name="csrfmiddlewaretoken"')
+        self.assertContains(page, 'id="autosave-status"')
+        self.assertContains(page, 'aria-live="polite"')
+        self.assertContains(page, "未修改")
+        self.assertContains(page, 'id="autosave-reload"')
+        self.assertContains(page, "js/knowledge_editor.js")
         self.assertNotContains(page, "保存版本")
         self.assertNotContains(page, "提交审核")
         self.assertNotContains(page, "发布")
         self.assertNotContains(page, "预览")
-        self.assertContains(page, "当前阶段尚未接入保存功能，页面修改不会提交到服务器。")
+        self.assertNotContains(page, "当前阶段尚未接入保存功能")
 
     def test_all_editable_values_are_loaded_from_same_working_draft(self):
         ArticleVersion.objects.filter(pk=self.draft.pk).update(

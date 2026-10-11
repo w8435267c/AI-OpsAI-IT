@@ -37,6 +37,29 @@ class JSONObjectField(forms.JSONField):
         return value
 
 
+class StrictPositiveIntegerField(forms.Field):
+    """只接受 JSON 解码后的正整数，不接受 bool、浮点数或数字字符串。"""
+
+    default_error_messages = {
+        "required": "此字段为必填项。",
+        "invalid": "请输入正整数。",
+    }
+
+    def to_python(self, value):
+        if value in self.empty_values:
+            return None
+        if type(value) is not int or value < 1:
+            raise forms.ValidationError(self.error_messages["invalid"], code="invalid")
+        return value
+
+
+class ArticleAutosaveIdentityForm(forms.Form):
+    """autosave 请求中的草稿身份与 CAS token。"""
+
+    draft_id = forms.UUIDField()
+    expected_lock_version = StrictPositiveIntegerField()
+
+
 class ArticleCreateForm(forms.Form):
     """Article 与首个 DRAFT 创建输入白名单。"""
 
