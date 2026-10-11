@@ -10,6 +10,7 @@ from apps.knowledge.manage_views import (
     manage_article_history_detail,
     manage_article_list,
     manage_article_manual_save,
+    manage_article_preview,
     manage_article_restore,
 )
 
@@ -20,6 +21,7 @@ urlpatterns = [
     path("new/", manage_article_create, name="create"),
     path("<str:kb_no>/autosave/", manage_article_autosave, name="autosave"),
     path("<str:kb_no>/save/", manage_article_manual_save, name="save"),
+    path("<str:kb_no>/preview/", manage_article_preview, name="preview"),
     path("<str:kb_no>/history/", manage_article_history, name="history"),
     path(
         "<str:kb_no>/history/<uuid:version_id>/",

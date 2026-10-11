@@ -10,6 +10,7 @@
   const status = editor.querySelector("#autosave-status");
   const reloadLink = editor.querySelector("#autosave-reload");
   const manualSaveButton = editor.querySelector("#manual-save-button");
+  const previewButton = editor.querySelector("#preview-draft-button");
   const versionLabel = document.querySelector("#working-version-label");
   const lockLabel = document.querySelector("#working-lock-label");
   const restoredFromRow = document.querySelector("#restored-from-row");
@@ -26,11 +27,13 @@
   let pageVersion = Number(editor.dataset.versionNo);
   const autosaveUrl = editor.dataset.autosaveUrl;
   const saveUrl = editor.dataset.saveUrl;
+  const previewUrl = editor.dataset.previewUrl;
 
   if (
     !status ||
     !reloadLink ||
     !manualSaveButton ||
+    !previewButton ||
     !versionLabel ||
     !lockLabel ||
     !csrfToken ||
@@ -38,6 +41,7 @@
     !lockVersion ||
     !autosaveUrl ||
     !saveUrl ||
+    !previewUrl ||
     !Number.isInteger(pageVersion) ||
     fields.some((field) => !field)
   ) {
@@ -50,6 +54,7 @@
   let blocked = false;
   let manualPending = false;
   let manualInFlight = false;
+  let previewPending = false;
 
   function setStatus(message, state) {
     status.textContent = message;
@@ -66,8 +71,10 @@
   function blockAutosave(message) {
     blocked = true;
     manualPending = false;
+    previewPending = false;
     clearDebounce();
     manualSaveButton.disabled = true;
+    previewButton.disabled = true;
     reloadLink.hidden = false;
     setStatus(message, "blocked");
   }
@@ -83,7 +90,7 @@
     if (blocked || inFlight || !dirty) {
       return;
     }
-    if (manualPending || manualInFlight) {
+    if (manualPending || manualInFlight || previewPending) {
       return;
     }
     debounceTimer = window.setTimeout(attemptAutosave, DEBOUNCE_MS);
@@ -145,7 +152,14 @@
     try {
       snapshot = buildSnapshot();
     } catch (error) {
-      setStatus(error.message, "invalid");
+      if (previewPending) {
+        previewPending = false;
+        previewButton.disabled = false;
+        manualSaveButton.disabled = false;
+        setStatus(`${error.message} 请修正后再预览。`, "invalid");
+      } else {
+        setStatus(error.message, "invalid");
+      }
       return;
     }
 
@@ -179,7 +193,9 @@
         dirty = true;
         if (response.status === 400) {
           setStatus(
-            safeErrorMessage(payload, "当前内容无法自动保存，请检查输入。"),
+            previewPending
+              ? `${safeErrorMessage(payload, "当前内容无法自动保存，请检查输入。")} 请修正后再预览。`
+              : safeErrorMessage(payload, "当前内容无法自动保存，请检查输入。"),
             "invalid",
           );
           return;
@@ -236,10 +252,30 @@
           manualPending = false;
           manualSaveButton.disabled = false;
         }
+      } else if (previewPending) {
+        continuePreviewAfterAutosave(autosaveSucceeded);
       } else if (scheduleNext && dirty && !blocked) {
         scheduleAutosave();
       }
     }
+  }
+
+  function continuePreviewAfterAutosave(autosaveSucceeded) {
+    if (!previewPending || blocked) {
+      return;
+    }
+    if (!autosaveSucceeded) {
+      previewPending = false;
+      previewButton.disabled = false;
+      manualSaveButton.disabled = false;
+      return;
+    }
+    if (dirty) {
+      attemptAutosave();
+      return;
+    }
+    previewPending = false;
+    window.location.assign(previewUrl);
   }
 
   function isPlainObject(value) {
@@ -299,7 +335,7 @@
   }
 
   async function startManualSave() {
-    if (blocked || manualInFlight || !manualPending) {
+    if (blocked || manualInFlight || previewPending || !manualPending) {
       return;
     }
 
@@ -319,6 +355,7 @@
     dirty = false;
     setFieldsDisabled(true);
     manualSaveButton.disabled = true;
+    previewButton.disabled = true;
     setStatus("正在保存版本…", "saving");
 
     try {
@@ -387,22 +424,45 @@
       if (!blocked) {
         setFieldsDisabled(false);
         manualSaveButton.disabled = false;
+        previewButton.disabled = false;
       }
     }
   }
 
   function requestManualSave() {
-    if (blocked || manualPending || manualInFlight) {
+    if (blocked || manualPending || manualInFlight || previewPending) {
       return;
     }
     manualPending = true;
     manualSaveButton.disabled = true;
+    previewButton.disabled = true;
     clearDebounce();
     if (inFlight) {
       setStatus("正在等待当前自动保存完成…", "saving");
       return;
     }
     startManualSave();
+  }
+
+  function requestPreview() {
+    if (blocked || manualPending || manualInFlight || previewPending) {
+      return;
+    }
+    clearDebounce();
+    if (!dirty && !inFlight) {
+      window.location.assign(previewUrl);
+      return;
+    }
+    previewPending = true;
+    previewButton.disabled = true;
+    manualSaveButton.disabled = true;
+    if (inFlight) {
+      setStatus("正在等待当前自动保存完成…", "saving");
+      return;
+    }
+    if (dirty) {
+      attemptAutosave();
+    }
   }
 
   function markDirty() {
@@ -419,4 +479,5 @@
     field.addEventListener("change", markDirty);
   });
   manualSaveButton.addEventListener("click", requestManualSave);
+  previewButton.addEventListener("click", requestPreview);
 })();

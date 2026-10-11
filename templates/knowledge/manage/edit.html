@@ -50,6 +50,7 @@
       data-version-no="{{ detail.version_no }}"
       data-autosave-url="{% url 'knowledge_manage:autosave' detail.kb_no %}"
       data-save-url="{% url 'knowledge_manage:save' detail.kb_no %}"
+      data-preview-url="{% url 'knowledge_manage:preview' detail.kb_no %}"
       aria-labelledby="draft-editor-title"
     >
       <h2 id="draft-editor-title">工作版本内容</h2>
@@ -88,6 +89,7 @@
         </a>
       </div>
       <div class="editor-actions">
+        <button id="preview-draft-button" type="button">预览草稿</button>
         <button id="manual-save-button" type="button">保存版本并继续编辑</button>
       </div>
     </section>

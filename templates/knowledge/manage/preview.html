@@ -1,0 +1,54 @@
+{% extends "knowledge/manage/base.html" %}
+
+{% block title %}{{ detail.title }} | 草稿预览{% endblock %}
+
+{% block manage_content %}
+  <nav class="detail-navigation" aria-label="草稿预览导航">
+    <a class="back-link" href="{% url 'knowledge_manage:edit' detail.kb_no %}">← 返回编辑</a>
+    <a href="{% url 'knowledge_manage:list' %}">返回知识管理</a>
+  </nav>
+
+  <article class="article-detail draft-preview">
+    <div class="draft-preview-banner" role="status">
+      <strong>草稿预览</strong>
+      <span>未发布</span>
+    </div>
+
+    <header class="article-header">
+      <p class="eyebrow">CURRENT WORKING DRAFT</p>
+      <p class="kb-number">{{ detail.kb_no }}</p>
+      <h1>{{ detail.title }}</h1>
+      <p class="article-summary">{{ detail.summary }}</p>
+    </header>
+
+    <dl class="article-metadata">
+      <div>
+        <dt>当前工作版本</dt>
+        <dd>v{{ detail.version_no }} · {{ detail.status_label }}</dd>
+      </div>
+      <div>
+        <dt>知识空间</dt>
+        <dd>{{ detail.space_name }}</dd>
+      </div>
+      <div>
+        <dt>分类</dt>
+        <dd>{{ detail.category_name }}</dd>
+      </div>
+    </dl>
+
+    <section class="article-section" aria-labelledby="draft-scope-title">
+      <h2 id="draft-scope-title">适用范围</h2>
+      <pre class="draft-preview-json">{{ scope_json }}</pre>
+    </section>
+
+    <section class="article-section" aria-labelledby="draft-body-title">
+      <h2 id="draft-body-title">正文</h2>
+      <div class="article-body">{{ detail.body_text }}</div>
+    </section>
+
+    <section class="article-section" aria-labelledby="draft-change-title">
+      <h2 id="draft-change-title">版本说明</h2>
+      <p class="plain-text-block">{{ detail.change_summary }}</p>
+    </section>
+  </article>
+{% endblock %}

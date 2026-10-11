@@ -255,6 +255,30 @@ class KnowledgeEditorJavaScriptContractTests(SimpleTestCase):
                 self.assertNotIn(forbidden, self.source)
         self.assertIn("status.textContent = message", self.source)
 
+    def test_preview_reuses_autosave_state_machine_before_current_tab_navigation(self):
+        for expected in (
+            'const previewButton = editor.querySelector("#preview-draft-button")',
+            "const previewUrl = editor.dataset.previewUrl",
+            "let previewPending = false",
+            "function requestPreview()",
+            "if (inFlight)",
+            "if (dirty)",
+            "attemptAutosave()",
+            "window.location.assign(previewUrl)",
+            'previewButton.addEventListener("click", requestPreview)',
+        ):
+            with self.subTest(expected=expected):
+                self.assertIn(expected, self.source)
+        self.assertEqual(self.source.count("fetch(autosaveUrl"), 1)
+        self.assertNotIn("window.open", self.source)
+
+    def test_preview_is_blocked_by_manual_or_unsafe_autosave_state(self):
+        self.assertIn("blocked || manualPending || manualInFlight", self.source)
+        self.assertIn("previewButton.disabled = true", self.source)
+        self.assertIn("previewPending", self.source)
+        self.assertIn("请修正后再预览", self.source)
+        self.assertIn("continuePreviewAfterAutosave", self.source)
+
 
 class ManageArticleEditPageTests(TestCase):
     @classmethod
@@ -514,10 +538,11 @@ class ManageArticleEditPageTests(TestCase):
                 self.assertEqual(response["Allow"], "GET")
                 self.assertEqual(response["Cache-Control"], "private, no-store")
 
-    def test_page_loads_autosave_and_manual_save_contract(self):
+    def test_page_loads_autosave_manual_save_and_preview_contract(self):
         page = self.get_as(self.article_owner)
         autosave_url = reverse("knowledge_manage:autosave", args=[self.article.kb_no])
         save_url = reverse("knowledge_manage:save", args=[self.article.kb_no])
+        preview_url = reverse("knowledge_manage:preview", args=[self.article.kb_no])
 
         self.assertNotContains(page, "<form", html=False)
         self.assertNotContains(page, 'type="submit"', html=False)
@@ -526,6 +551,7 @@ class ManageArticleEditPageTests(TestCase):
             f'data-autosave-url="{autosave_url}"',
         )
         self.assertContains(page, f'data-save-url="{save_url}"')
+        self.assertContains(page, f'data-preview-url="{preview_url}"')
         self.assertContains(page, 'name="csrfmiddlewaretoken"')
         self.assertContains(page, 'id="autosave-status"')
         self.assertContains(page, 'aria-live="polite"')
@@ -534,13 +560,14 @@ class ManageArticleEditPageTests(TestCase):
         self.assertContains(page, 'id="manual-save-button"')
         self.assertContains(page, 'type="button"')
         self.assertContains(page, "保存版本并继续编辑")
+        self.assertContains(page, 'id="preview-draft-button"')
+        self.assertContains(page, "预览草稿")
         self.assertContains(page, 'id="working-version-label"')
         self.assertContains(page, 'id="working-lock-label"')
         self.assertContains(page, 'id="restored-from-row"')
         self.assertContains(page, "js/knowledge_editor.js")
         self.assertNotContains(page, "提交审核")
         self.assertNotContains(page, "发布")
-        self.assertNotContains(page, "预览")
         self.assertNotContains(page, "当前阶段尚未接入保存功能")
 
     def test_all_editable_values_are_loaded_from_same_working_draft(self):

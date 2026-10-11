@@ -665,6 +665,31 @@ def manage_article_manual_save(request: HttpRequest, kb_no: str) -> HttpResponse
 
 
 @manage_get_page
+def manage_article_preview(request: HttpRequest, kb_no: str) -> HttpResponse:
+    """只读展示 current working DRAFT 的安全预览。"""
+
+    try:
+        detail = get_manage_working_article_detail(actor=request.user, kb_no=kb_no)
+    except ManageWorkingArticleReadError as error:
+        if error.code == MANAGE_WORKING_ARTICLE_NOT_FOUND_OR_INACCESSIBLE:
+            return HttpResponseNotFound("未找到可预览的文章草稿。")
+        return HttpResponse(error.public_message, status=403)
+
+    return render(
+        request,
+        "knowledge/manage/preview.html",
+        {
+            "detail": detail,
+            "scope_json": json.dumps(
+                detail.applicable_scope,
+                ensure_ascii=False,
+                indent=2,
+            ),
+        },
+    )
+
+
+@manage_get_page
 def manage_article_edit(request: HttpRequest, kb_no: str) -> HttpResponse:
     """展示 current DRAFT 的无写入编辑器基础页。"""
 
