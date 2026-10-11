@@ -38,10 +38,12 @@ from apps.knowledge.services import (
     INVALID_DRAFT_STATE,
     MODEL_CONSISTENCY_FAILED,
     SPACE_CATEGORY_MISMATCH,
+    VERSION_NUMBER_CONFLICT,
     ArticleCreationError,
     ArticleVersionWriteError,
     autosave_draft,
     create_article,
+    manual_save_draft,
 )
 
 MANAGE_ARTICLE_PAGE_SIZE = 20
@@ -49,7 +51,7 @@ _CREATE_FORM_ERROR_CODES = {
     ARTICLE_CREATE_INVALID_INPUT,
     SPACE_CATEGORY_MISMATCH,
 }
-_AUTOSAVE_FIELDS = frozenset(
+_DRAFT_WRITE_FIELDS = frozenset(
     {
         "draft_id",
         "expected_lock_version",
@@ -60,24 +62,27 @@ _AUTOSAVE_FIELDS = frozenset(
         "change_summary",
     }
 )
-_AUTOSAVE_CONFLICT_CODES = {
+_DRAFT_WRITE_CONFLICT_CODES = {
     DRAFT_CONFLICT,
     DRAFT_NOT_CURRENT,
     INVALID_DRAFT_STATE,
     MODEL_CONSISTENCY_FAILED,
+    VERSION_NUMBER_CONFLICT,
 }
 
 
-def _autosave_error(*, code: str, message: str, status: int) -> JsonResponse:
+def _draft_write_error(*, code: str, message: str, status: int) -> JsonResponse:
     return JsonResponse(
         {"ok": False, "error": {"code": code, "message": message}},
         status=status,
     )
 
 
-def _parse_autosave_json(request: HttpRequest) -> tuple[dict | None, JsonResponse | None]:
+def _parse_draft_write_json(
+    request: HttpRequest,
+) -> tuple[dict | None, JsonResponse | None]:
     if request.content_type != "application/json":
-        return None, _autosave_error(
+        return None, _draft_write_error(
             code="INVALID_JSON",
             message="请求必须使用 application/json。",
             status=400,
@@ -85,25 +90,25 @@ def _parse_autosave_json(request: HttpRequest) -> tuple[dict | None, JsonRespons
     try:
         payload = json.loads(request.body)
     except (json.JSONDecodeError, UnicodeDecodeError):
-        return None, _autosave_error(
+        return None, _draft_write_error(
             code="INVALID_JSON",
             message="请求正文不是有效的 JSON 对象。",
             status=400,
         )
     if not isinstance(payload, dict):
-        return None, _autosave_error(
+        return None, _draft_write_error(
             code="INVALID_JSON",
             message="请求正文必须是 JSON 对象。",
             status=400,
         )
-    if unknown_fields := payload.keys() - _AUTOSAVE_FIELDS:
-        return None, _autosave_error(
+    if unknown_fields := payload.keys() - _DRAFT_WRITE_FIELDS:
+        return None, _draft_write_error(
             code="UNKNOWN_FIELDS",
             message=f"请求包含不支持的字段：{', '.join(sorted(unknown_fields))}。",
             status=400,
         )
-    if missing_fields := _AUTOSAVE_FIELDS - payload.keys():
-        return None, _autosave_error(
+    if missing_fields := _DRAFT_WRITE_FIELDS - payload.keys():
+        return None, _draft_write_error(
             code="INVALID_REQUEST",
             message=f"请求缺少必填字段：{', '.join(sorted(missing_fields))}。",
             status=400,
@@ -111,22 +116,111 @@ def _parse_autosave_json(request: HttpRequest) -> tuple[dict | None, JsonRespons
     return payload, None
 
 
-def _map_autosave_service_error(error: ArticleVersionWriteError) -> JsonResponse:
+def _map_draft_write_service_error(
+    error: ArticleVersionWriteError,
+    *,
+    fallback_code: str,
+    fallback_message: str,
+) -> JsonResponse:
     if error.code == ARTICLE_VERSION_WRITE_PERMISSION_DENIED:
-        return _autosave_error(code=error.code, message=error.public_message, status=403)
+        return _draft_write_error(code=error.code, message=error.public_message, status=403)
     if error.code == DRAFT_NOT_FOUND_OR_INACCESSIBLE:
-        return _autosave_error(code=error.code, message=error.public_message, status=404)
-    if error.code in _AUTOSAVE_CONFLICT_CODES:
-        return _autosave_error(code=error.code, message=error.public_message, status=409)
+        return _draft_write_error(code=error.code, message=error.public_message, status=404)
+    if error.code in _DRAFT_WRITE_CONFLICT_CODES:
+        return _draft_write_error(code=error.code, message=error.public_message, status=409)
     if error.code == ARTICLE_VERSION_WRITE_INVALID_INPUT:
-        return _autosave_error(code=error.code, message=error.public_message, status=400)
+        return _draft_write_error(code=error.code, message=error.public_message, status=400)
     if error.code == DATABASE_WRITE_FAILED:
-        return _autosave_error(code=error.code, message=error.public_message, status=503)
-    return _autosave_error(
-        code="AUTOSAVE_FAILED",
-        message="系统暂时无法自动保存，请稍后重试或联系管理员。",
+        return _draft_write_error(code=error.code, message=error.public_message, status=503)
+    return _draft_write_error(
+        code=fallback_code,
+        message=fallback_message,
         status=503,
     )
+
+
+def _prepare_draft_write(
+    request: HttpRequest,
+    *,
+    kb_no: str,
+    invalid_content_message: str,
+) -> tuple[Article | None, dict | None, dict | None, JsonResponse | None]:
+    """复用管理权限、严格 JSON、身份与五字段内容验证。"""
+
+    try:
+        get_manage_working_article_detail(actor=request.user, kb_no=kb_no)
+    except ManageWorkingArticleReadError as error:
+        if error.code == MANAGE_WORKING_ARTICLE_NOT_FOUND_OR_INACCESSIBLE:
+            return (
+                None,
+                None,
+                None,
+                _draft_write_error(
+                    code=DRAFT_NOT_FOUND_OR_INACCESSIBLE,
+                    message="草稿不存在或不可访问。",
+                    status=404,
+                ),
+            )
+        return (
+            None,
+            None,
+            None,
+            _draft_write_error(
+                code="PERMISSION_DENIED",
+                message=error.public_message,
+                status=403,
+            ),
+        )
+
+    payload, parse_error = _parse_draft_write_json(request)
+    if parse_error is not None:
+        return None, None, None, parse_error
+    assert payload is not None
+
+    identity_form = ArticleAutosaveIdentityForm(data=payload)
+    if not identity_form.is_valid():
+        return (
+            None,
+            None,
+            None,
+            _draft_write_error(
+                code="INVALID_REQUEST",
+                message="草稿身份或锁版本无效。",
+                status=400,
+            ),
+        )
+
+    content_data = {
+        **payload,
+        "applicable_scope": json.dumps(payload["applicable_scope"], ensure_ascii=False),
+    }
+    content_form = ArticleDraftForm(data=content_data)
+    if not content_form.is_valid():
+        return (
+            None,
+            None,
+            None,
+            _draft_write_error(
+                code="INVALID_CONTENT",
+                message=invalid_content_message,
+                status=400,
+            ),
+        )
+
+    try:
+        article = Article.objects.get(kb_no=kb_no)
+    except Article.DoesNotExist:
+        return (
+            None,
+            None,
+            None,
+            _draft_write_error(
+                code=DRAFT_NOT_FOUND_OR_INACCESSIBLE,
+                message="草稿不存在或不可访问。",
+                status=404,
+            ),
+        )
+    return article, identity_form.cleaned_data, content_form.cleaned_data, None
 
 
 @manage_get_page
@@ -224,56 +318,14 @@ def manage_article_create(request: HttpRequest) -> HttpResponse:
 def manage_article_autosave(request: HttpRequest, kb_no: str) -> HttpResponse:
     """校验完整草稿快照，并仅通过正式 Service 执行 autosave CAS。"""
 
-    try:
-        get_manage_working_article_detail(actor=request.user, kb_no=kb_no)
-    except ManageWorkingArticleReadError as error:
-        if error.code == MANAGE_WORKING_ARTICLE_NOT_FOUND_OR_INACCESSIBLE:
-            return _autosave_error(
-                code=DRAFT_NOT_FOUND_OR_INACCESSIBLE,
-                message="草稿不存在或不可访问。",
-                status=404,
-            )
-        return _autosave_error(
-            code="PERMISSION_DENIED",
-            message=error.public_message,
-            status=403,
-        )
-
-    payload, parse_error = _parse_autosave_json(request)
-    if parse_error is not None:
-        return parse_error
-    assert payload is not None
-
-    identity_form = ArticleAutosaveIdentityForm(data=payload)
-    if not identity_form.is_valid():
-        return _autosave_error(
-            code="INVALID_REQUEST",
-            message="草稿身份或锁版本无效。",
-            status=400,
-        )
-
-    content_data = {
-        **payload,
-        "applicable_scope": json.dumps(payload["applicable_scope"], ensure_ascii=False),
-    }
-    content_form = ArticleDraftForm(data=content_data)
-    if not content_form.is_valid():
-        return _autosave_error(
-            code="INVALID_CONTENT",
-            message="当前内容无法自动保存，请检查输入。",
-            status=400,
-        )
-
-    try:
-        article = Article.objects.get(kb_no=kb_no)
-    except Article.DoesNotExist:
-        return _autosave_error(
-            code=DRAFT_NOT_FOUND_OR_INACCESSIBLE,
-            message="草稿不存在或不可访问。",
-            status=404,
-        )
-    identity = identity_form.cleaned_data
-    content = content_form.cleaned_data
+    article, identity, content, request_error = _prepare_draft_write(
+        request,
+        kb_no=kb_no,
+        invalid_content_message="当前内容无法自动保存，请检查输入。",
+    )
+    if request_error is not None:
+        return request_error
+    assert article is not None and identity is not None and content is not None
     try:
         draft = autosave_draft(
             actor=request.user,
@@ -287,7 +339,11 @@ def manage_article_autosave(request: HttpRequest, kb_no: str) -> HttpResponse:
             change_summary=content["change_summary"],
         )
     except ArticleVersionWriteError as error:
-        return _map_autosave_service_error(error)
+        return _map_draft_write_service_error(
+            error,
+            fallback_code="AUTOSAVE_FAILED",
+            fallback_message="系统暂时无法自动保存，请稍后重试或联系管理员。",
+        )
 
     return JsonResponse(
         {
@@ -296,6 +352,68 @@ def manage_article_autosave(request: HttpRequest, kb_no: str) -> HttpResponse:
                 "id": str(draft.pk),
                 "version_no": draft.version_no,
                 "lock_version": draft.lock_version,
+                "updated_at": draft.updated_at.isoformat(),
+            },
+        }
+    )
+
+
+@manage_post_json_page
+def manage_article_manual_save(request: HttpRequest, kb_no: str) -> HttpResponse:
+    """冻结当前 DRAFT，并通过正式 Service 创建下一工作 DRAFT。"""
+
+    article, identity, content, request_error = _prepare_draft_write(
+        request,
+        kb_no=kb_no,
+        invalid_content_message="当前内容无法保存版本，请检查输入。",
+    )
+    if request_error is not None:
+        return request_error
+    assert article is not None and identity is not None and content is not None
+
+    try:
+        saved, draft = manual_save_draft(
+            actor=request.user,
+            article=article,
+            draft_id=identity["draft_id"],
+            expected_lock_version=identity["expected_lock_version"],
+            title=content["title"],
+            summary=content["summary"],
+            applicable_scope=content["applicable_scope"],
+            body_text=content["body_text"],
+            change_summary=content["change_summary"],
+        )
+    except ArticleVersionWriteError as error:
+        return _map_draft_write_service_error(
+            error,
+            fallback_code="MANUAL_SAVE_FAILED",
+            fallback_message="系统暂时无法保存版本，请稍后重试或联系管理员。",
+        )
+
+    restored_from_version_no = None
+    if draft.restored_from_version_id is not None:
+        restored_from_version_no = draft.restored_from_version.version_no
+    return JsonResponse(
+        {
+            "ok": True,
+            "saved": {
+                "id": str(saved.pk),
+                "version_no": saved.version_no,
+                "status": saved.status,
+                "lock_version": saved.lock_version,
+            },
+            "draft": {
+                "id": str(draft.pk),
+                "version_no": draft.version_no,
+                "status": draft.status,
+                "status_label": draft.get_status_display(),
+                "lock_version": draft.lock_version,
+                "title": draft.title,
+                "summary": draft.summary,
+                "applicable_scope": draft.applicable_scope,
+                "body_text": draft.body_plaintext,
+                "change_summary": draft.change_summary,
+                "restored_from_version_no": restored_from_version_no,
                 "updated_at": draft.updated_at.isoformat(),
             },
         }

@@ -7,6 +7,7 @@ from apps.knowledge.manage_views import (
     manage_article_create,
     manage_article_edit,
     manage_article_list,
+    manage_article_manual_save,
 )
 
 app_name = "knowledge_manage"
@@ -15,5 +16,6 @@ urlpatterns = [
     path("", manage_article_list, name="list"),
     path("new/", manage_article_create, name="create"),
     path("<str:kb_no>/autosave/", manage_article_autosave, name="autosave"),
+    path("<str:kb_no>/save/", manage_article_manual_save, name="save"),
     path("<str:kb_no>/edit/", manage_article_edit, name="edit"),
 ]

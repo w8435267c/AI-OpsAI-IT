@@ -167,6 +167,39 @@ class KnowledgeEditorJavaScriptContractTests(SimpleTestCase):
         self.assertIn("let blocked = false", self.source)
         self.assertIn("if (blocked || inFlight || !dirty)", self.source)
 
+    def test_manual_save_waits_for_autosave_and_is_single_flight(self):
+        self.assertIn("let manualPending = false", self.source)
+        self.assertIn("let manualInFlight = false", self.source)
+        self.assertIn("clearDebounce()", self.source)
+        self.assertIn("if (inFlight)", self.source)
+        self.assertIn("startManualSave", self.source)
+        self.assertIn("manualSaveButton.disabled = true", self.source)
+        self.assertIn("manualPending || manualInFlight", self.source)
+
+    def test_manual_success_switches_all_server_authoritative_state(self):
+        for expected in (
+            "draftId.value = payload.draft.id",
+            "editor.dataset.versionNo = String(payload.draft.version_no)",
+            "lockVersion.value = String(payload.draft.lock_version)",
+            "title.value = payload.draft.title",
+            "summary.value = payload.draft.summary",
+            "bodyText.value = payload.draft.body_text",
+            "changeSummary.value = payload.draft.change_summary",
+            "JSON.stringify(payload.draft.applicable_scope, null, 2)",
+        ):
+            with self.subTest(expected=expected):
+                self.assertIn(expected, self.source)
+        self.assertNotIn("pageVersion + 1", self.source)
+        self.assertNotIn("expectedLockVersion + 1", self.source)
+
+    def test_manual_failures_block_without_retry_and_400_recovers(self):
+        self.assertIn("response.status === 400", self.source)
+        self.assertIn("response.status === 409", self.source)
+        self.assertIn("response.status === 403 || response.status === 404", self.source)
+        self.assertIn("response.status >= 500", self.source)
+        self.assertIn("版本保存结果未知", self.source)
+        self.assertNotIn("retryManual", self.source)
+
     def test_request_is_full_json_snapshot_with_csrf(self):
         for field in (
             "draft_id",
@@ -481,24 +514,30 @@ class ManageArticleEditPageTests(TestCase):
                 self.assertEqual(response["Allow"], "GET")
                 self.assertEqual(response["Cache-Control"], "private, no-store")
 
-    def test_page_loads_autosave_contract_without_future_controls(self):
+    def test_page_loads_autosave_and_manual_save_contract(self):
         page = self.get_as(self.article_owner)
         autosave_url = reverse("knowledge_manage:autosave", args=[self.article.kb_no])
+        save_url = reverse("knowledge_manage:save", args=[self.article.kb_no])
 
         self.assertNotContains(page, "<form", html=False)
         self.assertNotContains(page, 'type="submit"', html=False)
-        self.assertNotContains(page, "<button", html=False)
         self.assertContains(
             page,
             f'data-autosave-url="{autosave_url}"',
         )
+        self.assertContains(page, f'data-save-url="{save_url}"')
         self.assertContains(page, 'name="csrfmiddlewaretoken"')
         self.assertContains(page, 'id="autosave-status"')
         self.assertContains(page, 'aria-live="polite"')
         self.assertContains(page, "未修改")
         self.assertContains(page, 'id="autosave-reload"')
+        self.assertContains(page, 'id="manual-save-button"')
+        self.assertContains(page, 'type="button"')
+        self.assertContains(page, "保存版本并继续编辑")
+        self.assertContains(page, 'id="working-version-label"')
+        self.assertContains(page, 'id="working-lock-label"')
+        self.assertContains(page, 'id="restored-from-row"')
         self.assertContains(page, "js/knowledge_editor.js")
-        self.assertNotContains(page, "保存版本")
         self.assertNotContains(page, "提交审核")
         self.assertNotContains(page, "发布")
         self.assertNotContains(page, "预览")
