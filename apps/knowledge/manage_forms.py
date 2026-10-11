@@ -1,0 +1,124 @@
+"""正式知识管理区表单。"""
+
+from __future__ import annotations
+
+import json
+
+from django import forms
+from django.forms.fields import InvalidJSONInput
+
+from apps.accounts.models import User
+
+from .manage_readers import get_manage_article_create_options
+from .models import ArticleType, AudiencePolicy, Category, KnowledgeSpace
+
+
+class JSONObjectField(forms.JSONField):
+    """只接受顶层对象，并以可读且保留中文的格式展示。"""
+
+    default_error_messages = {
+        **forms.JSONField.default_error_messages,
+        "invalid": "请输入有效的 JSON。",
+    }
+
+    def prepare_value(self, value):
+        if isinstance(value, InvalidJSONInput):
+            return value
+        if value in self.empty_values:
+            return ""
+        return json.dumps(value, ensure_ascii=False, indent=2)
+
+
+class ArticleCreateForm(forms.Form):
+    """Article 与首个 DRAFT 创建输入白名单。"""
+
+    space = forms.ModelChoiceField(
+        label="知识空间",
+        queryset=KnowledgeSpace.objects.none(),
+    )
+    category = forms.ModelChoiceField(
+        label="分类",
+        queryset=Category.objects.none(),
+    )
+    article_type = forms.ChoiceField(
+        label="文章类型",
+        choices=ArticleType.choices,
+    )
+    title = forms.CharField(label="标题", max_length=60)
+    summary = forms.CharField(
+        label="摘要",
+        max_length=500,
+        widget=forms.Textarea(attrs={"rows": 3}),
+    )
+    applicable_scope = JSONObjectField(
+        label="适用范围（高级设置）",
+        required=False,
+        initial=dict,
+        widget=forms.Textarea(attrs={"rows": 7}),
+        help_text="当前版本暂使用 JSON 对象保存适用范围。没有特殊限制时可填写 {}。",
+    )
+    body_text = forms.CharField(
+        label="正文",
+        widget=forms.Textarea(attrs={"rows": 16}),
+    )
+    change_summary = forms.CharField(
+        label="版本说明",
+        max_length=500,
+        widget=forms.Textarea(attrs={"rows": 3}),
+    )
+    audience_policy = forms.ChoiceField(
+        label="内容受众策略",
+        required=False,
+        choices=(("", "使用知识空间默认策略"), *AudiencePolicy.choices),
+    )
+    effective_at = forms.DateTimeField(
+        label="生效时间",
+        required=False,
+        widget=forms.DateTimeInput(
+            attrs={"type": "datetime-local"},
+            format="%Y-%m-%dT%H:%M",
+        ),
+    )
+    review_due_at = forms.DateTimeField(
+        label="复审截止时间",
+        widget=forms.DateTimeInput(
+            attrs={"type": "datetime-local"},
+            format="%Y-%m-%dT%H:%M",
+        ),
+    )
+    owner = forms.ModelChoiceField(
+        label="知识负责人",
+        queryset=User.objects.none(),
+        required=False,
+        help_text="不选择时由当前知识管理员担任负责人。",
+    )
+
+    def __init__(self, *, actor, **kwargs):
+        super().__init__(**kwargs)
+        options = get_manage_article_create_options(actor=actor)
+        self.fields["space"].queryset = options.spaces
+        self.fields["category"].queryset = options.categories
+        if options.is_admin:
+            self.fields["owner"].queryset = options.owners
+        else:
+            self.fields.pop("owner")
+
+    def clean_applicable_scope(self):
+        value = self.cleaned_data.get("applicable_scope")
+        raw_value = self.data.get(self.add_prefix("applicable_scope")) if self.is_bound else None
+        if raw_value in (None, ""):
+            return {}
+        if not isinstance(value, dict):
+            raise forms.ValidationError("适用范围必须是 JSON 对象，例如 {}。")
+        return value
+
+    def clean_audience_policy(self):
+        return self.cleaned_data.get("audience_policy") or None
+
+    def clean(self):
+        cleaned_data = super().clean()
+        space = cleaned_data.get("space")
+        category = cleaned_data.get("category")
+        if space is not None and category is not None and category.space_id != space.pk:
+            self.add_error("category", "所选分类不属于该知识空间")
+        return cleaned_data

@@ -1,0 +1,22 @@
+{% extends "knowledge/manage/base.html" %}
+
+{% block title %}新建知识 | OpsAI IT 故障问答知识库{% endblock %}
+
+{% block manage_content %}
+  <a class="back-link" href="{% url 'knowledge_manage:list' %}">← 返回知识管理</a>
+
+  <header class="category-header">
+    <p class="eyebrow">CREATE KNOWLEDGE</p>
+    <h1>新建知识</h1>
+    <p>提交后系统将原子创建 Article 与首个草稿，并进入只读草稿落地页。</p>
+  </header>
+
+  <section class="content-section" aria-labelledby="create-form-title">
+    <h2 id="create-form-title">文章与初始草稿</h2>
+    <form method="post">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit">创建知识</button>
+    </form>
+  </section>
+{% endblock %}

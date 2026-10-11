@@ -10,7 +10,10 @@
   <section class="content-section" aria-labelledby="manage-article-list-title">
     <div class="section-heading">
       <h2 id="manage-article-list-title">管理文章列表</h2>
-      <p>共 {{ pagination.count }} 篇</p>
+      <p>
+        共 {{ pagination.count }} 篇
+        · <a href="{% url 'knowledge_manage:create' %}">新建知识</a>
+      </p>
     </div>
 
     {% if articles %}
