@@ -195,3 +195,18 @@ class ArticleDraftForm(forms.Form):
 
     def clean_change_summary(self):
         return self._clean_nonblank_text("change_summary", "版本说明")
+
+
+class ArticleRestoreForm(ArticleDraftForm):
+    """历史恢复确认页提交的当前草稿完整快照。"""
+
+    draft_id = forms.UUIDField(widget=forms.HiddenInput())
+    expected_lock_version = forms.IntegerField(
+        min_value=1,
+        widget=forms.HiddenInput(),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget = forms.HiddenInput()

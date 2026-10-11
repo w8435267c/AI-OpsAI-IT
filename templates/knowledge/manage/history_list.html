@@ -1,0 +1,66 @@
+{% extends "knowledge/manage/base.html" %}
+
+{% block title %}{{ article.kb_no }} 版本历史 | 知识管理{% endblock %}
+
+{% block manage_content %}
+  <a class="back-link" href="{% url 'knowledge_manage:list' %}">← 返回知识管理</a>
+
+  <header class="category-header">
+    <p class="eyebrow">VERSION HISTORY</p>
+    <p class="kb-number">{{ article.kb_no }}</p>
+    <h1>版本历史</h1>
+    <p>共 {{ pagination.count }} 个版本；历史节点只读，不会在此页面被修改。</p>
+  </header>
+
+  <section class="content-section" aria-labelledby="version-history-title">
+    <h2 id="version-history-title">完整版本链</h2>
+    {% if versions %}
+      <div class="history-list">
+        {% for version in versions %}
+          <article class="history-card">
+            <div class="history-card-heading">
+              <h3>v{{ version.version_no }} · {{ version.title }}</h3>
+              <span class="version-status">{{ version.get_status_display }}</span>
+            </div>
+            <dl class="article-metadata">
+              <div><dt>创建人</dt><dd>{{ version.created_by }}</dd></div>
+              <div><dt>创建时间</dt><dd><time datetime="{{ version.created_at|date:'c' }}">{{ version.created_at|date:"Y-m-d H:i" }}</time></dd></div>
+              {% if version.submitted_at %}
+                <div><dt>提交时间</dt><dd><time datetime="{{ version.submitted_at|date:'c' }}">{{ version.submitted_at|date:"Y-m-d H:i" }}</time></dd></div>
+              {% endif %}
+              {% if version.published_at %}
+                <div><dt>发布时间</dt><dd><time datetime="{{ version.published_at|date:'c' }}">{{ version.published_at|date:"Y-m-d H:i" }}</time></dd></div>
+              {% endif %}
+              {% if version.restored_from_version %}
+                <div><dt>恢复来源</dt><dd>恢复自 v{{ version.restored_from_version.version_no }}</dd></div>
+              {% endif %}
+            </dl>
+            <p class="version-flags">
+              {% if version.pk == article.latest_working_version_id %}<strong>当前工作草稿</strong>{% endif %}
+              {% if version.pk == article.current_published_version_id %}<strong>当前发布版本</strong>{% endif %}
+            </p>
+            <p><a href="{% url 'knowledge_manage:history_detail' article.kb_no version.pk %}">查看详情</a></p>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="empty-state">当前没有版本记录。</p>
+    {% endif %}
+  </section>
+
+  {% if pagination.num_pages > 1 %}
+    <nav class="pagination" aria-label="版本历史分页">
+      {% if pagination.has_previous %}
+        <a href="?page={{ pagination.previous_page_number }}">上一页</a>
+      {% else %}
+        <span aria-disabled="true">上一页</span>
+      {% endif %}
+      <span>第 {{ pagination.number }} / {{ pagination.num_pages }} 页</span>
+      {% if pagination.has_next %}
+        <a href="?page={{ pagination.next_page_number }}">下一页</a>
+      {% else %}
+        <span aria-disabled="true">下一页</span>
+      {% endif %}
+    </nav>
+  {% endif %}
+{% endblock %}

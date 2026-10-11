@@ -1,0 +1,65 @@
+{% extends "knowledge/manage/base.html" %}
+
+{% block title %}{{ detail.kb_no }} v{{ detail.version_no }} | 版本历史{% endblock %}
+
+{% block manage_content %}
+  <nav class="detail-navigation" aria-label="历史版本导航">
+    <a class="back-link" href="{% url 'knowledge_manage:history' detail.kb_no %}">← 返回版本历史</a>
+    <a href="{% url 'knowledge_manage:edit' detail.kb_no %}">返回当前草稿编辑页</a>
+  </nav>
+
+  <article class="article-detail">
+    <header class="article-header">
+      <p class="eyebrow">VERSION DETAIL</p>
+      <p class="kb-number">{{ detail.kb_no }}</p>
+      <h1>v{{ detail.version_no }} · {{ detail.title }}</h1>
+      <p class="article-summary">{{ detail.summary }}</p>
+      <p class="version-flags">
+        {% if detail.is_current_working %}<strong>当前工作草稿</strong>{% endif %}
+        {% if detail.is_current_published %}<strong>当前发布版本</strong>{% endif %}
+      </p>
+    </header>
+
+    <dl class="article-metadata">
+      <div><dt>状态</dt><dd>{{ detail.status_label }}</dd></div>
+      <div><dt>创建人</dt><dd>{{ detail.created_by_name }}</dd></div>
+      <div><dt>创建时间</dt><dd><time datetime="{{ detail.created_at|date:'c' }}">{{ detail.created_at|date:"Y-m-d H:i" }}</time></dd></div>
+      {% if detail.submitted_by_name %}<div><dt>提交人</dt><dd>{{ detail.submitted_by_name }}</dd></div>{% endif %}
+      {% if detail.submitted_at %}<div><dt>提交时间</dt><dd><time datetime="{{ detail.submitted_at|date:'c' }}">{{ detail.submitted_at|date:"Y-m-d H:i" }}</time></dd></div>{% endif %}
+      {% if detail.published_at %}<div><dt>发布时间</dt><dd><time datetime="{{ detail.published_at|date:'c' }}">{{ detail.published_at|date:"Y-m-d H:i" }}</time></dd></div>{% endif %}
+      {% if detail.restored_from_version_no %}<div><dt>恢复来源</dt><dd>恢复自 v{{ detail.restored_from_version_no }}</dd></div>{% endif %}
+    </dl>
+
+    <section class="article-section" aria-labelledby="history-scope-title">
+      <h2 id="history-scope-title">适用范围</h2>
+      <pre class="history-json">{{ scope_json }}</pre>
+    </section>
+    <section class="article-section" aria-labelledby="history-body-title">
+      <h2 id="history-body-title">正文</h2>
+      <div class="history-plaintext">{{ detail.body_text|linebreaksbr }}</div>
+    </section>
+    <section class="article-section" aria-labelledby="history-change-title">
+      <h2 id="history-change-title">版本说明</h2>
+      <p>{{ detail.change_summary }}</p>
+    </section>
+
+    {% if restore_form %}
+      <section class="article-section restore-warning" aria-labelledby="restore-title">
+        <h2 id="restore-title">恢复此版本</h2>
+        <p><strong>恢复不会修改历史记录。</strong>系统会先将当前工作草稿保存为历史版本，再复制本版本内容创建新的草稿继续编辑。</p>
+        <p>如果当前草稿已在其他窗口更新，系统会拒绝恢复并要求刷新。</p>
+        {% if restore_form.non_field_errors %}
+          <div class="form-errors" role="alert">{{ restore_form.non_field_errors }}</div>
+        {% endif %}
+        {% for field in restore_form %}
+          {% if field.errors %}<div class="form-errors" role="alert">{{ field.errors }}</div>{% endif %}
+        {% endfor %}
+        <form method="post" action="{% url 'knowledge_manage:restore' detail.kb_no detail.version_id %}">
+          {% csrf_token %}
+          {% for field in restore_form %}{{ field }}{% endfor %}
+          <button type="submit">恢复此版本</button>
+        </form>
+      </section>
+    {% endif %}
+  </article>
+{% endblock %}

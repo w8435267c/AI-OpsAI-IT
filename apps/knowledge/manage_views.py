@@ -11,6 +11,7 @@ from apps.knowledge.manage_forms import (
     ArticleAutosaveIdentityForm,
     ArticleCreateForm,
     ArticleDraftForm,
+    ArticleRestoreForm,
 )
 from apps.knowledge.manage_http import (
     manage_get_page,
@@ -37,6 +38,8 @@ from apps.knowledge.services import (
     DRAFT_NOT_FOUND_OR_INACCESSIBLE,
     INVALID_DRAFT_STATE,
     MODEL_CONSISTENCY_FAILED,
+    RESTORE_SOURCE_INVALID,
+    RESTORE_SOURCE_WRONG_ARTICLE,
     SPACE_CATEGORY_MISMATCH,
     VERSION_NUMBER_CONFLICT,
     ArticleCreationError,
@@ -44,9 +47,18 @@ from apps.knowledge.services import (
     autosave_draft,
     create_article,
     manual_save_draft,
+    restore_article_version,
+)
+from apps.knowledge.version_readers import (
+    ARTICLE_VERSION_HISTORY_NOT_FOUND_OR_INACCESSIBLE,
+    ArticleVersionHistoryDetail,
+    ArticleVersionHistoryReadError,
+    get_article_version_history,
+    get_article_version_history_detail,
 )
 
 MANAGE_ARTICLE_PAGE_SIZE = 20
+MANAGE_ARTICLE_HISTORY_PAGE_SIZE = 20
 _CREATE_FORM_ERROR_CODES = {
     ARTICLE_CREATE_INVALID_INPUT,
     SPACE_CATEGORY_MISMATCH,
@@ -68,6 +80,13 @@ _DRAFT_WRITE_CONFLICT_CODES = {
     INVALID_DRAFT_STATE,
     MODEL_CONSISTENCY_FAILED,
     VERSION_NUMBER_CONFLICT,
+}
+_RESTORE_FORM_FIELDS = frozenset(ArticleRestoreForm.base_fields) | {"csrfmiddlewaretoken"}
+_RESTORE_REQUIRED_FIELDS = frozenset(ArticleRestoreForm.base_fields)
+_RESTORE_NOT_FOUND_CODES = {
+    DRAFT_NOT_FOUND_OR_INACCESSIBLE,
+    RESTORE_SOURCE_INVALID,
+    RESTORE_SOURCE_WRONG_ARTICLE,
 }
 
 
@@ -252,6 +271,231 @@ def manage_article_list(request: HttpRequest) -> HttpResponse:
             "pagination": pagination,
         },
     )
+
+
+def _history_article_or_404(kb_no: str) -> Article | None:
+    return Article.objects.filter(kb_no=kb_no).first()
+
+
+@manage_get_page
+def manage_article_history(request: HttpRequest, kb_no: str) -> HttpResponse:
+    """展示经过正式 Reader 权限过滤的完整版本链。"""
+
+    article = _history_article_or_404(kb_no)
+    if article is None:
+        return HttpResponseNotFound("文章版本历史不存在或不可访问。")
+    try:
+        history = get_article_version_history(actor=request.user, article=article)
+    except ArticleVersionHistoryReadError as error:
+        if error.code == ARTICLE_VERSION_HISTORY_NOT_FOUND_OR_INACCESSIBLE:
+            return HttpResponseNotFound(error.public_message)
+        return HttpResponse(error.public_message, status=403)
+
+    paginator = Paginator(history, MANAGE_ARTICLE_HISTORY_PAGE_SIZE)
+    page = paginator.get_page(request.GET.get("page"))
+    pagination = {
+        "number": page.number,
+        "num_pages": paginator.num_pages,
+        "count": paginator.count,
+        "has_previous": page.has_previous(),
+        "previous_page_number": page.previous_page_number() if page.has_previous() else None,
+        "has_next": page.has_next(),
+        "next_page_number": page.next_page_number() if page.has_next() else None,
+    }
+    return render(
+        request,
+        "knowledge/manage/history_list.html",
+        {
+            "article": article,
+            "versions": page.object_list,
+            "pagination": pagination,
+        },
+    )
+
+
+def _restore_form_initial(detail) -> dict:
+    return {
+        "draft_id": detail.draft_id,
+        "expected_lock_version": detail.lock_version,
+        "title": detail.title,
+        "summary": detail.summary,
+        "applicable_scope": detail.applicable_scope,
+        "body_text": detail.body_text,
+        "change_summary": detail.change_summary,
+    }
+
+
+def _render_history_detail(
+    request: HttpRequest,
+    detail: ArticleVersionHistoryDetail,
+    *,
+    restore_form: ArticleRestoreForm | None,
+    status: int = 200,
+) -> HttpResponse:
+    return render(
+        request,
+        "knowledge/manage/history_detail.html",
+        {
+            "detail": detail,
+            "scope_json": json.dumps(
+                detail.applicable_scope,
+                ensure_ascii=False,
+                indent=2,
+            ),
+            "restore_form": restore_form,
+        },
+        status=status,
+    )
+
+
+@manage_get_page
+def manage_article_history_detail(
+    request: HttpRequest,
+    kb_no: str,
+    version_id,
+) -> HttpResponse:
+    """展示单个历史版本的只读白名单快照。"""
+
+    try:
+        detail = get_article_version_history_detail(
+            actor=request.user,
+            kb_no=kb_no,
+            version_id=version_id,
+        )
+    except ArticleVersionHistoryReadError as error:
+        if error.code == ARTICLE_VERSION_HISTORY_NOT_FOUND_OR_INACCESSIBLE:
+            return HttpResponseNotFound(error.public_message)
+        return HttpResponse(error.public_message, status=403)
+
+    restore_form = None
+    if detail.can_restore:
+        try:
+            working = get_manage_working_article_detail(actor=request.user, kb_no=kb_no)
+        except ManageWorkingArticleReadError:
+            working = None
+        if working is not None:
+            restore_form = ArticleRestoreForm(initial=_restore_form_initial(working))
+    return _render_history_detail(request, detail, restore_form=restore_form)
+
+
+def _restore_error_response(
+    request: HttpRequest,
+    detail: ArticleVersionHistoryDetail,
+    form: ArticleRestoreForm,
+    *,
+    message: str,
+    status: int,
+) -> HttpResponse:
+    form.add_error(None, message)
+    return _render_history_detail(
+        request,
+        detail,
+        restore_form=form,
+        status=status,
+    )
+
+
+@manage_post_json_page
+def manage_article_restore(
+    request: HttpRequest,
+    kb_no: str,
+    version_id,
+) -> HttpResponse:
+    """以普通 HTML Form 调用正式 Restore Service。"""
+
+    try:
+        detail = get_article_version_history_detail(
+            actor=request.user,
+            kb_no=kb_no,
+            version_id=version_id,
+        )
+    except ArticleVersionHistoryReadError as error:
+        if error.code == ARTICLE_VERSION_HISTORY_NOT_FOUND_OR_INACCESSIBLE:
+            return HttpResponseNotFound(error.public_message)
+        return HttpResponse(error.public_message, status=403)
+
+    unknown_fields = set(request.POST) - _RESTORE_FORM_FIELDS
+    missing_fields = _RESTORE_REQUIRED_FIELDS - set(request.POST)
+    form = ArticleRestoreForm(data=request.POST)
+    if unknown_fields:
+        form.add_error(
+            None,
+            f"请求包含不支持的字段：{', '.join(sorted(unknown_fields))}。",
+        )
+        return _render_history_detail(
+            request,
+            detail,
+            restore_form=form,
+            status=400,
+        )
+    if missing_fields:
+        form.add_error(
+            None,
+            f"请求缺少必填字段：{', '.join(sorted(missing_fields))}。",
+        )
+        return _render_history_detail(
+            request,
+            detail,
+            restore_form=form,
+            status=400,
+        )
+    if not form.is_valid():
+        return _render_history_detail(
+            request,
+            detail,
+            restore_form=form,
+            status=400,
+        )
+
+    article = _history_article_or_404(kb_no)
+    if article is None:
+        return HttpResponseNotFound("文章版本历史不存在或不可访问。")
+    cleaned = form.cleaned_data
+    try:
+        restore_article_version(
+            actor=request.user,
+            article=article,
+            source_version_id=version_id,
+            draft_id=cleaned["draft_id"],
+            expected_lock_version=cleaned["expected_lock_version"],
+            current_title=cleaned["title"],
+            current_summary=cleaned["summary"],
+            current_applicable_scope=cleaned["applicable_scope"],
+            current_body_text=cleaned["body_text"],
+            current_change_summary=cleaned["change_summary"],
+        )
+    except ArticleVersionWriteError as error:
+        if error.code == ARTICLE_VERSION_WRITE_PERMISSION_DENIED:
+            return HttpResponse("没有恢复文章版本的权限。", status=403)
+        if error.code in _RESTORE_NOT_FOUND_CODES:
+            return HttpResponseNotFound("历史版本不存在或不可恢复。")
+        if error.code in _DRAFT_WRITE_CONFLICT_CODES:
+            return _restore_error_response(
+                request,
+                detail,
+                form,
+                message="当前草稿已发生变化，请刷新后重新确认恢复操作。",
+                status=409,
+            )
+        if error.code == ARTICLE_VERSION_WRITE_INVALID_INPUT:
+            return _restore_error_response(
+                request,
+                detail,
+                form,
+                message="恢复请求内容无效，请刷新后重新确认。",
+                status=400,
+            )
+        return _restore_error_response(
+            request,
+            detail,
+            form,
+            message="系统暂时无法恢复历史版本，请稍后重试或联系管理员。",
+            status=503,
+        )
+
+    response = HttpResponse(status=303)
+    response["Location"] = reverse("knowledge_manage:edit", args=[kb_no])
+    return response
 
 
 def _render_article_create(

@@ -70,6 +70,9 @@
                 </dd>
               </div>
             </dl>
+            <p class="knowledge-card-actions">
+              <a href="{% url 'knowledge_manage:history' article.kb_no %}">版本历史</a>
+            </p>
           </article>
         {% endfor %}
       </div>
