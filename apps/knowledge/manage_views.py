@@ -1,13 +1,11 @@
 """正式知识管理区视图。"""
 
-import json
-
 from django.core.paginator import Paginator
 from django.http import HttpRequest, HttpResponse, HttpResponseNotFound
 from django.shortcuts import render
 from django.urls import reverse
 
-from apps.knowledge.manage_forms import ArticleCreateForm
+from apps.knowledge.manage_forms import ArticleCreateForm, ArticleDraftForm
 from apps.knowledge.manage_http import manage_get_page, manage_get_post_page
 from apps.knowledge.manage_readers import (
     MANAGE_WORKING_ARTICLE_NOT_FOUND_OR_INACCESSIBLE,
@@ -125,7 +123,7 @@ def manage_article_create(request: HttpRequest) -> HttpResponse:
 
 @manage_get_page
 def manage_article_edit(request: HttpRequest, kb_no: str) -> HttpResponse:
-    """展示 current DRAFT 的最小只读落地页。"""
+    """展示 current DRAFT 的无写入编辑器基础页。"""
 
     try:
         detail = get_manage_working_article_detail(actor=request.user, kb_no=kb_no)
@@ -134,16 +132,17 @@ def manage_article_edit(request: HttpRequest, kb_no: str) -> HttpResponse:
             return HttpResponseNotFound("未找到可查看的文章草稿。")
         return HttpResponse(error.public_message, status=403)
 
+    form = ArticleDraftForm(
+        initial={
+            "title": detail.title,
+            "summary": detail.summary,
+            "applicable_scope": detail.applicable_scope,
+            "body_text": detail.body_text,
+            "change_summary": detail.change_summary,
+        }
+    )
     return render(
         request,
         "knowledge/manage/edit.html",
-        {
-            "detail": detail,
-            "applicable_scope_text": json.dumps(
-                detail.applicable_scope,
-                ensure_ascii=False,
-                indent=2,
-                sort_keys=True,
-            ),
-        },
+        {"detail": detail, "form": form},
     )

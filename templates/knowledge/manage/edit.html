@@ -7,11 +7,10 @@
 
   <article class="article-detail">
     <header class="article-header">
-      <p class="eyebrow">DRAFT LANDING</p>
+      <p class="eyebrow">DRAFT EDITOR</p>
       <p class="kb-number">{{ detail.kb_no }}</p>
-      <h1>{{ detail.title }}</h1>
-      <p class="article-summary">{{ detail.summary }}</p>
-      <p><strong>当前为草稿</strong>；编辑保存功能将在后续编辑器阶段接入。</p>
+      <h1>草稿编辑器</h1>
+      <p class="article-summary"><strong>当前为草稿</strong>；以下内容来自当前工作版本。</p>
     </header>
 
     <dl class="article-metadata">
@@ -43,19 +42,44 @@
       {% endif %}
     </dl>
 
-    <section class="article-section" aria-labelledby="scope-title">
-      <h2 id="scope-title">适用范围（高级设置）</h2>
-      <pre class="plain-text-block">{{ applicable_scope_text }}</pre>
-    </section>
+    <section
+      id="knowledge-editor"
+      class="article-section draft-editor"
+      data-kb-no="{{ detail.kb_no }}"
+      data-version-no="{{ detail.version_no }}"
+      aria-labelledby="draft-editor-title"
+    >
+      <h2 id="draft-editor-title">工作版本内容</h2>
+      <input type="hidden" name="draft_id" value="{{ detail.draft_id }}">
+      <input type="hidden" name="expected_lock_version" value="{{ detail.lock_version }}">
 
-    <section class="article-section" aria-labelledby="body-title">
-      <h2 id="body-title">正文</h2>
-      <div class="article-body">{{ detail.body_text }}</div>
-    </section>
+      <div class="draft-editor-fields">
+        <div class="draft-editor-field">
+          {{ form.title.label_tag }}
+          {{ form.title }}
+        </div>
+        <div class="draft-editor-field">
+          {{ form.summary.label_tag }}
+          {{ form.summary }}
+        </div>
+        <div class="draft-editor-field">
+          {{ form.applicable_scope.label_tag }}
+          {{ form.applicable_scope }}
+          <p class="muted">{{ form.applicable_scope.help_text }}</p>
+        </div>
+        <div class="draft-editor-field">
+          {{ form.body_text.label_tag }}
+          {{ form.body_text }}
+        </div>
+        <div class="draft-editor-field">
+          {{ form.change_summary.label_tag }}
+          {{ form.change_summary }}
+        </div>
+      </div>
 
-    <section class="article-section" aria-labelledby="change-summary-title">
-      <h2 id="change-summary-title">版本说明</h2>
-      <p class="plain-text-block">{{ detail.change_summary }}</p>
+      <p class="editor-write-notice" role="note">
+        当前阶段尚未接入保存功能，页面修改不会提交到服务器。
+      </p>
     </section>
   </article>
 {% endblock %}

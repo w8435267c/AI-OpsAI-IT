@@ -24,9 +24,17 @@ class JSONObjectField(forms.JSONField):
     def prepare_value(self, value):
         if isinstance(value, InvalidJSONInput):
             return value
-        if value in self.empty_values:
+        if value is None or value == "":
             return ""
         return json.dumps(value, ensure_ascii=False, indent=2)
+
+    def clean(self, value):
+        if value in self.empty_values:
+            return {}
+        value = super().clean(value)
+        if not isinstance(value, dict):
+            raise forms.ValidationError("适用范围必须是 JSON 对象，例如 {}。")
+        return value
 
 
 class ArticleCreateForm(forms.Form):
@@ -103,15 +111,6 @@ class ArticleCreateForm(forms.Form):
         else:
             self.fields.pop("owner")
 
-    def clean_applicable_scope(self):
-        value = self.cleaned_data.get("applicable_scope")
-        raw_value = self.data.get(self.add_prefix("applicable_scope")) if self.is_bound else None
-        if raw_value in (None, ""):
-            return {}
-        if not isinstance(value, dict):
-            raise forms.ValidationError("适用范围必须是 JSON 对象，例如 {}。")
-        return value
-
     def clean_audience_policy(self):
         return self.cleaned_data.get("audience_policy") or None
 
@@ -122,3 +121,54 @@ class ArticleCreateForm(forms.Form):
         if space is not None and category is not None and category.space_id != space.pk:
             self.add_error("category", "所选分类不属于该知识空间")
         return cleaned_data
+
+
+class ArticleDraftForm(forms.Form):
+    """working DRAFT 可编辑内容的严格白名单。"""
+
+    title = forms.CharField(label="标题", max_length=60, strip=False)
+    summary = forms.CharField(
+        label="摘要",
+        max_length=500,
+        strip=False,
+        widget=forms.Textarea(attrs={"rows": 3}),
+    )
+    applicable_scope = JSONObjectField(
+        label="适用范围（高级设置）",
+        required=False,
+        initial=dict,
+        widget=forms.Textarea(attrs={"rows": 7}),
+        help_text="当前版本暂使用 JSON 对象保存适用范围。没有特殊限制时可填写 {}。",
+    )
+    body_text = forms.CharField(
+        label="正文",
+        strip=False,
+        widget=forms.Textarea(attrs={"rows": 18}),
+    )
+    change_summary = forms.CharField(
+        label="版本说明",
+        max_length=500,
+        strip=False,
+        widget=forms.Textarea(attrs={"rows": 3}),
+    )
+
+    def _clean_nonblank_text(self, field_name: str, label: str) -> str:
+        value = self.cleaned_data[field_name]
+        if not value.strip():
+            raise forms.ValidationError(f"{label}不能为空。")
+        return value
+
+    def clean_title(self):
+        return self._clean_nonblank_text("title", "标题")
+
+    def clean_summary(self):
+        return self._clean_nonblank_text("summary", "摘要")
+
+    def clean_body_text(self):
+        value = self.cleaned_data["body_text"]
+        if not value.strip():
+            raise forms.ValidationError("正文不能为空。")
+        return value
+
+    def clean_change_summary(self):
+        return self._clean_nonblank_text("change_summary", "版本说明")

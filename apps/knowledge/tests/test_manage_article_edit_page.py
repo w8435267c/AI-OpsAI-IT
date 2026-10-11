@@ -5,7 +5,7 @@ from io import StringIO
 
 from django.contrib.auth.models import Group
 from django.core.management import call_command
-from django.test import Client, TestCase
+from django.test import Client, SimpleTestCase, TestCase
 from django.urls import reverse
 from django.utils import timezone
 
@@ -16,6 +16,7 @@ from apps.accounts.roles import (
     ROLE_REVIEWER,
     SYSTEM_ROLE_BY_CODE,
 )
+from apps.knowledge.manage_forms import ArticleDraftForm
 from apps.knowledge.manage_readers import (
     ManageWorkingArticleDetail,
     get_manage_working_article_detail,
@@ -28,8 +29,124 @@ from apps.knowledge.models import (
     AudiencePolicy,
     Category,
     KnowledgeSpace,
+    ReviewRecord,
     VersionStatus,
 )
+
+
+class ArticleDraftFormTests(SimpleTestCase):
+    def valid_data(self, **overrides):
+        data = {
+            "title": "当前草稿标题",
+            "summary": "当前草稿摘要",
+            "applicable_scope": '{"note": "中文", "nested": {"value": 1}}',
+            "body_text": "当前草稿正文",
+            "change_summary": "当前版本说明",
+        }
+        data.update(overrides)
+        return data
+
+    def test_field_whitelist_is_exactly_the_five_working_content_fields(self):
+        form = ArticleDraftForm()
+
+        self.assertEqual(
+            list(form.fields),
+            [
+                "title",
+                "summary",
+                "applicable_scope",
+                "body_text",
+                "change_summary",
+            ],
+        )
+        forbidden = {
+            "space",
+            "category",
+            "owner",
+            "article_type",
+            "audience_policy",
+            "effective_at",
+            "review_due_at",
+            "kb_no",
+            "draft_id",
+            "version_no",
+            "status",
+            "lock_version",
+            "expected_lock_version",
+            "latest_working_version",
+            "current_published_version",
+            "submitted_by",
+            "submitted_at",
+            "published_at",
+            "restored_from_version",
+        }
+        self.assertTrue(forbidden.isdisjoint(form.fields))
+
+    def test_valid_content_and_json_objects_are_accepted(self):
+        cases = (
+            ("empty", "{}", {}),
+            ("nested", '{"nested": {"value": 1}}', {"nested": {"value": 1}}),
+            ("chinese", '{"说明": "中文范围"}', {"说明": "中文范围"}),
+        )
+        for label, raw_scope, expected_scope in cases:
+            with self.subTest(label=label):
+                form = ArticleDraftForm(data=self.valid_data(applicable_scope=raw_scope))
+                self.assertTrue(form.is_valid(), form.errors)
+                self.assertEqual(form.cleaned_data["applicable_scope"], expected_scope)
+
+    def test_non_object_and_malformed_json_are_rejected(self):
+        cases = (
+            ("list", "[]"),
+            ("string", '"abc"'),
+            ("number", "123"),
+            ("boolean", "true"),
+            ("null", "null"),
+            ("malformed", "{invalid"),
+        )
+        for label, raw_scope in cases:
+            with self.subTest(label=label):
+                form = ArticleDraftForm(data=self.valid_data(applicable_scope=raw_scope))
+                self.assertFalse(form.is_valid())
+                self.assertIn("applicable_scope", form.errors)
+
+    def test_scope_initial_value_is_pretty_json_without_unicode_escaping(self):
+        form = ArticleDraftForm(initial={"applicable_scope": {"说明": "中文"}})
+
+        self.assertEqual(
+            form["applicable_scope"].value(),
+            '{\n  "说明": "中文"\n}',
+        )
+
+    def test_lengths_and_required_rules_match_the_write_service(self):
+        form = ArticleDraftForm()
+        self.assertEqual(form.fields["title"].max_length, 60)
+        self.assertEqual(form.fields["summary"].max_length, 500)
+        self.assertEqual(form.fields["change_summary"].max_length, 500)
+        self.assertIsNone(form.fields["body_text"].max_length)
+
+        valid = ArticleDraftForm(
+            data=self.valid_data(
+                title="标" * 60,
+                summary="摘" * 500,
+                change_summary="改" * 500,
+            )
+        )
+        self.assertTrue(valid.is_valid(), valid.errors)
+
+        for field, value in (
+            ("title", "标" * 61),
+            ("title", " " + "标" * 60),
+            ("summary", "摘" * 501),
+            ("change_summary", "改" * 501),
+            ("title", "   "),
+            ("summary", "   "),
+            ("body_text", "   "),
+            ("change_summary", "   "),
+        ):
+            with self.subTest(field=field, length=len(value)):
+                invalid = ArticleDraftForm(data=self.valid_data(**{field: value}))
+                self.assertFalse(invalid.is_valid())
+                self.assertIn(field, invalid.errors)
 
 
 class ManageArticleEditPageTests(TestCase):
@@ -64,7 +181,7 @@ class ManageArticleEditPageTests(TestCase):
             owner=cls.article_owner,
             title="OLD-COMPAT-TITLE",
         )
-        source = ArticleVersion.objects.create(
+        cls.source = ArticleVersion.objects.create(
             article=cls.article,
             version_no=1,
             status=VersionStatus.SAVED,
@@ -73,7 +190,7 @@ class ManageArticleEditPageTests(TestCase):
             change_summary="历史说明",
             created_by=cls.article_owner,
         )
-        draft = ArticleVersion.objects.create(
+        cls.draft = ArticleVersion.objects.create(
             article=cls.article,
             version_no=2,
             status=VersionStatus.DRAFT,
@@ -83,10 +200,10 @@ class ManageArticleEditPageTests(TestCase):
             applicable_scope={"说明": "中文范围", "nested": {"value": 1}},
             body_plaintext='<script>alert("draft")</script>\n<img src=x>\n<b>正文</b>',
             change_summary="当前草稿说明",
-            restored_from_version=source,
+            restored_from_version=cls.source,
             created_by=cls.article_owner,
         )
-        Article.objects.filter(pk=cls.article.pk).update(latest_working_version=draft)
+        Article.objects.filter(pk=cls.article.pk).update(latest_working_version=cls.draft)
 
         cls.other_space = KnowledgeSpace.objects.create(
             code="edit-page-other-space",
@@ -106,7 +223,7 @@ class ManageArticleEditPageTests(TestCase):
             space=cls.other_space,
             category=cls.other_category,
         )
-        other_draft = ArticleVersion.objects.create(
+        cls.other_draft = ArticleVersion.objects.create(
             article=cls.other_article,
             version_no=1,
             status=VersionStatus.DRAFT,
@@ -116,7 +233,9 @@ class ManageArticleEditPageTests(TestCase):
             change_summary="其他说明",
             created_by=cls.other_editor,
         )
-        Article.objects.filter(pk=cls.other_article.pk).update(latest_working_version=other_draft)
+        Article.objects.filter(pk=cls.other_article.pk).update(
+            latest_working_version=cls.other_draft
+        )
 
         cls.no_working_article = cls.make_article(
             "KB-310003",
@@ -228,15 +347,44 @@ class ManageArticleEditPageTests(TestCase):
     def test_page_uses_draft_title_and_escapes_plaintext_body(self):
         response = self.get_as(self.article_owner)
 
-        self.assertContains(response, "REAL-DRAFT-TITLE")
+        self.assertContains(response, 'name="title"')
+        self.assertContains(response, 'value="REAL-DRAFT-TITLE"')
         self.assertNotContains(response, "OLD-COMPAT-TITLE")
         self.assertContains(response, "&lt;script&gt;", html=False)
         self.assertContains(response, "&lt;img src=x&gt;", html=False)
         self.assertContains(response, "&lt;b&gt;正文&lt;/b&gt;", html=False)
         self.assertNotContains(response, '<script>alert("draft")</script>', html=False)
 
-    def test_page_formats_scope_and_shows_read_only_version_metadata(self):
+    def test_page_renders_browser_version_contract_and_draft_fields(self):
         response = self.get_as(self.article_owner)
+
+        self.assertContains(response, 'id="knowledge-editor"')
+        self.assertContains(response, f'data-kb-no="{self.article.kb_no}"')
+        self.assertContains(response, 'data-version-no="2"')
+        self.assertContains(response, 'name="draft_id"')
+        self.assertContains(response, f'value="{self.draft.pk}"')
+        self.assertContains(response, 'name="expected_lock_version"')
+        self.assertContains(response, 'value="7"')
+        for field_name in (
+            "title",
+            "summary",
+            "applicable_scope",
+            "body_text",
+            "change_summary",
+        ):
+            with self.subTest(field_name=field_name):
+                self.assertContains(response, f'name="{field_name}"')
+
+        for forbidden_name in (
+            "version_no",
+            "status",
+            "lock_version",
+            "owner",
+            "space",
+            "category",
+        ):
+            with self.subTest(forbidden_name=forbidden_name):
+                self.assertNotContains(response, f'name="{forbidden_name}"')
 
         self.assertContains(response, "&quot;说明&quot;: &quot;中文范围&quot;", html=False)
         self.assertContains(response, "当前为草稿")
@@ -247,18 +395,153 @@ class ManageArticleEditPageTests(TestCase):
         self.assertContains(response, self.category.name)
         self.assertContains(response, str(self.article_owner))
 
-    def test_page_is_get_only_and_contains_no_write_or_task13_controls(self):
+    def test_page_is_get_only_for_every_write_method(self):
         client = Client()
         client.force_login(self.article_owner)
         url = reverse("knowledge_manage:edit", args=[self.article.kb_no])
 
-        response = client.post(url)
-        page = client.get(url)
+        for method in ("post", "put", "patch", "delete"):
+            with self.subTest(method=method):
+                response = getattr(client, method)(url)
+                self.assertEqual(response.status_code, 405)
+                self.assertEqual(response["Allow"], "GET")
+                self.assertEqual(response["Cache-Control"], "private, no-store")
 
-        self.assertEqual(response.status_code, 405)
-        self.assertEqual(response["Allow"], "GET")
-        self.assertEqual(response["Cache-Control"], "private, no-store")
+    def test_page_has_no_submit_storage_script_or_future_controls(self):
+        page = self.get_as(self.article_owner)
+
         self.assertNotContains(page, "<form", html=False)
+        self.assertNotContains(page, 'type="submit"', html=False)
+        self.assertNotContains(page, "<button", html=False)
+        self.assertNotContains(page, "localStorage")
+        self.assertNotContains(page, "sessionStorage")
+        self.assertNotContains(page, "indexedDB")
+        self.assertNotContains(page, "autosave")
         self.assertNotContains(page, "保存版本")
         self.assertNotContains(page, "提交审核")
         self.assertNotContains(page, "发布")
+        self.assertNotContains(page, "预览")
+        self.assertContains(page, "当前阶段尚未接入保存功能，页面修改不会提交到服务器。")
+
+    def test_all_editable_values_are_loaded_from_same_working_draft(self):
+        ArticleVersion.objects.filter(pk=self.draft.pk).update(
+            body={"format": "opsai.plaintext/1", "text": "结构化字段不直接展示"},
+        )
+
+        response = self.get_as(self.article_owner)
+
+        self.assertContains(response, 'value="REAL-DRAFT-TITLE"')
+        self.assertContains(response, "当前草稿摘要")
+        self.assertContains(response, "当前草稿说明")
+        self.assertContains(
+            response, "&lt;script&gt;alert(&quot;draft&quot;)&lt;/script&gt;", html=False
+        )
+        self.assertNotContains(response, "结构化字段不直接展示")
+
+    def test_cross_article_working_pointer_is_safe_404(self):
+        Article.objects.filter(pk=self.article.pk).update(latest_working_version=self.other_draft)
+
+        response = self.get_as(self.article_owner)
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response["Cache-Control"], "private, no-store")
+
+    def test_refresh_reads_the_new_current_draft_tokens_from_database(self):
+        ArticleVersion.objects.filter(pk=self.draft.pk).update(status=VersionStatus.SAVED)
+        next_draft = ArticleVersion.objects.create(
+            article=self.article,
+            version_no=3,
+            status=VersionStatus.DRAFT,
+            lock_version=1,
+            title="刷新后的新草稿",
+            summary="刷新后的摘要",
+            applicable_scope={},
+            body_plaintext="刷新后的正文",
+            change_summary="刷新后的说明",
+            created_by=self.article_owner,
+        )
+        Article.objects.filter(pk=self.article.pk).update(latest_working_version=next_draft)
+
+        response = self.get_as(self.article_owner)
+
+        self.assertContains(response, f'value="{next_draft.pk}"')
+        self.assertContains(response, 'data-version-no="3"')
+        self.assertContains(response, 'name="expected_lock_version"')
+        self.assertContains(response, 'value="1"')
+        self.assertContains(response, 'value="刷新后的新草稿"')
+        self.assertNotContains(response, f'value="{self.draft.pk}"')
+
+    def test_xss_payloads_are_escaped_inside_editor_fields(self):
+        ArticleVersion.objects.filter(pk=self.draft.pk).update(
+            title="<script>alert(1)</script>",
+            summary="<img src=x onerror=alert(1)>",
+            applicable_scope={"x": "<script>alert(2)</script>"},
+            body_plaintext="<b>not html</b>",
+            change_summary="<script>alert(3)</script>",
+        )
+
+        response = self.get_as(self.article_owner)
+        html = response.content.decode()
+
+        for raw_payload in (
+            "<script>alert(1)</script>",
+            "<img src=x onerror=alert(1)>",
+            "<script>alert(2)</script>",
+            "<b>not html</b>",
+            "<script>alert(3)</script>",
+        ):
+            with self.subTest(raw_payload=raw_payload):
+                self.assertNotIn(raw_payload, html)
+        self.assertIn("&lt;script&gt;alert(1)&lt;/script&gt;", html)
+        self.assertIn("&lt;img src=x onerror=alert(1)&gt;", html)
+        self.assertIn("&lt;b&gt;not html&lt;/b&gt;", html)
+
+    def test_get_editor_performs_no_database_writes(self):
+        article_before = Article.objects.get(pk=self.article.pk)
+        draft_before = ArticleVersion.objects.get(pk=self.draft.pk)
+        article_snapshot = {
+            "updated_at": article_before.updated_at,
+            "latest_working_version_id": article_before.latest_working_version_id,
+            "current_published_version_id": article_before.current_published_version_id,
+        }
+        draft_snapshot = {
+            "title": draft_before.title,
+            "summary": draft_before.summary,
+            "applicable_scope": draft_before.applicable_scope,
+            "body": draft_before.body,
+            "body_plaintext": draft_before.body_plaintext,
+            "change_summary": draft_before.change_summary,
+            "lock_version": draft_before.lock_version,
+            "updated_at": draft_before.updated_at,
+        }
+        version_count = ArticleVersion.objects.count()
+        review_count = ReviewRecord.objects.count()
+
+        response = self.get_as(self.article_owner)
+
+        self.assertEqual(response.status_code, 200)
+        article_after = Article.objects.get(pk=self.article.pk)
+        draft_after = ArticleVersion.objects.get(pk=self.draft.pk)
+        self.assertEqual(ArticleVersion.objects.count(), version_count)
+        self.assertEqual(ReviewRecord.objects.count(), review_count)
+        self.assertEqual(
+            {
+                "updated_at": article_after.updated_at,
+                "latest_working_version_id": article_after.latest_working_version_id,
+                "current_published_version_id": article_after.current_published_version_id,
+            },
+            article_snapshot,
+        )
+        self.assertEqual(
+            {
+                "title": draft_after.title,
+                "summary": draft_after.summary,
+                "applicable_scope": draft_after.applicable_scope,
+                "body": draft_after.body,
+                "body_plaintext": draft_after.body_plaintext,
+                "change_summary": draft_after.change_summary,
+                "lock_version": draft_after.lock_version,
+                "updated_at": draft_after.updated_at,
+            },
+            draft_snapshot,
+        )

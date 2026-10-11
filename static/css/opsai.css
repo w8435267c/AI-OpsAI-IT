@@ -408,6 +408,51 @@ time {
   overflow-wrap: anywhere;
 }
 
+.draft-editor-fields {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.draft-editor-field {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.draft-editor-field label {
+  font-weight: 700;
+}
+
+.draft-editor-field input,
+.draft-editor-field textarea {
+  width: 100%;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid #9db1cd;
+  border-radius: 0.65rem;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+
+.draft-editor-field textarea {
+  resize: vertical;
+}
+
+.draft-editor-field input:focus-visible,
+.draft-editor-field textarea:focus-visible {
+  outline: 3px solid #82b1ff;
+  outline-offset: 2px;
+}
+
+.editor-write-notice {
+  margin: 1.5rem 0 0;
+  padding: 0.9rem 1rem;
+  border: 1px solid #b8c8df;
+  border-radius: 0.65rem;
+  background: #eaf2ff;
+  color: var(--brand-dark);
+  font-weight: 650;
+}
+
 .site-footer {
   padding-block: 1.4rem;
   border-top: 1px solid var(--line);
