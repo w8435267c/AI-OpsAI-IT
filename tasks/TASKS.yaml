@@ -1,10 +1,10 @@
 project: AI-OpsAI-IT-wagtail-poc
 branch: fusion/wagtail-poc
 version: 1
-updated_at: "2026-10-10"
+updated_at: "2026-10-11"
 
 evidence_boundary:
-  - "正式 Django 工程当前已有 Task 11 最终回归 486 passed、102 subtests passed，以及 Django system check、迁移一致性检查、Ruff、format 与浏览器响应式验收通过的电脑 B 证据。"
+  - "正式 Django 工程当前已有 Task 12E 累计自动化证据：717 passed、9 skipped、571 subtests、0 failed；Django system check、迁移一致性检查、Ruff、Format、git diff --check 与 node --check 通过。9 个 skipped 项为 SQLite test settings 下的 PostgreSQL 专项。"
   - "Wagtail F02～F08 仍位于 experiments/wagtail_*，属于 SQLite 内存库隔离 PoC，不是正式上线能力。"
   - "正式根 pyproject.toml 尚未包含 Wagtail；不得为运行 PoC 而擅自修改正式依赖。"
   - "仓库根目录 .env 当前存在、被 Git 忽略且未跟踪；本项目未读取或验证其内容、来源、变量完整性及 PostgreSQL 适用性。Task 11 与 Task 12D 已完成仓库外临时 PostgreSQL 隔离验证，但均不等于真实持久环境已核验，8J 继续 BLOCKED / unassigned。"
@@ -365,17 +365,28 @@ tasks:
         - "a68b53a2355088460577f39035e7137c202ec87e"
         - "fde3082a567646f38e435e385d156904a11339b5"
         - "1e025b9f9a96f7c63207a196dcfd916553940004"
+        - "eababf6f19043fe44a925bd86e3142f38c80805a"
+        - "b239e0186ae999e99fa3c51e18965d6a56eee4b9"
+        - "a49bbf5fadea6c17ad2429adbbb149816d23240d"
+        - "9c514983698a9e3edcfe76af129ffe2eb543cd75"
+        - "a8238954d3f7639bdb9b0eb6f494eede2b7c317b"
+        - "4b565784dbcbb8f0d9aa005797cf3cac1668f7b1"
+        - "4e4a0bd25abed587c587c8bfc419b3ebe583198d"
       verification:
         - "Task 12A 架构 ADR 状态为 Accepted，Commit 72029527406c17f433c3226475609a291373b55e 已在 LOCAL、GitHub、Gitee 三端同步。"
-        - "Task 12B、12C、12D 已完成并同步；当前三端同步 HEAD 为 1e025b9f9a96f7c63207a196dcfd916553940004。"
+        - "Task 12B、12C、12D 已完成并同步；Task 12D 收口时三端同步 HEAD 为 1e025b9f9a96f7c63207a196dcfd916553940004。"
         - "Task 12D SQLite 版本链整体验证 PASS；PostgreSQL 17.11 临时隔离环境的六类真实竞争与 Lock wait 均 PASS。"
         - "Task 12D PostgreSQL 验证使用临时端口 15432 与 tmpfs；容器、网络和临时资源已完全清理，未操作正式 5432、持久 Volume 或真实 .env。"
+        - "Task 12E-02～12E-08 已完成管理列表、新建 Article、Draft 编辑、Autosave、Manual Save、History/Detail/Restore 与 Draft Preview，并同步至 LOCAL、GitHub、Gitee；当前三端同步业务 HEAD 为 4e4a0bd25abed587c587c8bfc419b3ebe583198d。"
+        - "Task 12E 累计自动化证据为 717 passed、9 skipped、571 subtests、0 failed；Django check、makemigrations --check --dry-run、Ruff、Format、git diff --check 与 node --check 均 PASS。"
+        - "Task 12E-09A 真实 Chromium 验收为 PASS_WITH_VISUAL_FINDINGS：Manage→Create→Edit→Autosave→Manual Save→History→Restore→Preview、Employee Published-only 隔离及双标签 CAS 冲突均 PASS；P0/P1/P2 为 0，P3 为 2。"
       notes:
         - "Task 12A“正式写入契约与融合范围冻结”已 DONE / SYNCED；docs/07-ADR/0003-Task12正式文章写入与版本链架构决策.md 是 Task 12B～12E 的正式实施基线。"
         - "Task 12B“最小 Model / Migration 增量”、Task 12C“KB 编号服务与原子 Article 创建”和 Task 12D“版本写入与历史恢复”均为 DONE / SYNCED。"
         - "Task 12D-00 为 DONE / SYNCED，Task 12D-01 为 DESIGN PASS，Task 12D-02～12D-06 均为 DONE / SYNCED。"
         - "Task 12D 已形成 autosave expected_lock_version 乐观 CAS、manual save 的 DRAFT(n) → SAVED(n) + 新 DRAFT、Article 行锁下 max(version_no)+1、SAVED 历史不可变及 restored_from_version 恢复血缘；current_published_version 不变，员工仍只读取 PUBLISHED。"
-        - "下一阶段为 Task 12E“正式编辑页面、草稿预览与 Task 12 收口”，当前仅为 NEXT / NOT STARTED；Task 12 继续 IN_PROGRESS / codex。"
+        - "Task 12E 已为 DONE / ACCEPTED；Task 12E-09A 验收等级为 PASS_WITH_VISUAL_FINDINGS，两项 P3 仅进入管理端 UI 统一精修 Backlog，不阻塞收口。"
+        - "Task 12E-09B 为纯文档收口，本次文档 Commit 待后续双端同步；Task 12 继续 IN_PROGRESS / codex。"
         - "Task 12D 的临时 PostgreSQL 并发证据不解除 8J；Task 13 继续 BACKLOG / unassigned，并负责 submit、review、approve、reject、publish 与 republish。"
         - "正式内容权威保持 Article + ArticleVersion；Wagtail 在 Task 12 V1 延期，不进入正式依赖、settings、路由、模型或 Revision 双写链路。"
 
