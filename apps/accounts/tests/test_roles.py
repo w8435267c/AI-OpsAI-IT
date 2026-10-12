@@ -69,6 +69,7 @@ class ExpectedPermissionMatrixTests(TestCase):
             "knowledge.add_articleversion",
             "knowledge.change_articleversion",
             "knowledge.view_articleversion",
+            "knowledge.submit_articleversion",
         },
         "知识审核员": {
             "knowledge.view_knowledgespace",
@@ -77,6 +78,10 @@ class ExpectedPermissionMatrixTests(TestCase):
             "knowledge.view_articleversion",
             "knowledge.add_reviewrecord",
             "knowledge.view_reviewrecord",
+            "knowledge.review_articleversion",
+            "knowledge.approve_articleversion",
+            "knowledge.reject_articleversion",
+            "knowledge.publish_articleversion",
         },
         "知识库管理员": {
             "knowledge.add_knowledgespace",
@@ -98,6 +103,7 @@ class ExpectedPermissionMatrixTests(TestCase):
             "knowledge.view_reviewrecord",
             "accounts.view_user",
             "auth.view_group",
+            "knowledge.submit_articleversion",
         },
     }
 
@@ -110,8 +116,27 @@ class ExpectedPermissionMatrixTests(TestCase):
                 f"角色 {role.name} 的权限集合与预期不一致",
             )
 
-    def test_expected_permission_counts_0_8_6_19(self):
-        self.assertEqual([len(role.permissions) for role in SYSTEM_ROLES], [0, 8, 6, 19])
+    def test_expected_permission_counts_0_9_10_20(self):
+        self.assertEqual([len(role.permissions) for role in SYSTEM_ROLES], [0, 9, 10, 20])
+
+    def test_task13_action_permissions_follow_frozen_role_matrix(self):
+        action_permissions = {
+            "knowledge.submit_articleversion",
+            "knowledge.review_articleversion",
+            "knowledge.approve_articleversion",
+            "knowledge.reject_articleversion",
+            "knowledge.publish_articleversion",
+        }
+        expected = {
+            ROLE_EMPLOYEE: set(),
+            ROLE_EDITOR: {"knowledge.submit_articleversion"},
+            ROLE_REVIEWER: action_permissions - {"knowledge.submit_articleversion"},
+            ROLE_KNOWLEDGE_ADMIN: {"knowledge.submit_articleversion"},
+        }
+
+        for role in SYSTEM_ROLES:
+            with self.subTest(role=role.code):
+                self.assertEqual(set(role.permissions) & action_permissions, expected[role.code])
 
     def test_dangerous_builtin_permissions_removed(self):
         forbidden = {

@@ -29,8 +29,8 @@ class SystemRole:
 # 原则：默认不授予任何 delete 权限；普通员工不获得任何模型权限，
 # 内容可见性由后续第 8 步受众 Selector 决定；编辑员、审核员、管理员
 # 按最小权限分别覆盖草稿管理、审核记录与知识管理。
-# 审核"批准 / 驳回 / 发布 / 下架"等状态机需要自定义操作权限，
-# 待对应业务步骤实现时再补充定义，本步骤不提前添加。
+# Task 13 动作权限只表达可执行的业务动作；正式 Service 还必须显式校验
+# 业务角色与 ReviewerSpaceScope，不能只依赖 has_perm()。
 # 安全收紧（第 7B 步）：
 # - 不授予 accounts.change_user / auth.change_group：这两个 Django
 #   内置权限过于宽泛（可编辑超级管理员标记、直接权限、任意 Group 权限
@@ -56,6 +56,7 @@ SYSTEM_ROLES: tuple[SystemRole, ...] = (
             "knowledge.add_articleversion",
             "knowledge.change_articleversion",
             "knowledge.view_articleversion",
+            "knowledge.submit_articleversion",
         ),
     ),
     SystemRole(
@@ -68,6 +69,10 @@ SYSTEM_ROLES: tuple[SystemRole, ...] = (
             "knowledge.view_articleversion",
             "knowledge.add_reviewrecord",
             "knowledge.view_reviewrecord",
+            "knowledge.review_articleversion",
+            "knowledge.approve_articleversion",
+            "knowledge.reject_articleversion",
+            "knowledge.publish_articleversion",
         ),
     ),
     SystemRole(
@@ -91,6 +96,7 @@ SYSTEM_ROLES: tuple[SystemRole, ...] = (
             "knowledge.view_articleaudience",
             "knowledge.add_reviewrecord",
             "knowledge.view_reviewrecord",
+            "knowledge.submit_articleversion",
             # 用户模型为自定义 accounts.User，其内置权限位于 accounts app 下。
             # 知识库管理员对用户与系统 Group 仅保留只读查看能力；
             # 账号状态维护与角色授权由后续白名单表单 / Service / 审计实现。

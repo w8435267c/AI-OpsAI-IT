@@ -175,6 +175,72 @@ class KnowledgeSpace(models.Model):
         return self.name
 
 
+class ReviewerSpaceScope(models.Model):
+    """审核员的知识空间对象范围；角色身份与动作权限由独立机制管理。"""
+
+    id = models.UUIDField(
+        _("审核范围 ID"),
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+        db_comment="审核员空间授权主键，使用 UUID。",
+    )
+    reviewer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name=_("审核员"),
+        on_delete=models.PROTECT,
+        related_name="review_space_scopes",
+        db_comment="被授予该知识空间审核对象范围的用户。",
+    )
+    space = models.ForeignKey(
+        KnowledgeSpace,
+        verbose_name=_("知识空间"),
+        on_delete=models.PROTECT,
+        related_name="reviewer_scopes",
+        db_comment="审核员可以处理共享待审池的知识空间。",
+    )
+    is_active = models.BooleanField(
+        _("是否有效"),
+        default=True,
+        db_comment="软停用审核范围；停用后保留唯一授权关系。",
+    )
+    created_at = models.DateTimeField(
+        _("创建时间"),
+        auto_now_add=True,
+        db_comment="审核范围首次创建时间。",
+    )
+    updated_at = models.DateTimeField(
+        _("更新时间"),
+        auto_now=True,
+        db_comment="审核范围最后更新时间。",
+    )
+
+    class Meta:
+        db_table = "kb_reviewer_space_scope"
+        db_table_comment = "审核员按知识空间授权的共享待审对象范围。"
+        verbose_name = _("审核员空间范围")
+        verbose_name_plural = _("审核员空间范围")
+        indexes = [
+            models.Index(
+                fields=("reviewer", "is_active"),
+                name="kb_scope_reviewer_active_idx",
+            ),
+            models.Index(
+                fields=("space", "is_active"),
+                name="kb_scope_space_active_idx",
+            ),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=("reviewer", "space"),
+                name="kb_scope_reviewer_space_uniq",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.reviewer} @ {self.space}"
+
+
 class Category(models.Model):
     """知识业务分类，支持父子层级。"""
 
@@ -392,7 +458,7 @@ class Article(models.Model):
         related_name="working_pointer_articles",
         null=True,
         blank=True,
-        db_comment="最新草稿、待审核或已驳回版本；没有工作版本时为空。",
+        db_comment="当前唯一可编辑草稿版本；没有工作草稿时为空。",
     )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -612,6 +678,13 @@ class ArticleVersion(models.Model):
         verbose_name = _("文章版本")
         verbose_name_plural = _("文章版本")
         ordering = ("article_id", "-version_no")
+        permissions = [
+            ("submit_articleversion", _("可提交文章版本审核")),
+            ("review_articleversion", _("可审核文章版本")),
+            ("approve_articleversion", _("可批准文章版本")),
+            ("reject_articleversion", _("可驳回文章版本")),
+            ("publish_articleversion", _("可发布文章版本")),
+        ]
         indexes = [
             models.Index(
                 fields=("article", "status"),
@@ -640,6 +713,11 @@ class ArticleVersion(models.Model):
                 fields=("article",),
                 condition=Q(status=VersionStatus.PUBLISHED),
                 name="kb_ver_published_uniq",
+            ),
+            models.UniqueConstraint(
+                fields=("article",),
+                condition=Q(status=VersionStatus.IN_REVIEW),
+                name="kb_ver_in_review_uniq",
             ),
             models.CheckConstraint(
                 condition=Q(version_no__gt=0),
@@ -1011,6 +1089,11 @@ class ReviewRecord(models.Model):
             ),
         ]
         constraints = [
+            models.UniqueConstraint(
+                fields=("article_version",),
+                condition=Q(review_type=ReviewType.CONTENT_REVIEW),
+                name="kb_review_content_uniq",
+            ),
             models.CheckConstraint(
                 condition=(
                     ~Q(
