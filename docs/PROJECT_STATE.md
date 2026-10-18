@@ -6,15 +6,16 @@
 
 | 项目 | 当前状态 |
 | --- | --- |
-| 快照日期 | 2026-10-11 |
+| 快照日期 | 2026-10-18 |
 | 当前工作区 | `D:\Desktop\OpsAI\AI-OpsAI-IT-wagtail-poc` |
 | 当前分支 | `fusion/wagtail-poc` |
-| 当前业务基线 HEAD | `4e4a0bd25abed587c587c8bfc419b3ebe583198d`（LOCAL / GitHub / Gitee 三端同步） |
-| 当前阶段 | Task 12 正式文章创建、草稿与版本保存实施阶段 |
+| 本轮治理核验代码基线 HEAD | `5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e` |
+| 远端实时核验 | GitHub `fusion/wagtail-poc` 为 `5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e`；Gitee 因 SSL 错误为 `UNKNOWN` |
+| 当前阶段 | Task 12/13 治理对齐；完成后 Task 12 仍为唯一当前业务任务 |
 | 正式技术主体 | Python 3.13 + Django 5.2 LTS 模块化单体 |
 | Wagtail 状态 | 融合方向已确认，F02～F08 已形成隔离 PoC 证据，尚未进入正式根依赖、正式 settings 或正式路由 |
 | 电脑 B 环境 | Python、正式项目依赖、WSL 2、Docker Desktop、Docker Engine 和 Docker Compose 已恢复；根目录 `.env` 存在、被 Git 忽略且未跟踪，内容与适用性未验证 |
-| 当前接力元数据任务 | Task 12E-09B 收口文档与项目状态同步 |
+| 当前接力元数据任务 | Task 12/13 历史成果登记与治理对齐；仅文档及一次本地 Commit |
 | 最近完成开发 | Task 12E 管理端知识编辑链已 `DONE / ACCEPTED` |
 | 当前开发任务 | Task 12“开发文章创建、草稿和版本保存”，`IN_PROGRESS / codex` |
 | Task 10 功能 | PASS |
@@ -24,10 +25,11 @@
 | Task 11 PostgreSQL 隔离专项 | PASS；PostgreSQL 17.11，临时资源已全部清理 |
 | Task 12D PostgreSQL 并发补证 | PASS；PostgreSQL 17.11、临时端口 15432、tmpfs、六类竞争与 Lock wait 均通过，资源已清理；不等同 8J |
 | Task 12E 真实浏览器验收 | `PASS_WITH_VISUAL_FINDINGS`；P0/P1/P2 均为 0，P3 为 2 |
-| 当前业务主线 | Task 12A～12E 已完成；Task 12E 为 `DONE / ACCEPTED`，本次收口文档 Commit 待同步 |
-| 当前交接状态 | 当前主任务仍为 Task 12；Task 13 仅为 `BACKLOG / unassigned`，不得自行开始 |
+| 当前业务主线 | Task 12A～12E 已完成；Task 12E 收口 Commit 为 `411535b32db4a40991e3c64228d018e9cebb17ed`；Task 12 主任务尚未正式封板 |
+| Task 13 代码现状 | 六个既有提交已实现权限/Schema、审计/Outbox/幂等、提交、驳回、批准发布及 Reader；统一登记为已有实现、待治理确认与独立验收 |
+| 当前交接状态 | Task 12 保持 `IN_PROGRESS / codex`；Task 13 保持 `BACKLOG / unassigned`，Task 13-07 仅为未授权候选技术验收 |
 
-本快照的总体结论是：Task 10、Task 11 均已正式 `DONE / codex`。Task 12 继续为 `IN_PROGRESS / codex`；Task 12A～12E 已完成，其中 Task 12E 为 `DONE / ACCEPTED`，真实 Chromium 浏览器验收为 `PASS_WITH_VISUAL_FINDINGS`，没有 P0/P1/P2 阻塞，两个 P3 视觉项进入非阻塞 Backlog。当前三端同步业务基线为 `4e4a0bd25abed587c587c8bfc419b3ebe583198d`；本次 Task 12E-09B 纯文档收口 Commit 尚待后续双端同步。正式内容权威保持 `Article + ArticleVersion`，Task 12 V1 不正式接入 Wagtail；Task 13 保持 `BACKLOG / unassigned`，8J 仍因真实持久 PostgreSQL / `.env` 未核验而保持 `BLOCKED / unassigned`。
+本快照的总体结论是：Task 10、Task 11 均已正式 `DONE / codex`。Task 12A～12E 的历史成果保留，Task 12E 为 `DONE / ACCEPTED`，但 Task 12 主任务继续为 `IN_PROGRESS / codex`；正式封板仍缺负责人最终验收、`390 × 844` 窄屏视觉验收或负责人书面豁免、Gitee 当前远端 HEAD 核验及必要治理文件同步。Task 13 六个提交已进入当前历史，但只登记为“已有实现、待治理确认与独立验收”；现有资料未证明其完整历史开工授权，也没有 PostgreSQL 并发专项、HTTP/UI 或负责人独立验收。正式内容权威保持 `Article + ArticleVersion`，8J 仍为 `BLOCKED / unassigned`。
 
 ## 2. 状态证据规则
 
@@ -61,19 +63,20 @@
 ### 3.3 知识核心模型与受众过滤
 
 - `KnowledgeSpace`、`Category`、`Article`、`ArticleVersion`、`ArticleAudience`、`ReviewRecord` 已存在于正式模型。
-- 仓库中存在 `accounts.0001`～`0002`、`knowledge.0001`～`0005` 迁移文件；迁移文件存在不代表它们已在当前电脑 B 的持久数据库中应用。
+- 仓库中存在 `accounts.0001`～`0002`、`knowledge.0001`～`0006`、`audit.0001` 与 `workflow.0001` 迁移文件；迁移文件存在不代表它们已在当前电脑 B 的持久数据库中应用。
 - `apps/knowledge/selectors.py` 已实现 `visible_articles` 和 `can_read_article`，读取语义遵循账号门槛、文章策略与拒绝优先规则。
 - 文章后台已具备受控的联合编辑和受众校验能力；Task 12C 已通过 Service 实现 KB 编号与原子 Article 创建，新增入口不得绕过该正式写入服务。Task 9B-1 当时未创建 Article 样本，并将 Article demo 记为 `N/A - SAFE STOP`。
 - Task 9B-1 已新增开发环境专用的幂等最小演示数据命令，使用稳定业务标识创建组织、内容用户组、知识空间和分类样本；一致数据保持不变，冲突数据失败关闭并整体回滚。对应 Commit 为 `9f214d30d6b2934302602bc7a152b27f00274968`。
-- 正式员工首页 `/`、分类页 `/categories/<category_id>/`、知识详情页 `/kb/<kb_no>/` 和搜索页 `/search/` 已接入；附件、发布事务、审核事务、审计与 Outbox 闭环尚未接入。
+- 正式员工首页 `/`、分类页 `/categories/<category_id>/`、知识详情页 `/kb/<kb_no>/` 和搜索页 `/search/` 已接入。Task 13 已存在 Service 层提交、驳回、原子批准发布以及审核 Reader，并有 AuditEvent、Outbox 与幂等持久化基础；但尚无审核 HTTP/UI、Outbox Worker/通知、PostgreSQL 并发验收或完整正式入口。附件仍未接入。
 - 员工列表使用 `employee_visible_articles`，详情使用 `get_employee_article_detail`，正式版本来源为 `current_published_version`；Task 10 V1 正文展示使用 `body_plaintext → body_text`，不直接渲染未知 `body` JSON。
 - Task 10 V1 正式前端基线为 Django Templates + 项目自有 `static/css/opsai.css`；Bootstrap / HTMX 为 `NOT REQUIRED FOR TASK 10 V1`，后续如有真实需求再以可信固定版本本地接入。
 - Task 11A、11B 已完成并双端同步，Task 11 已正式封板为 `DONE / codex`。V1 在 `employee_visible_articles` 返回的当前员工可见正式集合中搜索 `current_published_version.title`、`summary` 和 `body_plaintext`，并实现确定性排序、每页 20 条分页、空查询、零结果、可见结果数量和 KB 详情跳转；草稿、历史版本、全库匹配总数和无权限内容不进入该链路。
 - 当前正式模型没有已确认可用的标签或别名字段，Task 11 V1 不实现标签、别名或同义词搜索，也不为其新增 Model / Migration；详情跳转继续使用 `/kb/<kb_no>/` 及 `get_employee_article_detail` 权限链。
-- `apps/search` 与 `apps/audit` 当前没有可复用的搜索或点击日志模型。如后续日志需要 `SearchLog`、`ClickLog`、`AuditEvent`、新数据库表或 Migration，必须先提出 `SCOPE QUESTION`；搜索日志不能作为访问授权凭据。
+- `apps/search` 当前没有可复用的搜索或点击日志模型；`apps/audit` 已存在 Task 13 的 `AuditEvent` 基础，但不等同于搜索/点击日志或完整审计运维能力。搜索日志不能作为访问授权凭据。
 - SQLite 已完成 Task 11 通用功能与安全契约验证；PostgreSQL 17.11 仓库外临时隔离专项进一步确认当前 ORM 查询、中文 substring、特殊字符、权限与状态边界、确定性排序、`NULLS LAST`、count、pagination、查询数量、EXPLAIN/ANALYZE 及 1,000 篇合成数据性能均符合 V1 契约。当前 V1 未使用 PostgreSQL FTS、SearchVector、SearchRank、GIN 或 tsvector；专项结果不替代 8J 的真实持久环境核验。
 - Task 12A 已冻结正式写入架构，Task 12B～12D 已按该基线实现并验证：autosave 使用 `expected_lock_version` 乐观 CAS，过期 token 不会 last-write-wins；manual save 将 `DRAFT(n)` 固化为不可变 `SAVED(n)` 并创建新 `DRAFT`；后续版本号在 Article 行锁下按最大值加一；restore 创建带 `restored_from_version` 血缘的新 `DRAFT`，不修改历史来源。Task 12D 不改变 `current_published_version`，员工仍只读取正式 `PUBLISHED` 版本。
 - Task 12E 已完成管理端知识列表、新建 Article、Draft 编辑器、Autosave、Manual Save、History、History Detail、Restore 与 Draft Preview，并保持 Employee Published-only 隔离。Task 12E-09A 使用仓库外独立 SQLite 与真实 Chromium 完成主链、权限隔离和双标签 CAS 验收，结论为 `PASS_WITH_VISUAL_FINDINGS`；详细证据见 `docs/06-Process/Task12E-管理端知识编辑链验收.md`。
+- Task 13 的六个既有提交依次实现 Reviewer 空间授权与约束、Audit/Outbox/幂等底座、提交审核、驳回、原子批准发布和审核 Reader；这些是当前代码事实，不代表历史授权或正式验收已补齐。
 
 ### 3.4 容器化开发声明
 
@@ -115,7 +118,7 @@
 | 项目虚拟环境 | 仓库根目录 `.venv` 已建立，解释器为 Python 3.13.13 | READY |
 | 正式项目依赖 | 已在 `.venv` 中执行 `pip install -e ".[dev]"` | READY |
 | 依赖一致性 | `pip check` 输出 `No broken requirements found.` | PASS |
-| 正式工程自动测试 | Task 12E 累计正式证据：`717 passed`、`9 skipped`、`571 subtests`、`0 failed` | PASS |
+| 正式工程自动测试 | 最新 Task 13 Reader 提交记录的历史证据：`827 passed`、`9 skipped`、`712 subtests`、`0 failed`；本轮文档治理未重跑业务测试 | HISTORICAL PASS |
 | Django system check | `System check identified no issues (0 silenced).` | PASS |
 | 迁移一致性检查 | `No changes detected` | PASS |
 | Ruff 静态检查 | `All checks passed!` | PASS |
@@ -127,7 +130,7 @@
 | PostgreSQL Compose 声明 | `postgres:17.11-alpine3.24` 已在配置中定义 | READY TO CREATE |
 | 真实 `.env` | 根目录文件存在，被 Git 忽略且未跟踪；未读取或验证内容、来源、变量完整性及 PostgreSQL 适用性 | BLOCKED / WAITING OWNER |
 
-正式工程测试使用 SQLite test settings。Task 12E 累计正式自动化证据为 `717 passed`、`9 skipped`、`571 subtests`、`0 failed`；9 个 skipped 项为该设置下的 PostgreSQL 专项。Task 12E-09A 使用仓库外 acceptance settings 与独立 SQLite，未读取真实 `.env`、未操作 Docker、未连接 PostgreSQL；验收服务已停止，原始截图与隔离 SQLite 保留在仓库外验收目录，不作为项目运行依赖。
+正式工程测试使用 SQLite test settings。Task 12E 累计正式自动化证据为 `717 passed`、`9 skipped`、`571 subtests`、`0 failed`；Task 13 六个提交逐步记录至最新 `827 passed`、`9 skipped`、`712 subtests`、`0 failed`。这些均是对应历史提交证据，本轮文档治理不重跑业务测试。9 个 skipped 项包括 SQLite 设置下的 PostgreSQL 专项，不能视为 PostgreSQL 已验收。Task 12E-09A 使用仓库外 acceptance settings 与独立 SQLite，未读取真实 `.env`、未操作 Docker、未连接 PostgreSQL。
 
 ## 6. 测试范围与 Wagtail 收集边界
 
@@ -183,10 +186,10 @@ Task 10 的 10A～10E 分别对应 Commit `cf8bf1ff1692dedd69e5fbf97f0632a460d66
 - 旧内容批量迁移、正式切换、失败恢复和回退方案。
 - PostgreSQL 下的查询、排序、迁移状态、数据库注释和 Wagtail 行为验证。
 - 并发写入、锁策略和冲突处理；现有 `atomic()` 不能单独证明并发安全。
-- 提交审核、审核通过、审核驳回、发布、重新发布、审核流 UI 与审核工作台；这些属于尚未开始的 Task 13。
+- Task 13 的 HTTP/UI、审核工作台、Outbox Worker/通知发送、持久数据库迁移前置检查、真实 PostgreSQL 并发/锁/隔离验收及负责人独立验收。Service 与 Reader 底层实现已存在，不得再描述为“尚未开始”。
 - 附件与完整审核发布生命周期；员工首页、分类、详情、P0 搜索和 Task 12E 管理端知识编辑链已完成。
 - 钉钉免登、通讯录同步、工作通知及真实钉钉联调。
-- `workflow`、`dingtalk`、`service_desk`、`audit` 中仍处于骨架或规划状态的业务能力，以及 `search` 尚未纳入 V1 的标签/别名、高亮和日志能力。
+- `workflow` 已有 Task 13 Service/Reader/Outbox/幂等基础，`audit` 已有 AuditEvent 基础；两者的完整 HTTP/UI、Worker 与运行闭环仍未形成。`dingtalk`、`service_desk` 仍主要处于骨架或规划状态，`search` 的标签/别名、高亮和日志能力尚未纳入 V1。
 - 生产部署、移动端 Task 12E 视觉验收、正式持久 PostgreSQL、容量、备份恢复和上线安全验证。
 
 ## 9. 阻塞、风险与技术债
@@ -201,7 +204,7 @@ Task 10 的 10A～10E 分别对应 Commit `cf8bf1ff1692dedd69e5fbf97f0632a460d66
 
 - 仓库迁移文件和历史报告不能证明电脑 B 的持久数据库已应用相同迁移。
 - Wagtail PoC 使用 SQLite 内存库和合成数据，不能外推为 PostgreSQL 或生产可用。
-- 正式员工首页、分类、详情、P0 搜索读取路径和 Task 12E 管理端知识编辑链已经形成；Task 12D 的 SQLite 版本链整体验证与 PostgreSQL 17.11 真实并发补证均已通过，Task 12E-09A 真实浏览器主链也已通过。发布事务、审核证据和附件尚未形成完整端到端闭环，持久环境、移动端 Task 12E 视觉与生产容量仍未验证。
+- 正式员工首页、分类、详情、P0 搜索读取路径和 Task 12E 管理端知识编辑链已经形成；Task 12D 的 SQLite 版本链整体验证与 PostgreSQL 17.11 真实并发补证均已通过，Task 12E-09A 真实浏览器主链也已通过。Task 13 已有发布事务、审核证据和 Reader 的底层实现，但 HTTP/UI、Worker、PostgreSQL 并发专项、持久环境与独立验收仍未形成完整端到端闭环；Task 12E 窄屏视觉、附件和生产容量仍未验证。
 - Task 12D 已覆盖六类真实竞争与 Lock wait；更大规模批量数据、生产失败恢复和正式切换仍缺少实际运行证据。
 
 ### 9.3 已知技术债与待决策项
@@ -226,14 +229,17 @@ Task 10 的 10A～10E 分别对应 Commit `cf8bf1ff1692dedd69e5fbf97f0632a460d66
 - Task 10 的功能、安全、性能、正式工程回归、桌面和手机视觉验收以及项目负责人最终人工验收均已通过，当前状态为 `DONE / codex`。
 - 当前无真实 Agent 切换；`docs/HANDOFF.md` 记录当前活动任务、实施基线与下一阶段安全边界。
 - Task 11A Commit `6240147054f909c9f88c14d67e99f7c55ccc83d1`、Task 11B Commit `7ac5cd894db052dc3c7eb7e2721dbcc4f34d7ea6` 与 VERIFY 状态归档 Commit `56364d2dbde10d707df8f86aad463e9b1dd3d51c` 已完成双端同步；负责人视觉验收与 Task 11P-1 PostgreSQL 隔离专项均 PASS，Task 11 已正式封板为 `DONE / codex`。
-- Task 12E-02～12E-08 分别对应 Commit `eababf6f19043fe44a925bd86e3142f38c80805a`、`b239e0186ae999e99fa3c51e18965d6a56eee4b9`、`a49bbf5fadea6c17ad2429adbbb149816d23240d`、`9c514983698a9e3edcfe76af129ffe2eb543cd75`、`a8238954d3f7639bdb9b0eb6f494eede2b7c317b`、`4b565784dbcbb8f0d9aa005797cf3cac1668f7b1` 和 `4e4a0bd25abed587c587c8bfc419b3ebe583198d`，均已完成本地、GitHub、Gitee 三端同步。
-- Task 12E-09A 真实 Chromium 验收为 `PASS_WITH_VISUAL_FINDINGS`：Manage → Create → Edit → Autosave → Manual Save → History → Restore → Preview 主链、Employee Published-only 隔离和双标签 CAS 冲突均 PASS；P0/P1/P2 为 0，P3 为 2。Task 12E 当前为 `DONE / ACCEPTED`，本次 12E-09B 纯文档收口 Commit 待同步。
+- Task 12E-02～12E-08 分别对应 Commit `eababf6f19043fe44a925bd86e3142f38c80805a`、`b239e0186ae999e99fa3c51e18965d6a56eee4b9`、`a49bbf5fadea6c17ad2429adbbb149816d23240d`、`9c514983698a9e3edcfe76af129ffe2eb543cd75`、`a8238954d3f7639bdb9b0eb6f494eede2b7c317b`、`4b565784dbcbb8f0d9aa005797cf3cac1668f7b1` 和 `4e4a0bd25abed587c587c8bfc419b3ebe583198d`；历史记录显示这些提交当时已完成三端同步，但不替代本轮 Gitee 当前远端核验。
+- Task 12E-09A 真实 Chromium 验收为 `PASS_WITH_VISUAL_FINDINGS`：Manage → Create → Edit → Autosave → Manual Save → History → Restore → Preview 主链、Employee Published-only 隔离和双标签 CAS 冲突均 PASS；P0/P1/P2 为 0，P3 为 2。Task 12E 当前为 `DONE / ACCEPTED`。
+- Task 12E-09B 收口 Commit 为 `411535b32db4a40991e3c64228d018e9cebb17ed`；其父提交为 `4e4a0bd25abed587c587c8bfc419b3ebe583198d`，仅更新验收与治理文档。
+- Task 13 六个线性提交为 `031a4fca26cebcaf5b67091142ac6b3b82c9cbaa`、`95af9ca7c06eced103a7a034482959c97df04852`、`6d6bb9808ef68b87de63cf1d1762105aa9f8485a`、`e88bf8e065807343a5b78a0a49c29d0824980b67`、`e422b16ba0826064a629604a217b93978101d5f7`、`5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e`。负责人决定保留，但统一按已有实现、待治理确认与独立验收登记，不追认现有资料未证明的历史开工授权。
+- 实时只读远端核验：本地代码基线与 GitHub `fusion/wagtail-poc` 均为 `5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e`；Gitee 查询发生 `OpenSSL SSL_ERROR_SYSCALL`，结果为 `UNKNOWN`。本地远端跟踪引用过时，不作为当前同步证据。
 - Task 12 当前保持 `IN_PROGRESS / codex`；Task 13 保持 `BACKLOG / unassigned`，任务 8J 保持 `BLOCKED / unassigned`。
 - Task 12D-00 为 `DONE / SYNCED`，12D-01 为 `DESIGN PASS`，12D-02～12D-06 均为 `DONE / SYNCED`；PostgreSQL 17.11 临时并发补证使用端口 15432 与 tmpfs，六类竞争和 Lock wait 均 PASS，资源已完全清理，且不构成 8J 验收。
 
 ## 11. 下一步边界
 
-Task 11 已正式 `DONE / codex`。Task 12 继续为 `IN_PROGRESS / codex`，Task 12A～12E 已完成；Task 12E 为 `DONE / ACCEPTED`，本次纯文档收口 Commit 待后续双端同步。下一主要功能阶段为 Task 13，但 Task 13 仍是 `BACKLOG / unassigned`，本轮只记录该边界，不得开始实施。
+Task 11 已正式 `DONE / codex`。Task 12 继续为 `IN_PROGRESS / codex`，Task 12A～12E 已完成，Task 12E 为 `DONE / ACCEPTED`；Task 12 主任务只有在负责人最终验收、`390 × 844` 窄屏视觉验收或书面豁免、Gitee 当前远端 HEAD 核验及必要治理同步完成后，才具备申请正式封板的条件。Task 13 六个既有提交保留，正式状态仍为 `BACKLOG / unassigned`。Task 13-07 是下一候选技术验收任务，但尚未授权执行。
 
 当前边界继续禁止自动执行：
 
@@ -243,5 +249,5 @@ Task 11 已正式 `DONE / codex`。Task 12 继续为 `IN_PROGRESS / codex`，Tas
 - 把 Wagtail 加入正式根依赖、settings 或路由；
 - 创建 Task 11C、修改已完成的 Task 11 / Task 12E 业务范围，或实现审核发布、附件、钉钉或生产部署；
 - 创建 Article 假数据或绕过正式编号规则；
-- 自行开始 Task 13，修复两项非阻塞 P3，或扩大已冻结的 Task 12 V1 范围；
+- 继续开发 Task 13、执行 Task 13-07、运行或暂存未跟踪 `apps/workflow/tests/test_pg_concurrency.py`、修复两项非阻塞 P3，或扩大已冻结的 Task 12 V1 范围；
 - 未经单独授权创建 Commit 或 Push。

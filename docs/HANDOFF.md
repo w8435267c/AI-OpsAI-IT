@@ -1,10 +1,10 @@
 # OpsAI AI Handoff
 
-> 当前活动任务：Task 12“开发文章创建、草稿和版本保存”，`IN_PROGRESS / codex`。Task 12A～12E 已完成；Task 12E 为 `DONE / ACCEPTED`，本次 12E-09B 纯文档收口 Commit 待同步。
+> 当前业务任务：Task 12“开发文章创建、草稿和版本保存”，`IN_PROGRESS / codex`。Task 12A～12E 历史成果已完成，Task 12E 收口 Commit 为 `411535b32db4a40991e3c64228d018e9cebb17ed`。本轮只授权 Task 12/13 治理对齐与一次本地 Commit；完成后停止。
 
 ## 1. 当前交接状态
 
-当前没有真实的 Agent 切换事件。Task 11“开发 P0 搜索”已正式封板为 `DONE / codex`；Task 12 继续为 `IN_PROGRESS / codex`。Task 12A～12E 已完成，Task 12E 为 `DONE / ACCEPTED`；当前三端同步业务 HEAD 为 `4e4a0bd25abed587c587c8bfc419b3ebe583198d`，本次 Task 12E-09B 纯文档收口 Commit 待后续双端同步。下一主要功能阶段为 Task 13，但仍须等待项目负责人单独授权。
+当前没有真实的 Agent 切换事件。Task 11“开发 P0 搜索”已正式封板为 `DONE / codex`；Task 12 继续为 `IN_PROGRESS / codex`。Task 12A～12E 已完成，Task 12E 为 `DONE / ACCEPTED`。本轮治理核验代码基线为 `5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e`；GitHub 实时 HEAD 与其一致，Gitee 因 SSL 连接错误为 `UNKNOWN`，不得宣称三端同步。Task 13 六个既有提交保留并登记为已有实现、待治理确认与独立验收；Task 13-07 仍须等待项目负责人单独授权。
 
 | 项目 | 当前值 |
 | --- | --- |
@@ -14,11 +14,12 @@
 | 开工日期 | `2026-10-05` |
 | 依赖 | 任务 `11`，状态为 `DONE / codex` |
 | 架构基线 | `docs/07-ADR/0003-Task12正式文章写入与版本链架构决策.md`，`Accepted` |
-| 当前同步业务基线 | `4e4a0bd25abed587c587c8bfc419b3ebe583198d`，LOCAL / GitHub / Gitee 三端同步 |
+| 本轮治理核验代码基线 | `5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e` |
+| 远端实时状态 | GitHub 为 `5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e`；Gitee 为 `UNKNOWN`（SSL 错误） |
 | 业务实施状态 | Task 12A～12E 已完成；Task 12E `DONE / ACCEPTED` |
-| 当前收口状态 | Task 12E-09B 纯文档 Commit 待负责人验收与后续双端同步 |
-| 当前等待动作 | 等待项目负责人验收本次文档 Commit；Task 13 仍未授权 |
-| 当前禁止动作 | 不修复 P3，不开始 Task 13，不正式接入 Wagtail，不操作持久数据库或读取真实 `.env` |
+| 当前收口状态 | Task 12 主任务尚缺负责人最终验收、`390 × 844` 窄屏视觉验收或书面豁免、Gitee 当前远端核验及必要治理同步 |
+| 当前等待动作 | 负责人决定 Task 12 窄屏验收/豁免和最终验收；另行决定是否授权 Task 13-07 |
+| 当前禁止动作 | 不修复 P3，不继续 Task 13 开发，不执行 Task 13-07，不正式接入 Wagtail，不操作持久数据库或读取真实 `.env` |
 | Agent 切换状态 | 未发生 |
 
 Task 12 V1 的正式内容权威为 `Article + ArticleVersion`，Task 12B～12D 已完成模型、原子创建与版本链实现，Task 12E 已完成正式管理端创建、编辑、保存、历史、恢复和草稿预览入口。autosave 使用 `expected_lock_version` 乐观 CAS，过期 token 不会 last-write-wins；manual save 执行 `DRAFT(n) → SAVED(n) + 新 DRAFT`，后续版本号在 Article 行锁下按最大值加一；`SAVED` 历史不可由正式 Writer / Admin 修改；restore 创建带 `restored_from_version` 血缘的新 `DRAFT`，不修改来源历史。`current_published_version` 保持不变，员工仍只读取正式 `PUBLISHED` 版本。
@@ -37,10 +38,28 @@ Task 12 当前阶段：
 | 12E | 正式编辑页面 / 草稿预览 / 浏览器验收 | `DONE / ACCEPTED` |
 | 12E-02～12E-08 | 管理列表、Create、Draft 编辑、Autosave、Manual Save、History/Restore、Draft Preview | `DONE / SYNCED` |
 | 12E-09A | 真实 Chromium 完整管理链与视觉验收 | `PASS_WITH_VISUAL_FINDINGS` |
+| 12E-09B | 验收与治理收口 Commit `411535b32db4a40991e3c64228d018e9cebb17ed` | `DONE` |
 
 Task 12E 的累计自动化证据为 `717 passed`、`9 skipped`、`571 subtests`、`0 failed`；Django check、迁移一致性、Ruff、Format、`git diff --check` 与 `node --check` 均 PASS。Task 12E-09A 使用仓库外独立 SQLite 与真实 Chromium 完成 Manage → Create → Edit → Autosave → Manual Save → History → Restore → Preview、Employee Published-only 隔离及双标签 CAS 冲突验证；P0/P1/P2 为 0，P3 为 2。
 
 两项非阻塞遗留为 Create 表单视觉一致性与 Edit 页“预览草稿”/“保存版本并继续编辑”的视觉层级；均进入管理端 UI 统一精修 Backlog。窄屏验收为 `NOT_EXECUTED_BROWSER_CAPABILITY`，正式持久 PostgreSQL 与 Task 13 均未在本次浏览器验收中执行。详细证据见 `docs/06-Process/Task12E-管理端知识编辑链验收.md`。
+
+Task 12 主任务在负责人最终验收、`390 × 844` 窄屏视觉验收或负责人书面豁免、Gitee 当前远端 HEAD 核验及必要治理同步完成前，继续保持 `IN_PROGRESS / codex`，不得标记为 `DONE`、`ACCEPTED` 或 `SYNCED`。
+
+### 1.1 Task 13 既有实现与验收缺口
+
+| Commit | 已有实现 | 历史测试证据 | 尚缺 |
+| --- | --- | --- | --- |
+| `031a4fca26cebcaf5b67091142ac6b3b82c9cbaa` | Reviewer Scope、动作权限及审核唯一约束 | `735 passed`、`9 skipped`、`582 subtests` | 持久 PostgreSQL 迁移前置检查、独立验收 |
+| `95af9ca7c06eced103a7a034482959c97df04852` | AuditEvent、Outbox、幂等基础 | `761 passed`、`9 skipped`、`585 subtests` | 持久 PostgreSQL、Worker/通知、独立验收 |
+| `6d6bb9808ef68b87de63cf1d1762105aa9f8485a` | 提交审核 Service | `785 passed`、`9 skipped`、`624 subtests` | HTTP/UI、PostgreSQL 并发、独立验收 |
+| `e88bf8e065807343a5b78a0a49c29d0824980b67` | 驳回 Service 与后继 Draft | `800 passed`、`9 skipped`、`657 subtests` | Approve-vs-Reject 竞争、独立验收 |
+| `e422b16ba0826064a629604a217b93978101d5f7` | 原子批准发布/重新发布 | `818 passed`、`9 skipped`、`697 subtests` | 双 Reviewer、锁等待、事务隔离、独立验收 |
+| `5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e` | 五类审核 Reader | `827 passed`、`9 skipped`、`712 subtests` | HTTP/UI、独立验收 |
+
+ADR-0004 只证明负责人选择 Reviewer Scope 方案 B；现有资料未发现六项实现各自完整的历史开工授权或负责人独立验收记录。六项提交按负责人决定保留，Task 13 正式状态继续为 `BACKLOG / unassigned`。
+
+未跟踪 `apps/workflow/tests/test_pg_concurrency.py` 的 SHA-256 为 `08E6DAE26FFD8959592C47FB77BA5604B69A2543308F36CDB855C08D7E143E23`。该文件疑似 Task 13-07 验收草稿，Git 来源无法确认，尚未执行、尚未验收并保持未跟踪；未来仅可在负责人另行授权的一次性隔离 PostgreSQL 环境中执行。
 
 Task 11 V1 已正式封板。员工链继续只读取 `current_published_version`，Task 12 的草稿、`SAVED` 历史和管理预览不得进入员工搜索或正式详情。Task 12D 的 SQLite 整链验证已通过；PostgreSQL 17.11 临时隔离验证使用端口 15432 与 tmpfs，六类真实竞争和 Lock wait 均 PASS，资源已完全清理。该证据不代表真实持久环境获准使用或 8J 已完成，8J 保持 `BLOCKED / unassigned`。
 
@@ -232,8 +251,8 @@ Task 10 最终验证为页面专项 `30 passed`、knowledge `310 passed`、正�
 - 正式员工读取来源为 `current_published_version`；列表 Reader 为 `employee_visible_articles`，详情 Reader 为 `get_employee_article_detail`；V1 正文使用 `body_plaintext → body_text`。
 - Task 10 V1 正式前端为 Django Templates + 项目自有 CSS；Bootstrap / HTMX 当前不要求接入。
 - Task 11A、11B 已完成并双端同步，项目负责人视觉验收与 PostgreSQL 隔离专项均 PASS；Task 11 当前为 `DONE / codex`，不需要 Task 11C。
-- Task 12A～12E 已完成，ADR-0003 为 `Accepted`；Task 12E 为 `DONE / ACCEPTED`，Task 12 当前仍为 `IN_PROGRESS / codex`。
-- 当前没有真实 Agent 切换；如后续切换，下一 Agent 必须先读 ADR-0003 与 Task 12E 验收文档，不得自行开始 Task 13。
+- Task 12A～12E 已完成，ADR-0003 为 `Accepted`；Task 12E 为 `DONE / ACCEPTED`，收口 Commit 为 `411535b32db4a40991e3c64228d018e9cebb17ed`，Task 12 主任务仍为 `IN_PROGRESS / codex`。
+- 当前没有真实 Agent 切换；如后续切换，下一 Agent 必须先读 ADR-0003、ADR-0004 与 Task 12E 验收文档，不得自行继续 Task 13 或执行 Task 13-07。
 - 任务 8J 保持 `BLOCKED / unassigned`；Task 13 保持 `BACKLOG / unassigned`。
-- Task 13 负责 submit、review、approve、reject、publish 与 republish；这些流程不属于 Task 12E。
-- 本文件与 `tasks/CURRENT_TASK.md`、`tasks/TASKS.yaml` 的 Task 12 当前状态保持一致；未经单独授权不得开始 Task 13、正式接入 Wagtail 或操作持久数据库。
+- Task 13 六个既有提交已经覆盖 submit、reject、approve/publish 和 Reader 等底层能力，但仍缺 PostgreSQL 验收、HTTP/UI、Worker/通知和负责人独立验收；这些成果不属于 Task 12E，也不等于 Task 13 已完成。
+- 本文件与 `tasks/CURRENT_TASK.md`、`tasks/TASKS.yaml` 的 Task 12/13 当前状态保持一致；未经单独授权不得继续 Task 13、执行 Task 13-07、正式接入 Wagtail 或操作持久数据库。

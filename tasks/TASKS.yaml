@@ -1,13 +1,15 @@
 project: AI-OpsAI-IT-wagtail-poc
 branch: fusion/wagtail-poc
 version: 1
-updated_at: "2026-10-11"
+updated_at: "2026-10-18"
 
 evidence_boundary:
   - "正式 Django 工程当前已有 Task 12E 累计自动化证据：717 passed、9 skipped、571 subtests、0 failed；Django system check、迁移一致性检查、Ruff、Format、git diff --check 与 node --check 通过。9 个 skipped 项为 SQLite test settings 下的 PostgreSQL 专项。"
   - "Wagtail F02～F08 仍位于 experiments/wagtail_*，属于 SQLite 内存库隔离 PoC，不是正式上线能力。"
   - "正式根 pyproject.toml 尚未包含 Wagtail；不得为运行 PoC 而擅自修改正式依赖。"
   - "仓库根目录 .env 当前存在、被 Git 忽略且未跟踪；本项目未读取或验证其内容、来源、变量完整性及 PostgreSQL 适用性。Task 11 与 Task 12D 已完成仓库外临时 PostgreSQL 隔离验证，但均不等于真实持久环境已核验，8J 继续 BLOCKED / unassigned。"
+  - "本轮治理核验代码基线为 5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e；GitHub 实时分支 HEAD 与其一致，Gitee 因 SSL 连接错误为 UNKNOWN，不得宣称三端同步。"
+  - "未跟踪 apps/workflow/tests/test_pg_concurrency.py 的 SHA-256 为 08E6DAE26FFD8959592C47FB77BA5604B69A2543308F36CDB855C08D7E143E23；疑似 Task 13-07 验收草稿，来源未确认、未执行、未验收，保持未跟踪。"
 
 tasks:
   - id: "8"
@@ -365,6 +367,7 @@ tasks:
         - "a68b53a2355088460577f39035e7137c202ec87e"
         - "fde3082a567646f38e435e385d156904a11339b5"
         - "1e025b9f9a96f7c63207a196dcfd916553940004"
+        - "f8c2c6d403a292685a04a635b03b84d446e36749"
         - "eababf6f19043fe44a925bd86e3142f38c80805a"
         - "b239e0186ae999e99fa3c51e18965d6a56eee4b9"
         - "a49bbf5fadea6c17ad2429adbbb149816d23240d"
@@ -372,21 +375,24 @@ tasks:
         - "a8238954d3f7639bdb9b0eb6f494eede2b7c317b"
         - "4b565784dbcbb8f0d9aa005797cf3cac1668f7b1"
         - "4e4a0bd25abed587c587c8bfc419b3ebe583198d"
+        - "411535b32db4a40991e3c64228d018e9cebb17ed"
       verification:
         - "Task 12A 架构 ADR 状态为 Accepted，Commit 72029527406c17f433c3226475609a291373b55e 已在 LOCAL、GitHub、Gitee 三端同步。"
         - "Task 12B、12C、12D 已完成并同步；Task 12D 收口时三端同步 HEAD 为 1e025b9f9a96f7c63207a196dcfd916553940004。"
         - "Task 12D SQLite 版本链整体验证 PASS；PostgreSQL 17.11 临时隔离环境的六类真实竞争与 Lock wait 均 PASS。"
         - "Task 12D PostgreSQL 验证使用临时端口 15432 与 tmpfs；容器、网络和临时资源已完全清理，未操作正式 5432、持久 Volume 或真实 .env。"
-        - "Task 12E-02～12E-08 已完成管理列表、新建 Article、Draft 编辑、Autosave、Manual Save、History/Detail/Restore 与 Draft Preview，并同步至 LOCAL、GitHub、Gitee；当前三端同步业务 HEAD 为 4e4a0bd25abed587c587c8bfc419b3ebe583198d。"
+        - "Task 12E-02～12E-08 已完成管理列表、新建 Article、Draft 编辑、Autosave、Manual Save、History/Detail/Restore 与 Draft Preview；历史记录显示当时同步至 LOCAL、GitHub、Gitee 的业务 HEAD 为 4e4a0bd25abed587c587c8bfc419b3ebe583198d，本轮 Gitee 当前状态仍为 UNKNOWN。"
         - "Task 12E 累计自动化证据为 717 passed、9 skipped、571 subtests、0 failed；Django check、makemigrations --check --dry-run、Ruff、Format、git diff --check 与 node --check 均 PASS。"
         - "Task 12E-09A 真实 Chromium 验收为 PASS_WITH_VISUAL_FINDINGS：Manage→Create→Edit→Autosave→Manual Save→History→Restore→Preview、Employee Published-only 隔离及双标签 CAS 冲突均 PASS；P0/P1/P2 为 0，P3 为 2。"
+        - "Task 12E-09B 收口 Commit 411535b32db4a40991e3c64228d018e9cebb17ed 已核验，父提交为 4e4a0bd25abed587c587c8bfc419b3ebe583198d，仅更新 Task 12E 验收与治理文档。"
       notes:
         - "Task 12A“正式写入契约与融合范围冻结”已 DONE / SYNCED；docs/07-ADR/0003-Task12正式文章写入与版本链架构决策.md 是 Task 12B～12E 的正式实施基线。"
         - "Task 12B“最小 Model / Migration 增量”、Task 12C“KB 编号服务与原子 Article 创建”和 Task 12D“版本写入与历史恢复”均为 DONE / SYNCED。"
         - "Task 12D-00 为 DONE / SYNCED，Task 12D-01 为 DESIGN PASS，Task 12D-02～12D-06 均为 DONE / SYNCED。"
         - "Task 12D 已形成 autosave expected_lock_version 乐观 CAS、manual save 的 DRAFT(n) → SAVED(n) + 新 DRAFT、Article 行锁下 max(version_no)+1、SAVED 历史不可变及 restored_from_version 恢复血缘；current_published_version 不变，员工仍只读取 PUBLISHED。"
         - "Task 12E 已为 DONE / ACCEPTED；Task 12E-09A 验收等级为 PASS_WITH_VISUAL_FINDINGS，两项 P3 仅进入管理端 UI 统一精修 Backlog，不阻塞收口。"
-        - "Task 12E-09B 为纯文档收口，本次文档 Commit 待后续双端同步；Task 12 继续 IN_PROGRESS / codex。"
+        - "Task 12E-09B 已由 Commit 411535b32db4a40991e3c64228d018e9cebb17ed 收口；Task 12 主任务继续 IN_PROGRESS / codex。"
+        - "Task 12 正式封板仍缺负责人最终验收、390×844 窄屏视觉验收或负责人明确书面豁免、Gitee 当前远端 HEAD 核验及必要治理文件同步；缺一不得标记 DONE、ACCEPTED 或 SYNCED。"
         - "Task 12D 的临时 PostgreSQL 并发证据不解除 8J；Task 13 继续 BACKLOG / unassigned，并负责 submit、review、approve、reject、publish 与 republish。"
         - "正式内容权威保持 Article + ArticleVersion；Wagtail 在 Task 12 V1 延期，不进入正式依赖、settings、路由、模型或 Revision 双写链路。"
 
@@ -409,9 +415,27 @@ tasks:
       - "计划：服务层、HTTP、事务回滚、幂等、并发冲突和旁路拒绝测试。"
       - "计划：在 PostgreSQL 上验证锁与事务行为，SQLite 结果不得替代。"
     result:
-      commits: []
-      verification: []
-      notes: []
+      commits:
+        - "031a4fca26cebcaf5b67091142ac6b3b82c9cbaa"
+        - "95af9ca7c06eced103a7a034482959c97df04852"
+        - "6d6bb9808ef68b87de63cf1d1762105aa9f8485a"
+        - "e88bf8e065807343a5b78a0a49c29d0824980b67"
+        - "e422b16ba0826064a629604a217b93978101d5f7"
+        - "5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e"
+      verification:
+        - "031a4fca 已实现 ReviewerSpaceScope、审核动作权限、每 Article 最多一个 IN_REVIEW 与每 ArticleVersion 最多一个 content_review 约束；历史提交记录 735 passed、9 skipped、582 subtests，持久 PostgreSQL 迁移前置检查未执行。"
+        - "95af9ca 已实现 AuditEvent、Workflow Outbox 和 Idempotency 持久化基础；历史提交记录 761 passed、9 skipped、585 subtests，持久 PostgreSQL 未连接，Outbox Worker/通知未实现。"
+        - "6d6bb98 已实现 DRAFT→IN_REVIEW 提交审核 Service 及同事务幂等、审计和 Outbox；历史提交记录 785 passed、9 skipped、624 subtests，无 HTTP/UI，PostgreSQL 并发未验收。"
+        - "e88bf8e 已实现驳回、唯一审核记录、后继 Draft、审计/Outbox/幂等；历史提交记录 800 passed、9 skipped、657 subtests，Approve-vs-Reject 等真实竞争未验收。"
+        - "e422b16 已实现原子批准发布/重新发布、旧版本 SUPERSEDED、指针切换及后继 Draft；历史提交记录 818 passed、9 skipped、697 subtests，双 Reviewer、锁等待和事务隔离未验收。"
+        - "5bf0632 已实现五类只读审核 Reader；历史提交记录 827 passed、9 skipped、712 subtests，无 HTTP/UI，尚待独立验收。"
+      notes:
+        - "六个提交按负责人决定保留并登记为已有实现、待治理确认与独立验收；代码已提交不等于正式验收通过。"
+        - "ADR-0004 证明负责人选择 Reviewer Scope 方案 B；现有资料未发现六项实现各自完整的历史开工授权或负责人独立验收记录，本轮不作追认。"
+        - "Task 13 正式状态继续为 BACKLOG / unassigned，本轮只授权治理对齐，不授权业务开发。"
+        - "尚缺 PostgreSQL 持久数据兼容预检、真实并发/锁/事务隔离验证、HTTP/UI、Outbox Worker/通知及负责人独立验收。"
+        - "apps/workflow/tests/test_pg_concurrency.py 疑似 Task 13-07 验收草稿，SHA-256 为 08E6DAE26FFD8959592C47FB77BA5604B69A2543308F36CDB855C08D7E143E23；无可确认 Git 来源，未执行、未验收并保持未跟踪。"
+        - "Task 13-07 仅为下一候选技术验收任务，尚未获执行授权；未来只能在一次性隔离 PostgreSQL 环境中按单独合同执行。"
 
   - id: "14"
     title: "开发反馈、下架和复审"

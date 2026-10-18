@@ -11,7 +11,7 @@
 | 项目定位 | 面向企业内部员工和 IT 运维团队、由公司独立部署和管理的 IT 运维知识库 |
 | 主要入口方向 | 钉钉工作台内的企业内部 H5 微应用；知识库平台自身负责内容、权限、搜索和审核等业务能力 |
 | 当前主要开发分支 | `fusion/wagtail-poc`，用于 Django 与 Wagtail 的融合验证；分支名是阶段性开发信息，不是不可变的项目身份 |
-| 当前开发阶段 | Task 12 正式文章创建、草稿与版本保存实施阶段；Task 12E 管理端知识编辑链已 `DONE / ACCEPTED`，Task 12 仍为 `IN_PROGRESS / codex` |
+| 当前开发阶段 | Task 12A～12E 历史成果已完成，Task 12 主任务仍为 `IN_PROGRESS / codex`；Task 13 六个底层实现提交已存在但统一待治理确认与独立验收，Task 13 正式状态仍为 `BACKLOG / unassigned` |
 | 当前 PRD 基线 | `docs/02-PRD/产品需求文档PRD-V1.1A-钉钉集成核心试点版-优化稿.md`；V1.1 及调研、归档资料仅作历史参考 |
 
 当前主要本地工作目录是 `D:\Desktop\OpsAI\AI-OpsAI-IT-wagtail-poc`。该路径仅用于定位当前工作区，不表示项目只能在这台电脑或这个路径运行；接力开发时应先以实际仓库根目录为准。
@@ -74,7 +74,7 @@ OpsAI 因此希望把经过审核的 IT 经验沉淀为可搜索、可分类、�
 | Django 5.2 LTS | 模块化单体的主体框架，承载账号、业务模型、权限、服务、页面和集成边界 | 正式接入；当前正式配置、路由和业务 App 均以 Django 为主体 |
 | Django Templates + 项目自有 CSS | Task 10 V1 的服务端渲染与响应式页面基线 | 正式员工首页、分类页和详情页已完成；Bootstrap / HTMX 在 V1 不强制引入，后续仅在真实需求下以可信固定版本本地接入 |
 | Wagtail 7.4.3 | 基于 Django 的内容管理框架，用于验证并逐步承接内容编辑、Revision 和 Workflow 基础能力 | 版本已固定并完成多阶段隔离 PoC；尚未加入正式依赖、正式设置和正式路由 |
-| PostgreSQL | 正式开发和目标部署数据库 | Django 开发环境已由 Docker Compose 提供；本轮未核验当前持久库状态，Wagtail 融合链路的 PostgreSQL 行为仍待验证 |
+| PostgreSQL | 正式开发和目标部署数据库 | Compose 配置与历史隔离专项证据存在；当前持久库状态、Task 13 数据兼容及审核并发/事务行为仍未验收 |
 | SQLite 内存库 | 自动测试和隔离实验数据库 | 用于现有测试及 Wagtail PoC，不代表 PostgreSQL 或生产验证 |
 | Docker Compose | 组织本地 `web` 与 PostgreSQL `db` 开发服务 | 已有正式开发配置；当前融合实验不复用真实开发数据卷 |
 
@@ -112,12 +112,12 @@ OpsAI 需要可靠的内容编辑、修订历史、草稿与正式版本隔离�
 | --- | --- | --- |
 | `core` | 公共基础能力和健康检查 | 正式基础模块；存活与就绪检查已有正式路由和测试 |
 | `accounts` | 自定义用户、部门、多部门关系、内容用户组、系统角色和账号状态 | 正式基础模块；核心模型、角色同步、后台保护和本地模拟登录已实现 |
-| `knowledge` | 知识空间、分类、文章、版本、受众、审核记录和阅读权限查询 | 正式核心模块；模型、迁移、后台约束、员工读取 Reader、员工首页/分类/详情/搜索，以及 Task 12E 管理端创建、编辑、保存、历史、恢复和草稿预览链已实现；审核与发布事务仍未完成 |
+| `knowledge` | 知识空间、分类、文章、版本、受众、审核记录和阅读权限查询 | 正式核心模块；Task 12 管理编辑链已实现；Task 13 已增加 Reviewer 空间 Scope、动作权限及审核唯一约束，但持久 PostgreSQL 迁移前置检查未完成 |
 | `search` | 查询规范化、受众过滤后的检索、排序、高亮和搜索日志 | P0 员工搜索已正式接入：首页入口、安全 Reader、结果页、确定性排序、分页、零结果和 KB 详情跳转已实现；高亮、标签/别名和搜索日志不属于当前 V1 已实现范围，PostgreSQL 17.11 隔离专项已通过 |
-| `workflow` | 状态转换、事务、幂等、Outbox 和后台任务编排 | 正式规划模块；当前主要是 App 骨架，融合 PoC 服务仍在实验目录 |
+| `workflow` | 状态转换、事务、幂等、Outbox 和后台任务编排 | 已有 Task 13 Submit、Reject、Approve/Publish Service、五类 Review Reader、Outbox 与幂等模型；尚无正式 HTTP/UI、Worker/通知及 PostgreSQL 并发验收 |
 | `dingtalk` | 钉钉免登、用户映射、通讯录同步、通知、回调和 API 适配 | 正式规划模块；当前主要是 App 骨架，正式钉钉链路尚未实现 |
 | `service_desk` | 统一 IT 服务入口、安全上下文、字段映射和失败降级 | 正式规划模块；当前主要是 App 骨架，不建设完整 ITSM |
-| `audit` | 敏感操作审计、请求上下文和变更前后快照 | 正式规划模块；当前主要是 App 骨架，不承载业务状态机 |
+| `audit` | 敏感操作审计、请求上下文和变更前后快照 | 已有 Task 13 `AuditEvent` 追加式审计基础；完整运维与防篡改验收仍未完成，不承载业务状态机 |
 | `experiments/wagtail_*` | 分阶段验证 Wagtail 兼容、内容模型、后台、审核发布、员工读取和迁移方案 | PoC / 隔离实验；不是正式 App 或生产入口 |
 | `deploy` | 本地 Django 与 PostgreSQL 的容器化开发配置 | 正式开发支撑；当前包含 Dockerfile 和 Docker Compose 配置 |
 | `tests` 与各 App 的 `tests` | 跨 App 和模块级自动化验证 | 测试基础设施；测试通过只证明相应范围，不等于上线 |
@@ -130,18 +130,20 @@ OpsAI 需要可靠的内容编辑、修订历史、草稿与正式版本隔离�
 | --- | --- | --- |
 | 正式接入 | 已进入当前项目正式配置或业务调用路径，不只存在于实验目录 | Django 工程骨架、健康检查、正式账号与知识核心模型、Django Admin 保护、本地开发角色与模拟登录、受众过滤后的员工首页、分类页、详情页和 P0 搜索、开发用 PostgreSQL Compose 环境 |
 | PoC / 隔离实验 | 为验证方案而存在，能够提供技术证据，但不能直接描述为生产功能 | Wagtail F02～F08 的兼容、内容修订、后台编辑、审核发布、员工读取、旧内容迁移和实验详情页 |
-| 已有测试但尚无完整正式入口 | 底层代码或服务已经验证，但最终用户尚不能通过完整正式路径使用 | 发布审核、附件、钉钉等后续能力；员工浏览与 P0 搜索已形成正式路径 |
-| 规划中 | PRD 或架构已经提出，但当前代码证据不足或尚未正式实现 | 钉钉免登与同步、完整发布事务、附件扫描、服务入口闭环、审计 / Outbox、运营指标及生产化 Wagtail 切换 |
+| 已有测试但尚无完整正式入口 | 底层代码或服务已经验证，但最终用户尚不能通过完整正式路径使用 | Task 13 提交、驳回、批准发布、审核 Reader、审计/Outbox/幂等；附件与钉钉仍未形成底层业务闭环 |
+| 规划中 | PRD 或架构已经提出，但当前代码证据不足或尚未正式实现 | Task 13 HTTP/UI、Outbox Worker/通知、附件扫描、钉钉免登与同步、服务入口闭环、运营指标及生产化 Wagtail 切换 |
 
 某项能力可能同时具有“实验测试充分”和“尚未正式接入”两个事实；最终归类以实际调用路径为准。详细且会变化的功能进度应记录在后续 `docs/PROJECT_STATE.md`，不在本文件维护完整验收清单。
 
 ## 11. 当前开发阶段
 
-项目仍处于 OpsAI 内容能力建设阶段。现有 Django 主项目已经建立账号、知识核心数据模型、权限基础、健康检查、本地开发环境、受众过滤后的正式员工首页/分类/详情/P0 搜索，以及 Task 12E 管理端文章列表、创建、Draft 编辑、Autosave、Manual Save、历史、恢复与草稿预览链。Task 10、Task 11 均已完成；Task 12E 已 `DONE / ACCEPTED`，真实浏览器验收等级为 `PASS_WITH_VISUAL_FINDINGS`。Task 12 继续为 `IN_PROGRESS / codex`，Task 13 保持 `BACKLOG / unassigned`。Task 12 V1 的正式内容权威保持 `Article + ArticleVersion`，不正式接入 Wagtail。
+项目仍处于 OpsAI 内容能力建设阶段。现有 Django 主项目已经建立账号、知识核心数据模型、权限基础、健康检查、本地开发环境、受众过滤后的正式员工首页/分类/详情/P0 搜索，以及 Task 12E 管理端文章列表、创建、Draft 编辑、Autosave、Manual Save、历史、恢复与草稿预览链。Task 10、Task 11 均已完成；Task 12E 已 `DONE / ACCEPTED`，收口 Commit 为 `411535b32db4a40991e3c64228d018e9cebb17ed`。Task 12 继续为 `IN_PROGRESS / codex`，仍缺负责人最终验收、`390 × 844` 窄屏视觉验收或书面豁免、Gitee 当前远端核验和必要治理同步。
+
+Task 13 的六个既有提交已经实现 Reviewer 授权与约束、Audit/Outbox/幂等底座、提交审核、驳回、原子批准发布及审核 Reader，但统一按“已有实现、待治理确认与独立验收”登记。Task 13 正式状态保持 `BACKLOG / unassigned`；现有资料未发现可证明六项实现完整历史开工授权的记录，也尚缺 PostgreSQL 并发/锁/隔离验收、持久数据兼容预检、HTTP/UI、Worker/通知和负责人独立验收。Task 12 V1 的正式内容权威保持 `Article + ArticleVersion`，不正式接入 Wagtail。
 
 这些实验形成了可继续推进的稳定技术证据，但没有改变正式项目配置和生产数据库边界。员工 P0 搜索与 Task 12E 管理端知识编辑链已进入正式 Django 业务路径；Task 12D 已完成 SQLite 版本链验证和 PostgreSQL 17.11 临时并发补证，Task 12E-09A 已使用仓库外独立 SQLite 与真实 Chromium 完成主链、Employee 隔离和双标签 CAS 验收。上述证据均不等于持久数据库或生产化验证。当前不能声称 Wagtail 融合、钉钉免登、附件、审核发布、服务跳转或完整内容生命周期已经生产上线。
 
-根 `README.md` 中部分“当前状态 / 下一步”文字仍保留较早阶段描述；理解当前融合进展时，应以实际代码、验证结果、Git 历史及 `docs/PROJECT_STATE.md` 为准。该差异属于动态状态文档滞后，不改变 V1.1A 产品基线和长期安全规则。
+本轮已按实际代码、验证结果和 Git 历史同步根 `README.md` 的当前状态；后续如出现差异，仍以实际代码、验证结果、Git 历史及 `docs/PROJECT_STATE.md` 为准。
 
 ## 12. 开发和运行方式概览
 
@@ -170,8 +172,8 @@ OpsAI 需要可靠的内容编辑、修订历史、草稿与正式版本隔离�
 | `docs/PROJECT.md` | 这个项目是什么？ | 本文件；保存稳定项目身份、边界和技术关系 |
 | `docs/PROJECT_STATE.md` | 项目现在做到哪里？ | 已存在；保存当前阶段、环境、验证、阻塞和风险证据 |
 | `tasks/TASKS.yaml` | 项目有哪些任务、各是什么状态？ | 已存在；登记任务池、依赖、状态和结果证据 |
-| `tasks/CURRENT_TASK.md` | 当前 AI 唯一应该处理什么任务？ | 已存在；Task 12“开发文章创建、草稿和版本保存”为 `IN_PROGRESS / codex`，Task 12A～12E 已完成，Task 13 仍未授权开始 |
-| `docs/HANDOFF.md` | 上一个 AI 做到哪里，下一 AI 如何继续？ | 已存在；记录 Task 12E 已 `DONE / ACCEPTED`、Task 13 仍为 Backlog 及后续执行边界 |
+| `tasks/CURRENT_TASK.md` | 当前 AI 唯一应该处理什么任务？ | 已存在；Task 12 为 `IN_PROGRESS / codex`，Task 13 六项已有实现仅登记待验收，Task 13-07 未授权执行 |
+| `docs/HANDOFF.md` | 上一个 AI 做到哪里，下一 AI 如何继续？ | 已存在；记录 Task 12 剩余封板条件、Task 13 六项既有成果、未跟踪 PostgreSQL 草稿及后续授权边界 |
 
 `.ai/reports/`、`.ai/runs/`、`outputs/`、`tasks/blocked/` 和 `tasks/completed/` 已预留目录，但目录存在不等于上述状态、任务或交接文件已经创建。
 
@@ -182,11 +184,12 @@ OpsAI 需要可靠的内容编辑、修订历史、草稿与正式版本隔离�
 1. `docs/02-PRD/产品需求文档PRD-V1.1A-钉钉集成核心试点版-优化稿.md`：当前产品目标、用户、范围和非功能要求。
 2. `AGENTS.md`：文档优先级、技术栈、App 边界、安全、测试和 Git 规则。
 3. `docs/07-ADR/0003-Task12正式文章写入与版本链架构决策.md`：Task 12 V1 的内容权威、KB 编号、草稿保存、版本链、管理入口及 Wagtail 延期决策。
-4. `docs/07-ADR/0002-Wagtail融合基线与最小设计.md`：Django 与 Wagtail 的长期目标关系、模型候选、安全适配和切换边界。
-5. `docs/07-ADR/0001-内容受众选择器权限语义.md`：员工读取的账号门槛、受众策略和拒绝优先语义。
-6. `README.md` 与两份 `docs/04-Architecture/` 文档：工程定位、模块化 Django 路线、开发环境和目标职责。
-7. 当前 `apps/`、`config/`、`deploy/`、`tests/` 和 `experiments/wagtail_f02`～`wagtail_f08`：实际代码结构、正式路由和融合实验边界。
-8. 当前 Git 历史和各实验 README：项目演进方向、已形成的验证证据及明确限制。
+4. `docs/07-ADR/0004-Task13审核发布与Reviewer空间权限架构决策.md`：Task 13 Reviewer Scope 方案 B、动作权限、状态机及数据约束决策。
+5. `docs/07-ADR/0002-Wagtail融合基线与最小设计.md`：Django 与 Wagtail 的长期目标关系、模型候选、安全适配和切换边界。
+6. `docs/07-ADR/0001-内容受众选择器权限语义.md`：员工读取的账号门槛、受众策略和拒绝优先语义。
+7. `README.md` 与两份 `docs/04-Architecture/` 文档：工程定位、模块化 Django 路线、开发环境和目标职责。
+8. 当前 `apps/`、`config/`、`deploy/`、`tests/` 和 `experiments/wagtail_f02`～`wagtail_f08`：实际代码结构、正式路由和融合实验边界。
+9. 当前 Git 历史和各实验 README：项目演进方向、已形成的验证证据及明确限制。
 
 历史聊天不作为本文档的事实依据。提交说明和历史测试报告只用于定位证据；最终成熟度仍以当前文件和实际调用路径判断。
 
