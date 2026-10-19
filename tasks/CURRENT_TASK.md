@@ -1,26 +1,29 @@
 # OpsAI Current Task
 
-> Task 12“开发文章创建、草稿和版本保存”当前继续为 `IN_PROGRESS / codex`。Task 12A～12E 的历史成果保留，Task 12E 收口 Commit 为 `411535b32db4a40991e3c64228d018e9cebb17ed`。Task 13 仍为 `BACKLOG / unassigned`；其六个既有提交仅登记为“已有实现、待治理确认与独立验收”，不追认现有资料未证明的历史开工授权。
+>当前唯一任务为 Task 13-07“一次性隔离 PostgreSQL 并发技术验收”。本文件只完成执行合同登记；真实验收必须等待项目负责人针对本次治理提交后的新完整 HEAD 再次明确授权。Task 12 保持 `IN_PROGRESS / codex`，Task 13 主任务保持 `BACKLOG / unassigned`，不追认六个既有 Task 13 提交的历史开工授权或负责人验收。
 
 ## 1. 任务身份
 
 | 项目 | 当前值 |
 | --- | --- |
-| 任务编号 | `12` |
-| 任务名称 | 开发文章创建、草稿和版本保存 |
+| 任务编号 | `Task 13-07` |
+| 任务名称 | PostgreSQL 17.11 一次性隔离并发与事务技术验收 |
 | 优先级 | `MUST` |
-| 当前状态 | `IN_PROGRESS` |
-| 当前负责人 | `codex` |
-| 开工日期 | `2026-10-05` |
-| 直接依赖 | Task 11，`DONE / codex` |
+| 当前状态 | `READY`；真实执行仍等待负责人针对治理提交后新完整 HEAD 的逐次授权 |
+| 当前负责人 | `unassigned`，等待逐次授权指定执行者 |
+| 治理登记日期 | `2026-10-18` |
+| 前置例外 | 项目负责人允许 Task 12 尚未封板时先行申请 Task 13-07 技术验收 |
 | 当前分支 | `fusion/wagtail-poc` |
-| 本轮治理核验代码基线 | `5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e` |
-| 远端核验 | GitHub 实时 HEAD 为 `5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e`；Gitee 因 SSL 连接错误为 `UNKNOWN`，不得宣称三端同步 |
-| 当前主阶段 | Task 12 |
-| 已完成阶段 | Task 12A～12E；Task 12E 为 `DONE / ACCEPTED` |
-| 当前收口 | Task 12 主任务尚缺负责人最终验收、`390 × 844` 窄屏视觉验收或负责人书面豁免、Gitee 当前远端 HEAD 核验及必要治理文件同步 |
-| 本轮唯一授权 | Task 12/13 治理对齐与历史成果登记；仅文档与一次本地 Commit，完成后停止 |
-| 下一候选技术验收 | Task 13-07；尚未获执行授权，不得运行未跟踪 PostgreSQL 测试 |
+| 上一治理工作 | Task 12/13 治理对齐已由 Commit `8fcd7107eb008fd01e6f6e2ac7366e05f5e6ee36` 完成 |
+| 正式任务状态 | Task 12 为 `IN_PROGRESS / codex`；Task 13 为 `BACKLOG / unassigned` |
+| 执行起始 HEAD | 待填写；必须是本次治理提交后的完整 HEAD，并由负责人再次明确批准 |
+| 测试文件 | `apps/workflow/tests/test_pg_concurrency.py` |
+| 固定 SHA-256 | `08E6DAE26FFD8959592C47FB77BA5604B69A2543308F36CDB855C08D7E143E23` |
+| 隔离工作区 | `D:\Temp\OpsAI-Task13-07-001-Workspace` |
+| 证据目录 | `D:\Temp\OpsAI-Task13-07-001-Evidence` |
+| 预定容器名 | `opsai-task13-07-001-pg` |
+| 当前允许动作 | 项目负责人明确授权 Codex 本轮仅完善 tasks/CURRENT_TASK.md 与 tasks/TASKS.yaml 两份治理文件，核验并创建一次本地治理 Commit；不授权执行 PostgreSQL 测试、创建隔离资源、修改业务代码或 Push。真实 Task 13-07 验收仍须负责人针对新完整 HEAD 再次批准。 |
+| 执行门禁 | 只有新 HEAD 获批、资源不存在、PostgreSQL 17.11 本地可信镜像存在且 DATABASES/实例身份双重核验通过后才能运行 |
 
 ## 2. 已完成阶段
 
@@ -92,11 +95,27 @@ ADR-0004 证明负责人选择了 Reviewer Scope 方案 B，但现有资料未�
 
 未跟踪文件 `apps/workflow/tests/test_pg_concurrency.py` 的 SHA-256 为 `08E6DAE26FFD8959592C47FB77BA5604B69A2543308F36CDB855C08D7E143E23`，疑似 Task 13-07 验收草稿；现有资料无法确认 Git 来源，尚未执行、尚未验收，必须保持未跟踪。后续仅可在负责人另行授权的一次性隔离 PostgreSQL 环境中运行。
 
-## 7. 持续边界
+
+## 7. Task 13-07 一次性隔离执行合同
+
+- Task 13-07 只验证现有提交审核、驳回、批准发布、幂等、审计与 Outbox 的 PostgreSQL 并发和事务行为，不授权新增功能或修改业务代码。
+- 真实执行前必须重新核验分支、新完整 HEAD、已跟踪工作区、测试文件 SHA-256 和 Git 进行中状态。
+- 隔离工作区、证据目录和容器必须在执行前不存在；存在时停止，不覆盖、不复用、不清理。
+- 只允许使用 PostgreSQL 17.11 本地可信镜像、独立测试用户、独立测试数据库和非 5432 回环端口。
+- 禁止使用真实 `.env`、正式数据库密码、正式 PostgreSQL 命名卷、正式项目数据目录、共享数据库或现有 OpsAI Compose 项目。
+- 迁移与测试只能在隔离工作区和 Django 自动创建的隔离测试数据库中运行。
+- 运行前必须核验 Django `DATABASES`、`TEST` 配置、数据库别名，以及 PostgreSQL 版本、当前数据库、当前用户和服务端口。
+- 测试失败后不得修改业务代码或原始测试取得 PASS；保存脱敏证据并停止后续开发。
+- 发生来源不明连接、隔离条件不足、Docker 不可用、镜像缺失或证据持久化失败时，结论为 `BLOCKED`。
+- 正式仓库中的未跟踪测试不得修改、暂存、提交或执行；只允许把哈希一致的副本复制到隔离工作区。
+- 真实执行结束后只可处置本次明确创建且身份已核实的资源，禁止全局 prune 或影响其他项目。
+
+
+## 8. 持续边界
 
 - 正式内容权威保持 `Article + ArticleVersion`；Wagtail 尚未进入正式根依赖、settings、路由或正式运行时。
 - 正式员工读取继续只走 `current_published_version`，不得暴露草稿、`SAVED` 历史或管理预览。
-- Task 13 已存在上述六项底层实现，但不得据此继续开发、补 UI、运行 PostgreSQL 专项或宣称验收通过。
+- Task 13 已存在上述六项底层实现，但不得据此继续开发、补 UI 或宣称验收通过；Task 13-07 是唯一登记的局部技术验收例外。
 - 不读取或记录真实 `.env` 正文，不把临时 PostgreSQL 证据写成持久环境验收。
 - 不把仓库外截图、SQLite、settings、临时脚本或浏览器日志提交 Git。
-- 未经授权不 Push，不执行 Task 13-07，不宣称 Task 12、Task 13 或整个项目已 DONE / 上线就绪。
+- 未经负责人针对治理提交后新完整 HEAD 的再次明确授权，不得创建隔离资源或执行 Task 13-07；不 Push，不宣称 Task 12、Task 13 或整个项目已 DONE / 上线就绪。
