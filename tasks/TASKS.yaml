@@ -435,9 +435,9 @@ tasks:
         - "Task 13 正式状态继续为 BACKLOG / unassigned；Task 13-07 仅作为一次性隔离 PostgreSQL 技术验收例外登记，不代表 Task 13 全面开工或六个既有提交已通过负责人验收。"
         - "尚缺 PostgreSQL 持久数据兼容预检、真实并发/锁/事务隔离验证、HTTP/UI、Outbox Worker/通知及负责人独立验收。"
         - "apps/workflow/tests/test_pg_concurrency.py 疑似 Task 13-07 验收草稿，SHA-256 为 08E6DAE26FFD8959592C47FB77BA5604B69A2543308F36CDB855C08D7E143E23；无可确认 Git 来源，未执行、未验收并保持未跟踪。"
-        - "Task 13-07 已获准进入一次性技术验收准备及后续单独授权执行范围；本次治理登记本身不授权创建资源、连接 PostgreSQL 或运行测试。"
-        - "Task 13-07 真实执行必须等待项目负责人针对治理提交后的新完整 HEAD 再次明确授权；未取得该授权时保持安全停止。"
-        - 'Task 13-07 固定测试文件 SHA-256 为 08E6DAE26FFD8959592C47FB77BA5604B69A2543308F36CDB855C08D7E143E23，隔离工作区为 D:\Temp\OpsAI-Task13-07-001-Workspace，证据目录为 D:\Temp\OpsAI-Task13-07-001-Evidence，预定容器名为 opsai-task13-07-001-pg。'
+        - "Task 13-07 已获准进入一次性技术验收准备及后续单独授权执行范围；001 因指定 Worktree 和 Evidence 在门禁检查时已存在而 BLOCKED，未启动 PostgreSQL、migration 或并发测试，现场必须原样保留。"
+        - "Task 13-07 的下一候选运行为 002；真实执行必须等待项目负责人针对本次治理提交后的新完整 HEAD 再次明确授权，未取得该授权时保持安全停止。"
+        - 'Task 13-07 固定测试文件 SHA-256 为 08E6DAE26FFD8959592C47FB77BA5604B69A2543308F36CDB855C08D7E143E23；002 运行标识为 TASK13-07-ISOLATED-PG-002，隔离工作区为 D:\Temp\OpsAI-Task13-07-002-Workspace，证据目录为 D:\Temp\OpsAI-Task13-07-002-Evidence，预定容器名为 opsai-task13-07-002-pg。'
         - "Task 13-07 禁止使用真实 .env、正式数据库密码、正式 PostgreSQL 持久卷、共享实例或现有 OpsAI Compose 项目；隔离身份和 DATABASES/TEST 双重验证未通过时结论必须为 BLOCKED。"
 
   - id: "13-07"
@@ -449,9 +449,11 @@ tasks:
     objective: >
       在不改变 Task 12 的 IN_PROGRESS 状态和 Task 13 的 BACKLOG 状态、不追认六个既有
       Task 13 提交历史授权或验收的前提下，登记一次性隔离 PostgreSQL 技术验收例外；
-      本次只完成治理准备，真实执行必须等待负责人批准治理提交后的新完整 HEAD。
+      保留 001 BLOCKED 现场并登记全新的 002 候选合同；002 真实执行必须等待负责人批准
+      本次治理提交后的新完整 HEAD。
     acceptance:
       - "Task 13-07 是当前唯一获准准备的一次性隔离技术验收例外，但本次 READY 不授权创建隔离资源、连接 PostgreSQL 或运行测试。"
+      - "001 Worktree、Evidence 及阻断记录必须保持原样；登记 002 不授权复用、修改、测试或清理 001。"
       - "真实执行前必须重新核验 fusion/wagtail-poc 分支、负责人批准的新完整 HEAD、已跟踪工作区、Git 进行中状态及固定测试文件 SHA-256。"
       - "正式仓库中的 apps/workflow/tests/test_pg_concurrency.py 必须保持未跟踪、未修改、未执行、未暂存；真实执行时只可在新授权下复制哈希一致的副本到全新隔离工作区。"
       - "隔离执行只能使用 PostgreSQL 17.11 本地可信镜像、独立用户、独立数据库、非 5432 回环端口及 Django 自动创建的隔离测试数据库。"
@@ -459,16 +461,17 @@ tasks:
       - "隔离身份、DATABASES/TEST 配置、PostgreSQL 版本、当前数据库、当前用户和服务端口任一核验失败时必须安全停止。"
       - "测试失败时不得修改业务代码或原始测试换取 PASS；只保存脱敏证据并停止。"
     verification:
-      - "本次治理验证：核对 tasks/CURRENT_TASK.md 与本任务条目的身份、状态、授权边界、固定路径和 SHA-256 一致。"
-      - "未来真实验收：仅在负责人针对治理提交后新完整 HEAD 再次授权后，按 tasks/CURRENT_TASK.md 第 7 节合同执行。"
+      - "本次治理验证：只读核验 001 来源与状态，确认 002 目录、Worktree 登记和容器名未占用，并核对两份治理文件的身份、状态、授权边界、固定路径和 SHA-256 一致。"
+      - "未来真实验收：仅在负责人针对本次治理提交后新完整 HEAD 再次授权后，按 tasks/CURRENT_TASK.md 第 7.2 节的 002 合同执行。"
     result:
       commits: []
       verification: []
       notes:
         - "项目负责人明确允许 Task 12 尚未封板时登记本例外；因此 dependencies 为空，不改变 Task 12 与 Task 13 主任务的正式依赖关系或状态。"
-        - "治理登记时 PostgreSQL 测试未执行、未验收；Docker、PostgreSQL、migration 和业务测试均不得在本次治理任务中运行。"
+        - "001 因既定 Worktree 和 Evidence 已存在而 BLOCKED；现场原样保留，未启动 PostgreSQL、migration 或并发测试。"
+        - "002 治理登记时 PostgreSQL 测试未执行、未验收；Docker 创建、PostgreSQL、migration 和业务测试均不得在本次治理任务中运行。"
         - "固定测试文件 SHA-256 为 08E6DAE26FFD8959592C47FB77BA5604B69A2543308F36CDB855C08D7E143E23。"
-        - '未来隔离工作区为 D:\Temp\OpsAI-Task13-07-001-Workspace，证据目录为 D:\Temp\OpsAI-Task13-07-001-Evidence，预定容器名为 opsai-task13-07-001-pg；本次治理任务不得创建这些资源。'
+        - '002 运行标识为 TASK13-07-ISOLATED-PG-002；候选隔离工作区为 D:\Temp\OpsAI-Task13-07-002-Workspace，证据目录为 D:\Temp\OpsAI-Task13-07-002-Evidence，预定容器名为 opsai-task13-07-002-pg；本次治理任务不得创建这些资源。'
 
   - id: "14"
     title: "开发反馈、下架和复审"
