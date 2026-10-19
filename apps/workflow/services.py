@@ -633,7 +633,7 @@ def _submit_in_transaction(
         try:
             locked_article = (
                 Article.objects.select_for_update()
-                .select_related("space", "current_published_version")
+                .select_related("space")
                 .get(pk=accessible_article.pk, kb_no=kb_no)
             )
         except Article.DoesNotExist as exc:
@@ -1066,7 +1066,7 @@ def _reject_in_transaction(
         try:
             article = (
                 Article.objects.select_for_update()
-                .select_related("space", "current_published_version")
+                .select_related("space")
                 .get(pk=accessible_target.article_id)
             )
         except Article.DoesNotExist as exc:

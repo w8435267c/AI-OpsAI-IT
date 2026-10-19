@@ -731,21 +731,37 @@ class SubmitArticleForReviewServiceTests(TestCase):
         history = get_article_version_history(actor=self.article_owner, article=article)
         self.assertEqual(list(history.values_list("status", flat=True)), [VersionStatus.IN_REVIEW])
 
-    def test_article_is_locked_before_draft(self):
+    def test_article_lock_excludes_nullable_join_and_precedes_draft(self):
         article, draft, _published = self.make_article()
         lock_order = []
+        article_lock_related_fields = []
         original_select_for_update = QuerySet.select_for_update
+        original_select_related = QuerySet.select_related
 
         def record_lock(queryset, *args, **kwargs):
             lock_order.append(queryset.model)
             return original_select_for_update(queryset, *args, **kwargs)
 
-        with mock.patch.object(
-            QuerySet,
-            "select_for_update",
-            autospec=True,
-            side_effect=record_lock,
+        def record_related(queryset, *fields):
+            if queryset.model is Article and queryset.query.select_for_update:
+                article_lock_related_fields.append(fields)
+            return original_select_related(queryset, *fields)
+
+        with (
+            mock.patch.object(
+                QuerySet,
+                "select_for_update",
+                autospec=True,
+                side_effect=record_lock,
+            ),
+            mock.patch.object(
+                QuerySet,
+                "select_related",
+                autospec=True,
+                side_effect=record_related,
+            ),
         ):
             submit_article_for_review(**self.submit_kwargs(article, draft))
 
+        self.assertEqual(article_lock_related_fields, [("space",)])
         self.assertLess(lock_order.index(Article), lock_order.index(ArticleVersion))
