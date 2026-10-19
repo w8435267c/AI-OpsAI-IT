@@ -8,8 +8,10 @@ evidence_boundary:
   - "Wagtail F02～F08 仍位于 experiments/wagtail_*，属于 SQLite 内存库隔离 PoC，不是正式上线能力。"
   - "正式根 pyproject.toml 尚未包含 Wagtail；不得为运行 PoC 而擅自修改正式依赖。"
   - "仓库根目录 .env 当前存在、被 Git 忽略且未跟踪；本项目未读取或验证其内容、来源、变量完整性及 PostgreSQL 适用性。Task 11 与 Task 12D 已完成仓库外临时 PostgreSQL 隔离验证，但均不等于真实持久环境已核验，8J 继续 BLOCKED / unassigned。"
-  - "本轮治理核验代码基线为 5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e；GitHub 实时分支 HEAD 与其一致，Gitee 因 SSL 连接错误为 UNKNOWN，不得宣称三端同步。"
-  - "未跟踪 apps/workflow/tests/test_pg_concurrency.py 的 SHA-256 为 08E6DAE26FFD8959592C47FB77BA5604B69A2543308F36CDB855C08D7E143E23；疑似 Task 13-07 验收草稿，来源未确认、未执行、未验收，保持未跟踪。"
+  - "历史 Task 12/13 治理核验代码基线为 5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e；当时 GitHub 实时分支 HEAD 与其一致，Gitee 因 SSL 连接错误为 UNKNOWN，不得据此宣称当前三端同步。"
+  - "本轮 Task 13-07 → Task 13-08 治理交接的负责人批准起始 HEAD 为 9fbc74843c339bc712ca59dc67e7bc28e22ef9d8；本轮不 Push，不作新的远端同步声明。"
+  - "未跟踪 apps/workflow/tests/test_pg_concurrency.py 的 SHA-256 为 08E6DAE26FFD8959592C47FB77BA5604B69A2543308F36CDB855C08D7E143E23；Task 13-07-002 已在哈希一致的隔离副本上执行，正式仓库原文件仍保持未跟踪、未修改、未暂存。"
+  - "Task 13-07-002 在 PostgreSQL 17.11 隔离环境执行 14 项，结果为 6 PASS、7 FAIL、1 ERROR、0 SKIPPED，正式结论 FAILED；已确认错误为 FOR UPDATE cannot be applied to the nullable side of an outer join。"
 
 tasks:
   - id: "8"
@@ -432,46 +434,78 @@ tasks:
       notes:
         - "六个提交按负责人决定保留并登记为已有实现、待治理确认与独立验收；代码已提交不等于正式验收通过。"
         - "ADR-0004 证明负责人选择 Reviewer Scope 方案 B；现有资料未发现六项实现各自完整的历史开工授权或负责人独立验收记录，本轮不作追认。"
-        - "Task 13 正式状态继续为 BACKLOG / unassigned；Task 13-07 仅作为一次性隔离 PostgreSQL 技术验收例外登记，不代表 Task 13 全面开工或六个既有提交已通过负责人验收。"
+        - "Task 13 正式状态继续为 BACKLOG / unassigned；Task 13-07 一次性隔离 PostgreSQL 技术验收与其后继 Task 13-08 最小缺陷修复均为局部例外，不代表 Task 13 全面开工或六个既有提交已通过负责人验收。"
         - "尚缺 PostgreSQL 持久数据兼容预检、真实并发/锁/事务隔离验证、HTTP/UI、Outbox Worker/通知及负责人独立验收。"
-        - "apps/workflow/tests/test_pg_concurrency.py 疑似 Task 13-07 验收草稿，SHA-256 为 08E6DAE26FFD8959592C47FB77BA5604B69A2543308F36CDB855C08D7E143E23；无可确认 Git 来源，未执行、未验收并保持未跟踪。"
-        - "Task 13-07 已获准进入一次性技术验收准备及后续单独授权执行范围；001 因指定 Worktree 和 Evidence 在门禁检查时已存在而 BLOCKED，未启动 PostgreSQL、migration 或并发测试，现场必须原样保留。"
-        - "Task 13-07 的下一候选运行为 002；真实执行必须等待项目负责人针对本次治理提交后的新完整 HEAD 再次明确授权，未取得该授权时保持安全停止。"
-        - 'Task 13-07 固定测试文件 SHA-256 为 08E6DAE26FFD8959592C47FB77BA5604B69A2543308F36CDB855C08D7E143E23；002 运行标识为 TASK13-07-ISOLATED-PG-002，隔离工作区为 D:\Temp\OpsAI-Task13-07-002-Workspace，证据目录为 D:\Temp\OpsAI-Task13-07-002-Evidence，预定容器名为 opsai-task13-07-002-pg。'
-        - "Task 13-07 禁止使用真实 .env、正式数据库密码、正式 PostgreSQL 持久卷、共享实例或现有 OpsAI Compose 项目；隔离身份和 DATABASES/TEST 双重验证未通过时结论必须为 BLOCKED。"
+        - "apps/workflow/tests/test_pg_concurrency.py 的 Git 来源无法确认，SHA-256 为 08E6DAE26FFD8959592C47FB77BA5604B69A2543308F36CDB855C08D7E143E23；Task 13-07-002 只执行了隔离 Worktree 中哈希一致的副本，正式仓库原文件保持未跟踪、未修改、未暂存。"
+        - "Task 13-07-001 因指定 Worktree 和 Evidence 在门禁检查时已存在而 BLOCKED，未启动 PostgreSQL、Migration 或并发测试；001 现场继续原样封存。"
+        - "Task 13-07-002 已在批准基线 9fbc74843c339bc712ca59dc67e7bc28e22ef9d8 上完成一次执行：14 项、6 PASS、7 FAIL、1 ERROR、0 SKIPPED且未重跑，正式结论为 FAILED。"
+        - "Task 13-07-002 已确认 Submit/Reject 的 Article 行锁查询因联表加载可空 current_published_version 而触发 PostgreSQL 错误 FOR UPDATE cannot be applied to the nullable side of an outer join。"
+        - "Task 13-07 状态为 BLOCKED / unassigned，等待 Task 13-08 最小修复后再由负责人单独授权全新的 PostgreSQL 17.11 并发复验。"
+        - "Task 13-08 是唯一登记的局部后继修复例外，保持 READY / unassigned，不代表 Task 13 主任务全面开工；其业务代码修改须等待负责人批准本次治理 Commit 后的新完整 HEAD。"
+        - '001/002 Worktree 与 Evidence 必须原样保留；002 已停止容器不得操作或清理；正式仓库未跟踪测试文件 SHA-256 继续为 08E6DAE26FFD8959592C47FB77BA5604B69A2543308F36CDB855C08D7E143E23。'
 
   - id: "13-07"
     title: "PostgreSQL 17.11 一次性隔离并发与事务技术验收"
+    priority: MUST
+    status: BLOCKED
+    owner: unassigned
+    dependencies: []
+    objective: >
+      在一次性隔离 PostgreSQL 17.11 环境中验证既有 Submit、Reject、Approve/Publish、
+      幂等、审计和 Outbox 的并发与事务行为；001 阻断现场和 002 失败现场均作为历史证据保留。
+    acceptance:
+      - "Task 13-07-002 实际执行 14 项，结果必须如实登记为 6 PASS、7 FAIL、1 ERROR、0 SKIPPED，正式结论 FAILED。"
+      - "PostgreSQL 错误 FOR UPDATE cannot be applied to the nullable side of an outer join 及其 Submit/Reject 影响必须保留为根因证据。"
+      - "Task 13-07 保持 BLOCKED / unassigned，只有行锁缺陷修复完成且负责人另行授权全新 PostgreSQL 17.11 并发复验后才可解除。"
+      - "001 和 002 Worktree、Evidence、未跟踪文件及 002 已停止容器必须保持原样，不得覆盖、复用或清理。"
+      - "正式仓库中的 apps/workflow/tests/test_pg_concurrency.py 必须保持未跟踪、未修改、未暂存，SHA-256 保持固定。"
+    verification:
+      - "证据：D:\\Temp\\OpsAI-Task13-07-002-Evidence\\execution-results.md 记录 14 项及 6 passed、7 failures、1 error。"
+      - "证据：D:\\Temp\\OpsAI-Task13-07-002-Evidence\\final-state.md 记录 FAILED、根因、资源保留和正式仓库保护结果。"
+    result:
+      commits: []
+      verification:
+        - "Task 13-07-002：14 项执行，6 PASS、7 FAIL、1 ERROR、0 SKIPPED；未重跑。"
+        - "根因：Submit/Reject 的 Article select_for_update 查询联表加载可空 current_published_version，PostgreSQL 拒绝在外连接可空侧应用 FOR UPDATE。"
+        - "Approve/Publish 的 Article 加锁查询只联表加载 space，其主要并发场景通过；不纳入本次缺陷修改范围。"
+      notes:
+        - "项目负责人明确允许 Task 12 尚未封板时执行该局部技术验收例外；Task 12 与 Task 13 主任务状态不变。"
+        - "001 因既定 Worktree 和 Evidence 已存在而 BLOCKED；现场原样保留，未启动 PostgreSQL、Migration 或并发测试。"
+        - "002 使用批准基线 9fbc74843c339bc712ca59dc67e7bc28e22ef9d8 完成一次执行并进入 FAILED；不得在该现场修改代码、重跑、补验或提交。"
+        - "固定测试文件 SHA-256 为 08E6DAE26FFD8959592C47FB77BA5604B69A2543308F36CDB855C08D7E143E23。"
+        - '002 运行标识为 TASK13-07-ISOLATED-PG-002；隔离工作区为 D:\Temp\OpsAI-Task13-07-002-Workspace，证据目录为 D:\Temp\OpsAI-Task13-07-002-Evidence，已停止容器名为 opsai-task13-07-002-pg；全部保留用于审计。'
+    blocking:
+      reason: "Task 13-07-002 因 Submit/Reject 的可空关联行锁查询触发 PostgreSQL NotSupportedError，验收结论 FAILED。"
+      unblock_when: "Task 13-08 最小修复完成并形成独立本地代码 Commit，且项目负责人另行授权全新的 PostgreSQL 17.11 并发复验。"
+
+  - id: "13-08"
+    title: "PostgreSQL 可空关联行锁最小修复"
     priority: MUST
     status: READY
     owner: unassigned
     dependencies: []
     objective: >
-      在不改变 Task 12 的 IN_PROGRESS 状态和 Task 13 的 BACKLOG 状态、不追认六个既有
-      Task 13 提交历史授权或验收的前提下，登记一次性隔离 PostgreSQL 技术验收例外；
-      保留 001 BLOCKED 现场并登记全新的 002 候选合同；002 真实执行必须等待负责人批准
-      本次治理提交后的新完整 HEAD。
+      按负责人批准的方案 B，消除 Submit、Reject 中由 current_published_version 可空关联
+      造成的 PostgreSQL FOR UPDATE 错误；只调整 Article 加锁查询的关联加载，不扩大 Task 13 范围。
     acceptance:
-      - "Task 13-07 是当前唯一获准准备的一次性隔离技术验收例外，但本次 READY 不授权创建隔离资源、连接 PostgreSQL 或运行测试。"
-      - "001 Worktree、Evidence 及阻断记录必须保持原样；登记 002 不授权复用、修改、测试或清理 001。"
-      - "真实执行前必须重新核验 fusion/wagtail-poc 分支、负责人批准的新完整 HEAD、已跟踪工作区、Git 进行中状态及固定测试文件 SHA-256。"
-      - "正式仓库中的 apps/workflow/tests/test_pg_concurrency.py 必须保持未跟踪、未修改、未执行、未暂存；真实执行时只可在新授权下复制哈希一致的副本到全新隔离工作区。"
-      - "隔离执行只能使用 PostgreSQL 17.11 本地可信镜像、独立用户、独立数据库、非 5432 回环端口及 Django 自动创建的隔离测试数据库。"
-      - "禁止使用真实 .env、正式数据库密码、正式 PostgreSQL 命名卷、正式项目数据目录、共享数据库或现有 OpsAI Compose 项目。"
-      - "隔离身份、DATABASES/TEST 配置、PostgreSQL 版本、当前数据库、当前用户和服务端口任一核验失败时必须安全停止。"
-      - "测试失败时不得修改业务代码或原始测试换取 PASS；只保存脱敏证据并停止。"
+      - "从 Submit/Reject 的 Article 加锁查询 select_related 中移除 current_published_version，只保留 space；Article 行锁和事务边界必须保留。"
+      - "审核状态机、权限判断、幂等、Audit 与 Outbox 行为保持不变。"
+      - "不得改变 Model 或 Migration，不得修改 Approve/Publish，不得开发 HTTP/UI，不得修改正式数据库或原始 PostgreSQL 并发测试。"
+      - "未来代码修改只允许 apps/workflow/services.py、apps/workflow/tests/test_submit_service.py、apps/workflow/tests/test_reject_service.py。"
+      - "Submit/Reject 专项，以及审核、权限、幂等、Approve/Publish、Task 12 版本链相关回归必须通过。"
+      - "Django check、迁移一致性、Ruff、格式、git diff --check 和 Git 修改范围检查必须通过。"
+      - "完成后只创建一个独立本地代码 Commit；PostgreSQL 17.11 并发复验必须由负责人后续另行授权。"
     verification:
-      - "本次治理验证：只读核验 001 来源与状态，确认 002 目录、Worktree 登记和容器名未占用，并核对两份治理文件的身份、状态、授权边界、固定路径和 SHA-256 一致。"
-      - "未来真实验收：仅在负责人针对本次治理提交后新完整 HEAD 再次授权后，按 tasks/CURRENT_TASK.md 第 7.2 节的 002 合同执行。"
+      - "实施前：核验 fusion/wagtail-poc 分支、本次治理 Commit 后的新 40 位完整 HEAD、工作区及负责人逐次授权。"
+      - "实施中：只修改三个批准文件，并为 Submit/Reject 的最小查询修复补充定点回归。"
+      - "实施后：执行专项与相关回归、Django check、makemigrations --check --dry-run、Ruff、格式、git diff --check、范围和敏感信息检查。"
     result:
       commits: []
       verification: []
       notes:
-        - "项目负责人明确允许 Task 12 尚未封板时登记本例外；因此 dependencies 为空，不改变 Task 12 与 Task 13 主任务的正式依赖关系或状态。"
-        - "001 因既定 Worktree 和 Evidence 已存在而 BLOCKED；现场原样保留，未启动 PostgreSQL、migration 或并发测试。"
-        - "002 治理登记时 PostgreSQL 测试未执行、未验收；Docker 创建、PostgreSQL、migration 和业务测试均不得在本次治理任务中运行。"
-        - "固定测试文件 SHA-256 为 08E6DAE26FFD8959592C47FB77BA5604B69A2543308F36CDB855C08D7E143E23。"
-        - '002 运行标识为 TASK13-07-ISOLATED-PG-002；候选隔离工作区为 D:\Temp\OpsAI-Task13-07-002-Workspace，证据目录为 D:\Temp\OpsAI-Task13-07-002-Evidence，预定容器名为 opsai-task13-07-002-pg；本次治理任务不得创建这些资源。'
+        - "这是 Task 13-07 FAILED 后唯一登记的局部缺陷修复例外；Task 13 主任务继续 BACKLOG / unassigned。"
+        - "dependencies 为空是负责人对 Task 12 未封板、Task 13-07 已 BLOCKED 情况下的显式局部例外，不改变 Task 12 或 Task 13 主任务状态。"
+        - "本条 READY 只表示合同已登记，不授权业务代码修改；真实开发必须等待负责人批准本次治理 Commit 后的新完整 HEAD。"
 
   - id: "14"
     title: "开发反馈、下架和复审"
