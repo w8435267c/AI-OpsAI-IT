@@ -11,8 +11,8 @@ evidence_boundary:
   - "历史 Task 12/13 治理核验代码基线为 5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e；当时 GitHub 实时分支 HEAD 与其一致，Gitee 因 SSL 连接错误为 UNKNOWN，不得据此宣称当前三端同步。"
   - "Task 13-08 核心修复 Commit 为 1050b8fbf1fc384a79a90fcc86ae9320e5afb67e；只修改 services.py 与 Submit/Reject 两个测试文件，提交内 RED 2 项、GREEN 2 项及 199 项唯一回归均有可核验记录。"
   - "Task 13-08-001 在 PostgreSQL 17.11 隔离环境执行 14 项，结果为 13 PASS、1 FAIL；Task 13-08-002 使用修正 PG07 夹具执行 14 项，结果为 14 PASS、0 FAIL。"
-  - "正式仓库未跟踪 apps/workflow/tests/test_pg_concurrency.py 的 SHA-256 为 08E6DAE26FFD8959592C47FB77BA5604B69A2543308F36CDB855C08D7E143E23；Task 13-08-002 已验证修正副本为 4C994737B880CDFE1E75391B99C601F94D702F149B4EFBBEB6AC9C500260854A，二者是不同版本。"
-  - "Task 13-08-ARCHIVE 只登记 PG07 单文件归档候选；必须在本次治理 Commit 后基于新的完整 HEAD 另行授权，本轮不复制、修改、暂存或提交 PG07。"
+  - "PG07 归档前的正式仓库原始版本 SHA-256 为 08E6DAE26FFD8959592C47FB77BA5604B69A2543308F36CDB855C08D7E143E23；Task 13-08-002 已验证并最终归档的修正版本为 4C994737B880CDFE1E75391B99C601F94D702F149B4EFBBEB6AC9C500260854A，二者是不同版本。"
+  - "Task 13-08-ARCHIVE 已由单文件 Commit a066b8e158d53770b2f9dab5e2c7e70c87817975 完成；该提交仅新增 apps/workflow/tests/test_pg_concurrency.py，归档不构成 Task 13 主任务完成或其他业务执行授权。"
 
 tasks:
   - id: "8"
@@ -435,15 +435,15 @@ tasks:
       notes:
         - "六个提交按负责人决定保留并登记为已有实现、待治理确认与独立验收；代码已提交不等于正式验收通过。"
         - "ADR-0004 证明负责人选择 Reviewer Scope 方案 B；现有资料未发现六项实现各自完整的历史开工授权或负责人独立验收记录，本轮不作追认。"
-        - "Task 13 正式状态继续为 BACKLOG / unassigned；Task 13-07 历史验收、Task 13-08 已完成核心修复与 Task 13-08-ARCHIVE 归档候选均为局部例外，不代表 Task 13 全面开工、整体完成或六个既有提交已通过负责人验收。"
+        - "Task 13 正式状态继续为 BACKLOG / unassigned；Task 13-07 历史验收、Task 13-08 已完成核心修复与 Task 13-08-ARCHIVE 已完成归档均为局部例外，不代表 Task 13 全面开工、整体完成或六个既有提交已通过负责人验收。"
         - "尚缺 PostgreSQL 持久数据兼容预检、HTTP/UI、Outbox Worker/通知及负责人独立验收；13-08-002 的 14 PASS 是修正夹具下的隔离并发证据，不等于持久环境或 Task 13 整体验收。"
-        - "apps/workflow/tests/test_pg_concurrency.py 的 Git 来源无法确认，正式仓库原文件 SHA-256 为 08E6DAE26FFD8959592C47FB77BA5604B69A2543308F36CDB855C08D7E143E23，继续保持未跟踪、未修改、未暂存；已验证修正副本 SHA-256 为 4C994737B880CDFE1E75391B99C601F94D702F149B4EFBBEB6AC9C500260854A。"
+        - "apps/workflow/tests/test_pg_concurrency.py 归档前原始版本 SHA-256 为 08E6DAE26FFD8959592C47FB77BA5604B69A2543308F36CDB855C08D7E143E23；已验证修正版本 SHA-256 为 4C994737B880CDFE1E75391B99C601F94D702F149B4EFBBEB6AC9C500260854A，后者已由 Commit a066b8e158d53770b2f9dab5e2c7e70c87817975 正式纳入 Git。"
         - "Task 13-07-001 因指定 Worktree 和 Evidence 在门禁检查时已存在而 BLOCKED，未启动 PostgreSQL、Migration 或并发测试；001 现场继续原样封存。"
         - "Task 13-07-002 已在批准基线 9fbc74843c339bc712ca59dc67e7bc28e22ef9d8 上完成一次执行：14 项、6 PASS、7 FAIL、1 ERROR、0 SKIPPED且未重跑，正式结论为 FAILED。"
         - "Task 13-07-002 已确认 Submit/Reject 的 Article 行锁查询因联表加载可空 current_published_version 而触发 PostgreSQL 错误 FOR UPDATE cannot be applied to the nullable side of an outer join。"
         - "Task 13-07 历史状态保持 BLOCKED / unassigned；其暴露的缺陷已有 Task 13-08 核心修复和 13-08-002 的 14 PASS 后继证据，但不得据此改写历史 FAILED/BLOCKED 结论。"
-        - "Task 13-08 核心修复已 DONE；PG07 正式归档另由 Task 13-08-ARCHIVE 登记为 READY / unassigned，须等待负责人批准本次治理 Commit 后的新完整 HEAD。"
-        - '001/002 Worktree 与 Evidence 必须原样保留；002 已停止容器不得操作或清理；正式仓库未跟踪测试文件 SHA-256 继续为 08E6DAE26FFD8959592C47FB77BA5604B69A2543308F36CDB855C08D7E143E23。'
+        - "Task 13-08 核心修复与 PG07 后继归档均已 DONE；Task 13 主任务继续保持 BACKLOG / unassigned。"
+        - '001/002 Worktree 与 Evidence 必须原样保留；002 已停止容器不得操作或清理；归档前原始测试文件 SHA-256 继续作为历史证据保留为 08E6DAE26FFD8959592C47FB77BA5604B69A2543308F36CDB855C08D7E143E23。'
 
   - id: "13-07"
     title: "PostgreSQL 17.11 一次性隔离并发与事务技术验收"
@@ -459,7 +459,7 @@ tasks:
       - "PostgreSQL 错误 FOR UPDATE cannot be applied to the nullable side of an outer join 及其 Submit/Reject 影响必须保留为根因证据。"
       - "Task 13-07 保持历史 BLOCKED / unassigned；Task 13-08 后继修复与复验结果只能作为新证据登记，不自动改写本任务的历史 FAILED/BLOCKED 结论。"
       - "001 和 002 Worktree、Evidence、未跟踪文件及 002 已停止容器必须保持原样，不得覆盖、复用或清理。"
-      - "Task 13-07 历史任务本身不授权修改 apps/workflow/tests/test_pg_concurrency.py；在 Task 13-08-ARCHIVE 获负责人单独授权前，该文件必须保持未跟踪、未修改、未暂存，SHA-256 保持固定。"
+      - "Task 13-07 历史任务本身不授权修改 apps/workflow/tests/test_pg_concurrency.py；后续仅可由独立授权的 Task 13-08-ARCHIVE 归档，不得借 Task 13-07 改写历史证据。"
     verification:
       - "证据：D:\\Temp\\OpsAI-Task13-07-002-Evidence\\execution-results.md 记录 14 项及 6 passed、7 failures、1 error。"
       - "证据：D:\\Temp\\OpsAI-Task13-07-002-Evidence\\final-state.md 记录 FAILED、根因、资源保留和正式仓库保护结果。"
@@ -506,7 +506,7 @@ tasks:
         - "1050b8fbf1fc384a79a90fcc86ae9320e5afb67e"
       verification:
         - "核心修复只修改 services.py、test_submit_service.py 和 test_reject_service.py，移除 Submit/Reject 加锁查询对可空 current_published_version 的联表加载。"
-        - "Task 13-08-002 的 14 项 PostgreSQL 17.11 隔离复验全部通过；该结果依赖已验证修正夹具，不表示正式 PG07 文件已归档。"
+        - "Task 13-08-002 的 14 项 PostgreSQL 17.11 隔离复验全部通过；该结果依赖已验证修正夹具，正式归档由后继 Commit a066b8e158d53770b2f9dab5e2c7e70c87817975 独立完成。"
       notes:
         - "这是 Task 13-07 FAILED 后已完成的局部缺陷修复；Task 13 主任务继续 BACKLOG / unassigned。"
         - "dependencies 为空是负责人对 Task 12 未封板、Task 13-07 已 BLOCKED 情况下的显式局部例外，不改变 Task 12 或 Task 13 主任务状态。"
@@ -516,31 +516,35 @@ tasks:
   - id: "13-08-ARCHIVE"
     title: "PG07 已验证夹具正式归档"
     priority: MUST
-    status: READY
+    status: DONE
     owner: unassigned
     dependencies:
       - "13-08"
     objective: >
-      在负责人基于治理 Commit 后的新完整 HEAD 单独授权后，将 Task 13-08-002 已验证的
-      PG07 修正副本逐字节归档为正式测试文件，不重做核心修复，不生成第三个测试版本。
+      已按负责人针对精确基线的单独授权，将 Task 13-08-002 已验证的 PG07 修正副本
+      逐字节归档为正式测试文件；未重做核心修复，也未生成第三个测试版本。
     acceptance:
       - "唯一归档目标为 apps/workflow/tests/test_pg_concurrency.py，唯一允许来源为 D:\\Temp\\OpsAI-Task13-08-002-Workspace\\apps\\workflow\\tests\\test_pg_concurrency.py。"
       - "归档前来源 SHA-256 必须为 4C994737B880CDFE1E75391B99C601F94D702F149B4EFBBEB6AC9C500260854A，正式仓库原文件 SHA-256 必须为 08E6DAE26FFD8959592C47FB77BA5604B69A2543308F36CDB855C08D7E143E23。"
       - "两个摘要对应不同版本；不得修改原文件去匹配批准摘要，不得生成第三个未经批准的版本。"
       - "归档差异只能同步 PG07 初始 Article.title 与当前 PUBLISHED 版本标题，并复用 current_published 变量；不得改变 PG01～PG14 数量、并发路径或业务断言。"
       - "正式归档 Commit 只能包含这一测试文件，不得重复修改或运行 Task 13-08 核心修复。"
-      - "本治理轮不复制修正副本、不执行归档；执行前必须由负责人针对治理 Commit 后的新 40 位完整 HEAD 单独授权。"
+      - "归档在负责人针对完整 HEAD 8049e17eabf97148b42a6c6b0196ac098bf1613c 单独授权后执行，未扩大至业务代码、PostgreSQL 或 Task 13 核心开发。"
     verification:
-      - "归档前：核验 fusion/wagtail-poc、负责人批准的新完整 HEAD、工作区、两个完整 SHA-256 与 Task 13-08-002 的 14 PASS Evidence。"
-      - "归档中：确认目标与批准来源逐字节一致，精确 diff 仅为已批准的 PG07 夹具修正。"
-      - "归档后：执行 Python 编译、Ruff lint/格式、git diff --check、敏感信息、修改范围与暂存范围检查；单纯归档不冒充重新执行 PostgreSQL。"
+      - "归档前已核验 fusion/wagtail-poc、批准基线 8049e17eabf97148b42a6c6b0196ac098bf1613c、工作区、两个完整 SHA-256 与 Task 13-08-002 的 14 PASS Evidence。"
+      - "归档中已确认目标与批准来源逐字节一致，精确 diff 仅为已批准的 PG07 夹具修正；原始版本已在独立 Evidence 目录备份。"
+      - "归档后 Python 编译、Ruff lint、Ruff format check 与 Git 检查通过；本次归档没有重新执行 PostgreSQL，14/14 PASS 仍是 Task 13-08-002 的历史验证证据。"
     result:
-      commits: []
-      verification: []
+      commits:
+        - "a066b8e158d53770b2f9dab5e2c7e70c87817975"
+      verification:
+        - "父提交为 8049e17eabf97148b42a6c6b0196ac098bf1613c；Commit 仅新增 apps/workflow/tests/test_pg_concurrency.py。"
+        - "已归档文件 SHA-256 为 4C994737B880CDFE1E75391B99C601F94D702F149B4EFBBEB6AC9C500260854A，Git 提交统计为新增 993 行。"
+        - "Python 编译、Ruff lint、Ruff format check 与 Git 检查通过；未重新执行 PostgreSQL。"
       notes:
-        - "READY 只表示归档合同已登记，不构成执行授权、业务任务授权、PostgreSQL 授权或 Task 13 全面开工授权。"
-        - "正式仓库原始 PG07 文件继续保持未跟踪、未修改、未暂存；批准前不得复制、覆盖、重命名、删除或提交。"
-        - "归档完成前不得声称 PG07 已正式归档；HANDOFF 文本和已知哈希均不能代替负责人逐次授权。"
+        - "DONE 仅表示批准的 PG07 单文件已正式纳入 Git，不构成 PostgreSQL 授权、Task 13 全面开工授权或其他业务执行授权。"
+        - "归档前原始版本 SHA-256 为 08E6DAE26FFD8959592C47FB77BA5604B69A2543308F36CDB855C08D7E143E23，并已在独立 Evidence 目录保留备份；不得用归档结果改写历史失败证据。"
+        - "该任务不再是可领取的未完成任务；HANDOFF 文本不能授予 P3-UI-02 或其他任务执行权。"
 
   - id: "14"
     title: "开发反馈、下架和复审"

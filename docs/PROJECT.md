@@ -11,7 +11,7 @@
 | 项目定位 | 面向企业内部员工和 IT 运维团队、由公司独立部署和管理的 IT 运维知识库 |
 | 主要入口方向 | 钉钉工作台内的企业内部 H5 微应用；知识库平台自身负责内容、权限、搜索和审核等业务能力 |
 | 当前主要开发分支 | `fusion/wagtail-poc`，用于 Django 与 Wagtail 的融合验证；分支名是阶段性开发信息，不是不可变的项目身份 |
-| 当前开发阶段 | Task 12A～12E 历史成果已完成，Task 12 主任务仍为 `IN_PROGRESS / codex`；Task 13 六个底层实现提交及 Task 13-08 行锁核心修复已存在，PG07 正式归档仍待单独授权，Task 13 正式状态仍为 `BACKLOG / unassigned` |
+| 当前开发阶段 | Task 12A～12E 历史成果已完成，Task 12 主任务仍为 `IN_PROGRESS / codex`；Task 13 六个底层实现提交及 Task 13-08 行锁核心修复已存在，PG07 已由单文件 Commit 正式归档，Task 13 正式状态仍为 `BACKLOG / unassigned` |
 | 当前 PRD 基线 | `docs/02-PRD/产品需求文档PRD-V1.1A-钉钉集成核心试点版-优化稿.md`；V1.1 及调研、归档资料仅作历史参考 |
 
 当前主要本地工作目录是 `D:\Desktop\OpsAI\AI-OpsAI-IT-wagtail-poc`。该路径仅用于定位当前工作区，不表示项目只能在这台电脑或这个路径运行；接力开发时应先以实际仓库根目录为准。
@@ -114,7 +114,7 @@ OpsAI 需要可靠的内容编辑、修订历史、草稿与正式版本隔离�
 | `accounts` | 自定义用户、部门、多部门关系、内容用户组、系统角色和账号状态 | 正式基础模块；核心模型、角色同步、后台保护和本地模拟登录已实现 |
 | `knowledge` | 知识空间、分类、文章、版本、受众、审核记录和阅读权限查询 | 正式核心模块；Task 12 管理编辑链已实现；Task 13 已增加 Reviewer 空间 Scope、动作权限及审核唯一约束，但持久 PostgreSQL 迁移前置检查未完成 |
 | `search` | 查询规范化、受众过滤后的检索、排序、高亮和搜索日志 | P0 员工搜索已正式接入：首页入口、安全 Reader、结果页、确定性排序、分页、零结果和 KB 详情跳转已实现；高亮、标签/别名和搜索日志不属于当前 V1 已实现范围，PostgreSQL 17.11 隔离专项已通过 |
-| `workflow` | 状态转换、事务、幂等、Outbox 和后台任务编排 | 已有 Task 13 Submit、Reject、Approve/Publish Service、五类 Review Reader、Outbox 与幂等模型；Task 13-08 已修复 Submit/Reject 的 PostgreSQL 可空关联行锁问题并完成修正夹具隔离复验，正式 PG07 归档、HTTP/UI、Worker/通知及整体验收仍未完成 |
+| `workflow` | 状态转换、事务、幂等、Outbox 和后台任务编排 | 已有 Task 13 Submit、Reject、Approve/Publish Service、五类 Review Reader、Outbox 与幂等模型；Task 13-08 已修复 Submit/Reject 的 PostgreSQL 可空关联行锁问题并完成修正夹具隔离复验，PG07 已正式归档，HTTP/UI、Worker/通知及整体验收仍未完成 |
 | `dingtalk` | 钉钉免登、用户映射、通讯录同步、通知、回调和 API 适配 | 正式规划模块；当前主要是 App 骨架，正式钉钉链路尚未实现 |
 | `service_desk` | 统一 IT 服务入口、安全上下文、字段映射和失败降级 | 正式规划模块；当前主要是 App 骨架，不建设完整 ITSM |
 | `audit` | 敏感操作审计、请求上下文和变更前后快照 | 已有 Task 13 `AuditEvent` 追加式审计基础；完整运维与防篡改验收仍未完成，不承载业务状态机 |
@@ -139,7 +139,7 @@ OpsAI 需要可靠的内容编辑、修订历史、草稿与正式版本隔离�
 
 项目仍处于 OpsAI 内容能力建设阶段。现有 Django 主项目已经建立账号、知识核心数据模型、权限基础、健康检查、本地开发环境、受众过滤后的正式员工首页/分类/详情/P0 搜索，以及 Task 12E 管理端文章列表、创建、Draft 编辑、Autosave、Manual Save、历史、恢复与草稿预览链。Task 10、Task 11 均已完成；Task 12E 已 `DONE / ACCEPTED`，收口 Commit 为 `411535b32db4a40991e3c64228d018e9cebb17ed`。Task 12 继续为 `IN_PROGRESS / codex`，仍缺负责人最终验收、`390 × 844` 窄屏视觉验收或书面豁免、Gitee 当前远端核验和必要治理同步。
 
-Task 13 的六个既有提交已经实现 Reviewer 授权与约束、Audit/Outbox/幂等底座、提交审核、驳回、原子批准发布及审核 Reader，但统一按“已有实现、待治理确认与独立验收”登记。Task 13-08 核心修复 Commit `1050b8fbf1fc384a79a90fcc86ae9320e5afb67e` 已消除 Submit/Reject 的可空关联行锁查询，提交内 199 项唯一回归通过；13-08-001 为 13 PASS、1 FAIL，13-08-002 使用修正 PG07 夹具达到 14 PASS、0 FAIL。正式 PG07 文件仍未跟踪且尚未归档。Task 13 正式状态保持 `BACKLOG / unassigned`，仍缺持久数据兼容预检、HTTP/UI、Worker/通知和负责人独立整体验收。Task 12 V1 的正式内容权威保持 `Article + ArticleVersion`，不正式接入 Wagtail。
+Task 13 的六个既有提交已经实现 Reviewer 授权与约束、Audit/Outbox/幂等底座、提交审核、驳回、原子批准发布及审核 Reader，但统一按“已有实现、待治理确认与独立验收”登记。Task 13-08 核心修复 Commit `1050b8fbf1fc384a79a90fcc86ae9320e5afb67e` 已消除 Submit/Reject 的可空关联行锁查询，提交内 199 项唯一回归通过；13-08-001 为 13 PASS、1 FAIL，13-08-002 使用修正 PG07 夹具达到 14 PASS、0 FAIL。修正 PG07 已由 Commit `a066b8e158d53770b2f9dab5e2c7e70c87817975` 作为唯一文件正式归档，SHA-256 为 `4C994737B880CDFE1E75391B99C601F94D702F149B4EFBBEB6AC9C500260854A`；该归档未重新执行 PostgreSQL。Task 13 正式状态保持 `BACKLOG / unassigned`，仍缺持久数据兼容预检、HTTP/UI、Worker/通知和负责人独立整体验收。Task 12 V1 的正式内容权威保持 `Article + ArticleVersion`，不正式接入 Wagtail。
 
 这些实验形成了可继续推进的稳定技术证据，但没有改变正式项目配置和生产数据库边界。员工 P0 搜索与 Task 12E 管理端知识编辑链已进入正式 Django 业务路径；Task 12D 已完成 SQLite 版本链验证和 PostgreSQL 17.11 临时并发补证，Task 12E-09A 已使用仓库外独立 SQLite 与真实 Chromium 完成主链、Employee 隔离和双标签 CAS 验收。上述证据均不等于持久数据库或生产化验证。当前不能声称 Wagtail 融合、钉钉免登、附件、审核发布、服务跳转或完整内容生命周期已经生产上线。
 
@@ -172,8 +172,8 @@ Task 13 的六个既有提交已经实现 Reviewer 授权与约束、Audit/Outbo
 | `docs/PROJECT.md` | 这个项目是什么？ | 本文件；保存稳定项目身份、边界和技术关系 |
 | `docs/PROJECT_STATE.md` | 项目现在做到哪里？ | 已存在；保存当前阶段、环境、验证、阻塞和风险证据 |
 | `tasks/TASKS.yaml` | 项目有哪些任务、各是什么状态？ | 已存在；登记任务池、依赖、状态和结果证据 |
-| `tasks/CURRENT_TASK.md` | 当前 AI 唯一应该处理什么任务？ | 已存在；Task 12 为 `IN_PROGRESS / codex`，Task 13-08 核心修复已完成，Task 13-08-ARCHIVE 仅登记为未获执行授权的后继候选 |
-| `docs/HANDOFF.md` | 上一个 AI 做到哪里，下一 AI 如何继续？ | 已存在；记录 Task 12 剩余封板条件、Task 13-08 完成证据、PG07 未跟踪现场及后续逐次授权边界；不构成自动执行授权 |
+| `tasks/CURRENT_TASK.md` | 当前 AI 唯一应该处理什么任务？ | 已存在；Task 12 为 `IN_PROGRESS / codex`，Task 13-08 核心修复与 Task 13-08-ARCHIVE 归档均已完成；P3-UI-02 仅为未获执行授权的试点候选 |
+| `docs/HANDOFF.md` | 上一个 AI 做到哪里，下一 AI 如何继续？ | 已存在；记录 Task 12 剩余封板条件、Task 13-08 与 PG07 归档证据及后续逐次授权边界；不构成自动执行授权 |
 
 `.ai/reports/`、`.ai/runs/`、`outputs/`、`tasks/blocked/` 和 `tasks/completed/` 已预留目录，但目录存在不等于上述状态、任务或交接文件已经创建。
 
