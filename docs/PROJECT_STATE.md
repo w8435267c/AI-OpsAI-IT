@@ -6,16 +6,16 @@
 
 | 项目 | 当前状态 |
 | --- | --- |
-| 快照日期 | 2026-10-18 |
+| 快照日期 | 2026-10-25 |
 | 当前工作区 | `D:\Desktop\OpsAI\AI-OpsAI-IT-wagtail-poc` |
 | 当前分支 | `fusion/wagtail-poc` |
-| 本轮治理核验代码基线 HEAD | `5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e` |
-| 远端实时核验 | GitHub `fusion/wagtail-poc` 为 `5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e`；Gitee 因 SSL 错误为 `UNKNOWN` |
-| 当前阶段 | Task 12/13 治理对齐；完成后 Task 12 仍为唯一当前业务任务 |
+| 本轮治理起始基线 HEAD | `1050b8fbf1fc384a79a90fcc86ae9320e5afb67e` |
+| 远端实时核验 | 本轮未联网核验 GitHub 或 Gitee；不得沿用历史远端状态宣称当前三端同步 |
+| 当前阶段 | Task 13-08 核心修复状态对账与 PG07 归档任务拆分；不授权归档或其他业务开发 |
 | 正式技术主体 | Python 3.13 + Django 5.2 LTS 模块化单体 |
 | Wagtail 状态 | 融合方向已确认，F02～F08 已形成隔离 PoC 证据，尚未进入正式根依赖、正式 settings 或正式路由 |
 | 电脑 B 环境 | Python、正式项目依赖、WSL 2、Docker Desktop、Docker Engine 和 Docker Compose 已恢复；根目录 `.env` 存在、被 Git 忽略且未跟踪，内容与适用性未验证 |
-| 当前接力元数据任务 | Task 12/13 历史成果登记与治理对齐；仅文档及一次本地 Commit |
+| 当前接力元数据任务 | Task 13-08 完成证据登记与 Task 13-08-ARCHIVE 合同拆分；仅五份治理文档及一次本地 Commit |
 | 最近完成开发 | Task 12E 管理端知识编辑链已 `DONE / ACCEPTED` |
 | 当前开发任务 | Task 12“开发文章创建、草稿和版本保存”，`IN_PROGRESS / codex` |
 | Task 10 功能 | PASS |
@@ -26,10 +26,10 @@
 | Task 12D PostgreSQL 并发补证 | PASS；PostgreSQL 17.11、临时端口 15432、tmpfs、六类竞争与 Lock wait 均通过，资源已清理；不等同 8J |
 | Task 12E 真实浏览器验收 | `PASS_WITH_VISUAL_FINDINGS`；P0/P1/P2 均为 0，P3 为 2 |
 | 当前业务主线 | Task 12A～12E 已完成；Task 12E 收口 Commit 为 `411535b32db4a40991e3c64228d018e9cebb17ed`；Task 12 主任务尚未正式封板 |
-| Task 13 代码现状 | 六个既有提交已实现权限/Schema、审计/Outbox/幂等、提交、驳回、批准发布及 Reader；统一登记为已有实现、待治理确认与独立验收 |
-| 当前交接状态 | Task 12 保持 `IN_PROGRESS / codex`；Task 13 保持 `BACKLOG / unassigned`，Task 13-07 仅为未授权候选技术验收 |
+| Task 13 代码现状 | 六个既有提交保留；Task 13-08 核心修复 Commit `1050b8fbf1fc384a79a90fcc86ae9320e5afb67e` 已完成并有修正夹具 PostgreSQL 14 PASS 证据，Task 13 主任务仍未完成 |
+| 当前交接状态 | Task 12 保持 `IN_PROGRESS / codex`；Task 12E 保持 `DONE / ACCEPTED`；Task 13 保持 `BACKLOG / unassigned`；Task 13-07 历史 `BLOCKED`；Task 13-08-ARCHIVE 为 `READY / unassigned` 且未获执行授权 |
 
-本快照的总体结论是：Task 10、Task 11 均已正式 `DONE / codex`。Task 12A～12E 的历史成果保留，Task 12E 为 `DONE / ACCEPTED`，但 Task 12 主任务继续为 `IN_PROGRESS / codex`；正式封板仍缺负责人最终验收、`390 × 844` 窄屏视觉验收或负责人书面豁免、Gitee 当前远端 HEAD 核验及必要治理文件同步。Task 13 六个提交已进入当前历史，但只登记为“已有实现、待治理确认与独立验收”；现有资料未证明其完整历史开工授权，也没有 PostgreSQL 并发专项、HTTP/UI 或负责人独立验收。正式内容权威保持 `Article + ArticleVersion`，8J 仍为 `BLOCKED / unassigned`。
+本快照的总体结论是：Task 10、Task 11 均已正式 `DONE / codex`。Task 12A～12E 的历史成果保留，Task 12E 为 `DONE / ACCEPTED`，但 Task 12 主任务继续为 `IN_PROGRESS / codex`。Task 13 的六个底层提交仍只登记为已有实现；Task 13-08 局部核心修复已经完成，13-08-002 在修正夹具下为 PostgreSQL 14 PASS，但正式 PG07 文件尚未归档，Task 13 整体也没有完成。正式内容权威保持 `Article + ArticleVersion`，8J 仍为 `BLOCKED / unassigned`。
 
 ## 2. 状态证据规则
 
@@ -186,7 +186,8 @@ Task 10 的 10A～10E 分别对应 Commit `cf8bf1ff1692dedd69e5fbf97f0632a460d66
 - 旧内容批量迁移、正式切换、失败恢复和回退方案。
 - PostgreSQL 下的查询、排序、迁移状态、数据库注释和 Wagtail 行为验证。
 - 并发写入、锁策略和冲突处理；现有 `atomic()` 不能单独证明并发安全。
-- Task 13 的 HTTP/UI、审核工作台、Outbox Worker/通知发送、持久数据库迁移前置检查、真实 PostgreSQL 并发/锁/隔离验收及负责人独立验收。Service 与 Reader 底层实现已存在，不得再描述为“尚未开始”。
+- Task 13 的 HTTP/UI、审核工作台、Outbox Worker/通知发送、持久数据库迁移前置检查及负责人独立整体验收。Service 与 Reader 底层实现及 Task 13-08 行锁核心修复已存在，不得再描述为“尚未开始”。
+- PG07 正式测试归档尚未完成：正式仓库原文件 SHA-256 为 `08E6DAE26FFD8959592C47FB77BA5604B69A2543308F36CDB855C08D7E143E23`，已验证修正副本为 `4C994737B880CDFE1E75391B99C601F94D702F149B4EFBBEB6AC9C500260854A`；归档须另行授权。
 - 附件与完整审核发布生命周期；员工首页、分类、详情、P0 搜索和 Task 12E 管理端知识编辑链已完成。
 - 钉钉免登、通讯录同步、工作通知及真实钉钉联调。
 - `workflow` 已有 Task 13 Service/Reader/Outbox/幂等基础，`audit` 已有 AuditEvent 基础；两者的完整 HTTP/UI、Worker 与运行闭环仍未形成。`dingtalk`、`service_desk` 仍主要处于骨架或规划状态，`search` 的标签/别名、高亮和日志能力尚未纳入 V1。
@@ -204,7 +205,7 @@ Task 10 的 10A～10E 分别对应 Commit `cf8bf1ff1692dedd69e5fbf97f0632a460d66
 
 - 仓库迁移文件和历史报告不能证明电脑 B 的持久数据库已应用相同迁移。
 - Wagtail PoC 使用 SQLite 内存库和合成数据，不能外推为 PostgreSQL 或生产可用。
-- 正式员工首页、分类、详情、P0 搜索读取路径和 Task 12E 管理端知识编辑链已经形成；Task 12D 的 SQLite 版本链整体验证与 PostgreSQL 17.11 真实并发补证均已通过，Task 12E-09A 真实浏览器主链也已通过。Task 13 已有发布事务、审核证据和 Reader 的底层实现，但 HTTP/UI、Worker、PostgreSQL 并发专项、持久环境与独立验收仍未形成完整端到端闭环；Task 12E 窄屏视觉、附件和生产容量仍未验证。
+- 正式员工首页、分类、详情、P0 搜索读取路径和 Task 12E 管理端知识编辑链已经形成；Task 12D 的 SQLite 版本链整体验证与 PostgreSQL 17.11 真实并发补证均已通过，Task 12E-09A 真实浏览器主链也已通过。Task 13 已有发布事务、审核证据和 Reader 的底层实现，Task 13-08-002 的修正夹具隔离并发 14 项通过，但 PG07 尚未正式归档，HTTP/UI、Worker、持久环境与独立整体验收仍未形成完整端到端闭环；Task 12E 窄屏视觉、附件和生产容量仍未验证。
 - Task 12D 已覆盖六类真实竞争与 Lock wait；更大规模批量数据、生产失败恢复和正式切换仍缺少实际运行证据。
 
 ### 9.3 已知技术债与待决策项
@@ -233,13 +234,15 @@ Task 10 的 10A～10E 分别对应 Commit `cf8bf1ff1692dedd69e5fbf97f0632a460d66
 - Task 12E-09A 真实 Chromium 验收为 `PASS_WITH_VISUAL_FINDINGS`：Manage → Create → Edit → Autosave → Manual Save → History → Restore → Preview 主链、Employee Published-only 隔离和双标签 CAS 冲突均 PASS；P0/P1/P2 为 0，P3 为 2。Task 12E 当前为 `DONE / ACCEPTED`。
 - Task 12E-09B 收口 Commit 为 `411535b32db4a40991e3c64228d018e9cebb17ed`；其父提交为 `4e4a0bd25abed587c587c8bfc419b3ebe583198d`，仅更新验收与治理文档。
 - Task 13 六个线性提交为 `031a4fca26cebcaf5b67091142ac6b3b82c9cbaa`、`95af9ca7c06eced103a7a034482959c97df04852`、`6d6bb9808ef68b87de63cf1d1762105aa9f8485a`、`e88bf8e065807343a5b78a0a49c29d0824980b67`、`e422b16ba0826064a629604a217b93978101d5f7`、`5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e`。负责人决定保留，但统一按已有实现、待治理确认与独立验收登记，不追认现有资料未证明的历史开工授权。
-- 实时只读远端核验：本地代码基线与 GitHub `fusion/wagtail-poc` 均为 `5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e`；Gitee 查询发生 `OpenSSL SSL_ERROR_SYSCALL`，结果为 `UNKNOWN`。本地远端跟踪引用过时，不作为当前同步证据。
+- Task 13-08 核心修复 Commit `1050b8fbf1fc384a79a90fcc86ae9320e5afb67e` 只修改 `apps/workflow/services.py` 及 Submit/Reject 两个测试文件；提交内 RED 2 项、GREEN 2 项及 199 项唯一回归通过。
+- Task 13-08-001 为 PostgreSQL 13 PASS、1 FAIL；Task 13-08-002 的修正夹具为 14 PASS、0 FAIL。二者均为保留的隔离 Evidence，不得改写为正式文件已经归档。
+- 本轮未联网核验远端；历史 GitHub/Gitee 状态不作为当前同步证据。
 - Task 12 当前保持 `IN_PROGRESS / codex`；Task 13 保持 `BACKLOG / unassigned`，任务 8J 保持 `BLOCKED / unassigned`。
 - Task 12D-00 为 `DONE / SYNCED`，12D-01 为 `DESIGN PASS`，12D-02～12D-06 均为 `DONE / SYNCED`；PostgreSQL 17.11 临时并发补证使用端口 15432 与 tmpfs，六类竞争和 Lock wait 均 PASS，资源已完全清理，且不构成 8J 验收。
 
 ## 11. 下一步边界
 
-Task 11 已正式 `DONE / codex`。Task 12 继续为 `IN_PROGRESS / codex`，Task 12A～12E 已完成，Task 12E 为 `DONE / ACCEPTED`；Task 12 主任务只有在负责人最终验收、`390 × 844` 窄屏视觉验收或书面豁免、Gitee 当前远端 HEAD 核验及必要治理同步完成后，才具备申请正式封板的条件。Task 13 六个既有提交保留，正式状态仍为 `BACKLOG / unassigned`。Task 13-07 是下一候选技术验收任务，但尚未授权执行。
+Task 11 已正式 `DONE / codex`。Task 12 继续为 `IN_PROGRESS / codex`，Task 12A～12E 已完成，Task 12E 为 `DONE / ACCEPTED`；Task 12 主任务只有在负责人最终验收、`390 × 844` 窄屏视觉验收或书面豁免、Gitee 当前远端 HEAD 核验及必要治理同步完成后，才具备申请正式封板的条件。Task 13 六个既有提交保留，正式状态仍为 `BACKLOG / unassigned`；Task 13-08 核心修复为 `DONE / unassigned`。下一候选只剩 Task 13-08-ARCHIVE 的单文件归档，但必须等待负责人针对本次治理 Commit 后的新完整 HEAD 单独授权。
 
 当前边界继续禁止自动执行：
 
@@ -249,5 +252,5 @@ Task 11 已正式 `DONE / codex`。Task 12 继续为 `IN_PROGRESS / codex`，Tas
 - 把 Wagtail 加入正式根依赖、settings 或路由；
 - 创建 Task 11C、修改已完成的 Task 11 / Task 12E 业务范围，或实现审核发布、附件、钉钉或生产部署；
 - 创建 Article 假数据或绕过正式编号规则；
-- 继续开发 Task 13、执行 Task 13-07、运行或暂存未跟踪 `apps/workflow/tests/test_pg_concurrency.py`、修复两项非阻塞 P3，或扩大已冻结的 Task 12 V1 范围；
+- 继续开发 Task 13、重做 Task 13-08、自动恢复 Task 13-07、复制/修改/暂存未跟踪 `apps/workflow/tests/test_pg_concurrency.py`、修复两项非阻塞 P3，或扩大已冻结的 Task 12 V1 范围；
 - 未经单独授权创建 Commit 或 Push。
