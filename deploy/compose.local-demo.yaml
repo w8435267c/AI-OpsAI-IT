@@ -1,0 +1,116 @@
+# LOCAL-DEMO-DATA-01：与现有 opsai-it 环境完全隔离的本地演示环境。
+# 必须从仓库根目录显式指定本文件、外部 env 文件和固定项目名启动。
+name: opsai-local-demo
+
+x-demo-app: &demo-app
+  image: opsai-local-demo-web:${LOCAL_DEMO_IMAGE_TAG:?LOCAL_DEMO_IMAGE_TAG is required}
+  build:
+    context: ..
+    # 当前 Docker Engine 无法从容器网络访问 PyPI。固定复用已核验的本地依赖镜像，
+    # 在新镜像层中清空旧 /app 后只复制当前构建上下文；不复用原业务容器或挂载。
+    dockerfile_inline: |
+      FROM opsai-it-web:latest
+      USER root
+      RUN rm -rf /app && mkdir -p /app/private_media && chown -R 10001:10001 /app
+      WORKDIR /app
+      COPY --chown=10001:10001 . .
+      RUN test ! -e /app/.env
+      LABEL com.opsai.environment="local-demo" \
+            com.opsai.task="LOCAL-DEMO-DATA-01" \
+            com.opsai.authorized-head="04d9cea907d3b35e143a3475568aa05291115243"
+      USER appuser
+      EXPOSE 8000
+      CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+  labels:
+    com.opsai.environment: local-demo
+    com.opsai.task: LOCAL-DEMO-DATA-01
+    com.opsai.authorized-head: ${LOCAL_DEMO_AUTHORIZED_HEAD:?LOCAL_DEMO_AUTHORIZED_HEAD is required}
+
+services:
+  db:
+    image: postgres:17.11-alpine3.24
+    environment:
+      POSTGRES_DB: ${LOCAL_DEMO_POSTGRES_DB:?LOCAL_DEMO_POSTGRES_DB is required}
+      POSTGRES_USER: ${LOCAL_DEMO_POSTGRES_USER:?LOCAL_DEMO_POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${LOCAL_DEMO_POSTGRES_PASSWORD:?LOCAL_DEMO_POSTGRES_PASSWORD is required}
+      TZ: UTC
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - demo_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    labels:
+      com.opsai.environment: local-demo
+      com.opsai.task: LOCAL-DEMO-DATA-01
+
+  media-init:
+    <<: *demo-app
+    user: "0:0"
+    command: ["sh", "-c", "chown -R 10001:10001 /app/private_media"]
+    volumes:
+      - private_media:/app/private_media
+    network_mode: none
+    restart: "no"
+
+  web:
+    <<: *demo-app
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.development
+      DJANGO_SECRET_KEY: ${LOCAL_DEMO_DJANGO_SECRET_KEY:?LOCAL_DEMO_DJANGO_SECRET_KEY is required}
+      DJANGO_ALLOWED_HOSTS: 127.0.0.1,localhost
+      DJANGO_DEV_LOGIN_ENABLED: "true"
+      DJANGO_TIME_ZONE: Asia/Shanghai
+      POSTGRES_DB: ${LOCAL_DEMO_POSTGRES_DB:?LOCAL_DEMO_POSTGRES_DB is required}
+      POSTGRES_USER: ${LOCAL_DEMO_POSTGRES_USER:?LOCAL_DEMO_POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${LOCAL_DEMO_POSTGRES_PASSWORD:?LOCAL_DEMO_POSTGRES_PASSWORD is required}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      OPSAI_LOCAL_DEMO: "true"
+      OPSAI_LOCAL_DEMO_PROJECT: opsai-local-demo
+      OPSAI_LOCAL_DEMO_INSTANCE: local-demo-data-01
+      OPSAI_LOCAL_DEMO_AUTHORIZED_HEAD: ${LOCAL_DEMO_AUTHORIZED_HEAD:?LOCAL_DEMO_AUTHORIZED_HEAD is required}
+    ports:
+      - "127.0.0.1:8001:8000"
+    volumes:
+      - private_media:/app/private_media
+    networks:
+      - demo_network
+    depends_on:
+      db:
+        condition: service_healthy
+      media-init:
+        condition: service_completed_successfully
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    init: true
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  postgres_data:
+    name: opsai-local-demo-postgres-data
+    labels:
+      com.opsai.environment: local-demo
+      com.opsai.task: LOCAL-DEMO-DATA-01
+  private_media:
+    name: opsai-local-demo-private-media
+    labels:
+      com.opsai.environment: local-demo
+      com.opsai.task: LOCAL-DEMO-DATA-01
+
+networks:
+  demo_network:
+    name: opsai-local-demo-network
+    labels:
+      com.opsai.environment: local-demo
+      com.opsai.task: LOCAL-DEMO-DATA-01
