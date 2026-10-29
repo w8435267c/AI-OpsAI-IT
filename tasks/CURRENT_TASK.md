@@ -1,29 +1,77 @@
 # OpsAI Current Task
 
-> 当前业务主任务仍为 Task 12“开发文章创建、草稿和版本保存”，状态为 `IN_PROGRESS / codex`。Task 13-08 核心修复与 Task 13-08-ARCHIVE 单文件归档均已登记为 `DONE / unassigned`；Task 12E 保持 `DONE / ACCEPTED`，Task 13 主任务保持 `BACKLOG / unassigned`。P3-UI-02 仅是下一项试点候选，尚未获得独立执行授权。
+> 当前唯一下一待批准任务为 `LOCAL-DEMO-READONLY-01`。本文件只完成任务登记，不授予 Docker、数据库、HTTP 或业务验收执行权限；后续必须由项目负责人基于本次治理 Commit 的新完整 HEAD 单独授权。
+>
+> Task 12“开发文章创建、草稿和版本保存”因本地演示只读验收优先而暂缓，保持 `IN_PROGRESS / codex` 历史状态，不标记为 `DONE`、`COMPLETED`、`ACCEPTED` 或 `SYNCED`；其历史成果、验收证据和未完成条件全部保留，待只读验收后由负责人决定恢复时间。
 
-## 1. 任务身份
+## 1. 当前唯一下一待批准任务
+
+| 项目 | 当前值 |
+| --- | --- |
+| 任务编号 | `LOCAL-DEMO-READONLY-01` |
+| 任务名称 | OpsAI-IT 本地知识库数据及功能只读验收 |
+| 当前状态 | `AWAITING EXACT HEAD AUTHORIZATION` |
+| 实施权限 | `NOT GRANTED` |
+| 实施 HEAD | `PENDING GOVERNANCE COMMIT HEAD` |
+| 治理登记日期 | `2026-10-29` |
+| 当前分支 | `fusion/wagtail-poc` |
+| 治理授权基线 | `5f19144e7a3ebb9377c498ec02d32288168e1700` |
+| 任务目标 | 确认 Windows 本机知识库的实际数据、可用功能、员工端无知识内容的原因，以及距离领导演示仍缺少的工作。 |
+| 当前允许动作 | 仅完成 `tasks/CURRENT_TASK.md` 的本次治理登记及最多一个本地 Commit；提交后立即停止。 |
+
+## 2. 后续计划只读范围与数据库保护
+
+只有项目负责人基于本次治理 Commit 的新完整 HEAD 独立授权后，才允许执行以下操作：
+
+1. 只读检查 Docker 容器状态、Django 配置、迁移状态和 Web 容器代码版本。
+2. 使用 `SELECT` 或 Django ORM 统计知识空间、分类、文章、版本、审核、受众和用户等现有记录。
+3. 只读核对文章发布状态、员工可见条件、搜索、审核、发布和详情路由及实现。
+4. 执行不会产生业务写入的 HTTP 验证，并输出功能验收报告与演示数据建议。
+
+数据库读取必须使用数据库只读角色、只读连接、`READ ONLY` 事务或经实际回读证明等效的数据库级防写保护。必须在查询前验证保护确实生效；如果不能可靠建立或验证只读约束，立即停止数据库操作并报告，不得仅依赖操作人员承诺“不写数据”。
+
+后续继续禁止：
+
+- `INSERT`、`UPDATE`、`DELETE`、`TRUNCATE`、DDL、`migrate`，以及任何会修改持久数据库的测试或命令；
+- 创建、修改、审核、发布或删除文章及演示数据；
+- 修改用户、密码、权限、源码、模板、CSS、配置、Migration、容器、镜像或数据卷；
+- 发送真实外部通知，执行 Git Push、Merge、Reset、Clean，或启动 Autopilot LIVE。
+
+## 3. 后续验收目标
+
+`LOCAL-DEMO-READONLY-01` 后续必须基于实际只读证据回答：
+
+1. 各类业务记录数量和员工首页没有知识内容的真实原因；
+2. 已可用功能、只有页面但尚未形成业务闭环的功能，以及明确缺陷；
+3. 当前 Web 容器是否使用当前项目代码；
+4. 创建、审核、发布、搜索和详情的正确业务入口；
+5. 是否适合在隔离数据库准备演示数据，以及是否适合向领导展示；
+6. 如果尚不适合展示，最短剩余任务是什么。
+
+结果必须区分 `PASS`、`FAIL`、`NOT TESTED`；代码存在不能替代实际业务流程验收。
+
+## 4. Task 12 暂缓状态与历史身份
 
 | 项目 | 当前值 |
 | --- | --- |
 | 任务编号 | `Task 12` |
 | 任务名称 | 开发文章创建、草稿和版本保存 |
-| 优先级 | `MUST` |
-| 当前状态 | `IN_PROGRESS / codex`；Task 12A～12E 已完成，仍待主任务最终封板条件 |
-| 当前负责人 | `codex` |
-| 治理登记日期 | `2026-10-25` |
+| 优先级 | `MUST`；因本地演示只读验收优先而暂缓 |
+| 当前状态 | `PAUSED / IN_PROGRESS HISTORY PRESERVED`；Task 12A～12E 已完成，主任务最终封板条件仍未满足 |
+| 当前负责人 | `codex`；暂停期间不得自动继续 |
+| 原治理登记日期 | `2026-10-25` |
+| 暂缓登记日期 | `2026-10-29` |
 | 局部例外 | Task 13-08 核心修复与 Task 13-08-ARCHIVE 归档已完成；二者不代表 Task 13 全面开工或完成 |
-| 当前分支 | `fusion/wagtail-poc` |
-| 本轮治理起始 HEAD | `a066b8e158d53770b2f9dab5e2c7e70c87817975` |
+| 原治理起始 HEAD | `a066b8e158d53770b2f9dab5e2c7e70c87817975` |
 | PG07 归档证据 | Commit `a066b8e158d53770b2f9dab5e2c7e70c87817975` 仅新增 `apps/workflow/tests/test_pg_concurrency.py`；父提交为 `8049e17eabf97148b42a6c6b0196ac098bf1613c` |
-| 正式任务状态 | Task 12 为 `IN_PROGRESS / codex`；Task 13 为 `BACKLOG / unassigned` |
+| 正式任务状态 | Task 12 保持未完成；Task 13 保持 `BACKLOG / unassigned` |
 | 已完成核心修复 | Commit `1050b8fbf1fc384a79a90fcc86ae9320e5afb67e` 从 Submit/Reject 的 Article 加锁查询中移除可空 `current_published_version` 联表，只保留 `space` |
 | 已归档 PG07 | `apps/workflow/tests/test_pg_concurrency.py` 已纳入 Git；SHA-256 `4C994737B880CDFE1E75391B99C601F94D702F149B4EFBBEB6AC9C500260854A`，Git 提交统计新增 993 行 |
 | 历史原始版本 | 归档前原始文件 SHA-256 为 `08E6DAE26FFD8959592C47FB77BA5604B69A2543308F36CDB855C08D7E143E23`，已在独立 Evidence 目录备份 |
 | P3-UI-02 | 下一项试点候选；不是 `READY`，不是当前任务，未获执行授权 |
-| 当前允许动作 | 仅完成本次五份治理文档状态收口及一个本地治理 Commit；不得开始 P3-UI-02 或其他业务开发。 |
+| 恢复条件 | 完成 `LOCAL-DEMO-READONLY-01` 后，由负责人基于届时完整 HEAD 单独决定是否恢复 Task 12。 |
 
-## 2. 已完成阶段
+## 5. Task 12 已完成阶段
 
 | 阶段 | 内容 | 状态 |
 | --- | --- | --- |
@@ -47,7 +95,7 @@
 | 13-08-002 | 修正 PG07 夹具 PostgreSQL 复验：14 PASS、0 FAIL | `PASS / EVIDENCE PRESERVED` |
 | 13-08-ARCHIVE | PG07 已验证修正夹具单文件归档，Commit `a066b8e158d53770b2f9dab5e2c7e70c87817975` | `DONE` |
 
-## 3. Task 12D 交接摘要
+## 6. Task 12D 交接摘要
 
 - autosave 使用 `expected_lock_version` 做乐观 CAS；过期 token 明确冲突，不采用 last-write-wins。
 - manual save 将 `DRAFT(n)` 固化为不可变 `SAVED(n)`，并创建新的工作 `DRAFT`。
@@ -57,13 +105,13 @@
 - Task 12D 不改变 `current_published_version`；员工读取仍只使用正式 `PUBLISHED` 版本。
 - SQLite 版本链整体验证通过；PostgreSQL 17.11 真实并发验证通过。
 
-## 4. PostgreSQL 证据边界
+## 7. PostgreSQL 证据边界
 
 Task 12D-06 在 PostgreSQL 17.11 仓库外临时隔离环境完成验证：端口 `15432`、存储为 `tmpfs`，六类真实竞争与 Lock wait 均为 PASS，临时验证资源已完全清理。
 
 该证据不等于 8J 的真实持久 PostgreSQL 验证，不证明正式数据库或生产环境已经验收。真实 `.env` 的内容、来源、完整性和适用性仍未验证；8J 继续为 `BLOCKED / unassigned`。
 
-## 5. Task 12E 完成与验收摘要
+## 8. Task 12E 完成与验收摘要
 
 Task 12E 已完成以下范围：
 
@@ -78,9 +126,9 @@ Task 12E 累计自动化证据为 `717 passed`、`9 skipped`、`571 subtests`、
 
 两项 P3 分别为 Create 表单视觉一致性和 Edit 页“预览草稿”/“保存版本并继续编辑”操作层级，均为 `BACKLOG / non-blocking`，本轮不修复。窄屏验收为 `NOT_EXECUTED_BROWSER_CAPABILITY`，不得宣称移动端视觉 PASS。
 
-Task 12E 已 `DONE / ACCEPTED`，收口 Commit `411535b32db4a40991e3c64228d018e9cebb17ed` 已存在于当前历史。Task 12 主任务仍为 `IN_PROGRESS / codex`；在负责人最终验收、`390 × 844` 窄屏视觉验收或负责人书面豁免、Gitee 当前远端 HEAD 核验及本轮必要治理同步完成前，不得标记为 `DONE`、`ACCEPTED` 或 `SYNCED`。
+Task 12E 已 `DONE / ACCEPTED`，收口 Commit `411535b32db4a40991e3c64228d018e9cebb17ed` 已存在于当前历史。Task 12 主任务的历史状态保持 `IN_PROGRESS / codex`，现以 `PAUSED / IN_PROGRESS HISTORY PRESERVED` 暂缓；在负责人最终验收、`390 × 844` 窄屏视觉验收或负责人书面豁免、Gitee 当前远端 HEAD 核验及必要治理同步完成前，不得标记为 `DONE`、`ACCEPTED` 或 `SYNCED`。
 
-## 6. Task 13 既有实现登记
+## 9. Task 13 既有实现登记
 
 以下提交已逐个核验并保留，但均不等同于正式验收通过：
 
@@ -98,16 +146,16 @@ ADR-0004 证明负责人选择了 Reviewer Scope 方案 B，但现有资料未�
 归档前原始文件 `apps/workflow/tests/test_pg_concurrency.py` 的 Git 来源无法确认，SHA-256 为 `08E6DAE26FFD8959592C47FB77BA5604B69A2543308F36CDB855C08D7E143E23`。Task 13-08-002 已验证的修正隔离副本 SHA-256 为 `4C994737B880CDFE1E75391B99C601F94D702F149B4EFBBEB6AC9C500260854A`；两个摘要对应不同字节版本。原始版本已在独立 Evidence 目录备份，修正版本已由单文件 Commit `a066b8e158d53770b2f9dab5e2c7e70c87817975` 正式纳入 Git。
 
 
-## 7. Task 13-07 验收结论与历史现场
+## 10. Task 13-07 验收结论与历史现场
 
-### 7.1 001 历史现场（BLOCKED，原样保留）
+### 10.1 001 历史现场（BLOCKED，原样保留）
 
 - 001 在基线 `04e363b5976536de34aede336e49c6747cede521` 上因指定 Worktree 和 Evidence 在资源门禁检查时已经存在而停止；未启动 PostgreSQL、未执行 Migration 或并发测试。
 - `D:\Temp\OpsAI-Task13-07-001-Workspace` 保持 detached HEAD `04e363b5976536de34aede336e49c6747cede521`，已跟踪工作区和索引无修改；两个未跟踪文件保持原样。
 - `D:\Temp\OpsAI-Task13-07-001-Evidence\preflight.md` 保持原样，SHA-256 为 `F7EB5604523EBEECB155DE69DEE3C3A7884CC6B813B12F3AD897797C8EAF584E`。
 - 001 Worktree、Evidence 及其内容不得删除、移动、覆盖、清理、执行或复用。
 
-### 7.2 Task 13-07-002 验收结果（FAILED）
+### 10.2 Task 13-07-002 验收结果（FAILED）
 
 - 运行标识：`TASK13-07-ISOLATED-PG-002`。
 - 执行基线：`9fbc74843c339bc712ca59dc67e7bc28e22ef9d8`。
@@ -119,23 +167,23 @@ ADR-0004 证明负责人选择了 Reviewer Scope 方案 B，但现有资料未�
 - 证据来源：`D:\Temp\OpsAI-Task13-07-002-Evidence\execution-results.md` 与 `final-state.md`。002 Worktree、Evidence 和已停止容器均保留用于审计，本轮不得操作、覆盖或清理。
 - Task 13-07-002 当时使用的原始测试文件与 002 副本 SHA-256 均为 `08E6DAE26FFD8959592C47FB77BA5604B69A2543308F36CDB855C08D7E143E23`；该摘要继续作为历史失败证据保留，不因后续归档而改写。
 
-## 8. Task 13-08 完成证据
+## 11. Task 13-08 完成证据
 
-### 8.1 核心修复
+### 11.1 核心修复
 
 - 核心 Commit：`1050b8fbf1fc384a79a90fcc86ae9320e5afb67e`。
 - 实际修改：`apps/workflow/services.py`、`apps/workflow/tests/test_submit_service.py`、`apps/workflow/tests/test_reject_service.py`。
 - 实现内容：从 Submit/Reject 的 Article 加锁查询 `select_related` 中移除 `current_published_version`，只保留 `space`；Article 行锁和事务边界保持不变。
 - Commit 内验证：RED 2 项失败、GREEN 2 项通过；Submit/Reject 39 项、审核/权限/幂等及 Approve/Publish 63 项、Task 12 版本链 97 项，共 199 项唯一测试通过。
 
-### 8.2 PostgreSQL 修正夹具复验
+### 11.2 PostgreSQL 修正夹具复验
 
 - Task 13-08-001：在 HEAD `1050b8fbf1fc384a79a90fcc86ae9320e5afb67e` 使用原始哈希副本执行 14 项，结果为 13 PASS、1 FAIL、0 ERROR、0 SKIPPED；PG07 暴露 Article 初始标题与旧 `PUBLISHED` 版本标题不一致。
 - Task 13-08-002：在同一 HEAD 使用可追溯修正副本执行 14 项，结果为 14 PASS、0 FAIL、0 ERROR、0 SKIPPED；原可空外连接行锁错误未再出现。
 - 修正副本只调整 PG07 初始 `Article.title` 与当前 `PUBLISHED` 版本标题投影一致性；隔离副本 SHA-256 为 `4C994737B880CDFE1E75391B99C601F94D702F149B4EFBBEB6AC9C500260854A`。
 - 上述证据完成 Task 13-08 核心修复验收；正式仓库中的 PG07 测试文件随后由独立归档 Commit 完成纳管，但这仍不等于 Task 13 主任务完成。
 
-## 9. Task 13-08-ARCHIVE 完成记录
+## 12. Task 13-08-ARCHIVE 完成记录
 
 该后继任务已在负责人针对精确基线单独授权后完成；以下记录归档边界和可核验证据，不构成再次执行授权。
 
@@ -148,12 +196,12 @@ ADR-0004 证明负责人选择了 Reviewer Scope 方案 B，但现有资料未�
 
 继续禁止修改业务实现、其他测试、治理文件以外的文件、历史 Evidence、临时 settings 或数据库文件；禁止 Push、Merge、Reset、Clean，不得自动启动 HTTP/UI 或其他任务。
 
-## 10. 持续边界
+## 13. 持续边界
 
-- Task 12 历史成果全部保留，主任务继续为 `IN_PROGRESS / codex`；尚缺负责人最终验收、`390 × 844` 窄屏视觉验收或书面豁免、Gitee 当前远端核验及必要治理同步，不得标记为 DONE。
+- Task 12 历史成果全部保留，主任务以 `PAUSED / IN_PROGRESS HISTORY PRESERVED` 暂缓；尚缺负责人最终验收、`390 × 844` 窄屏视觉验收或书面豁免、Gitee 当前远端核验及必要治理同步，不得标记为 DONE。
 - Task 13 主任务继续为 `BACKLOG / unassigned`；Task 13-08 核心修复与 Task 13-08-ARCHIVE 归档均为 `DONE / unassigned`，但不代表 Task 13 全面完成。
 - 001 和 002 的 Worktree、Evidence、未跟踪文件与 002 已停止容器必须原样保留，不得覆盖或清理。
 - 正式内容权威保持 `Article + ArticleVersion`；Wagtail 尚未进入正式根依赖、settings、路由或正式运行时。
 - 正式员工读取继续只走 `current_published_version`，不得暴露草稿、`SAVED` 历史或管理预览。
-- 不读取真实 `.env`，不连接 PostgreSQL，不启动新数据库容器，不执行 Migration，不开发审核工作台。
-- 本轮治理 Commit 完成后立即停止；P3-UI-02 仅为下一项试点候选，未获得独立授权前不得执行，不 Push、Merge、Reset 或 Clean。`docs/HANDOFF.md` 只能用于人工接力，不能授予自动执行权。
+- 本轮治理阶段不读取真实 `.env`，不连接 PostgreSQL，不执行 Docker 或 HTTP 操作，不执行 Migration，不开发审核工作台。
+- 本轮治理 Commit 完成后立即停止；`LOCAL-DEMO-READONLY-01` 在负责人基于新完整 HEAD 单独授权前不得执行。P3-UI-02 继续只是未授权候选，不 Push、Merge、Reset 或 Clean。`docs/HANDOFF.md` 只能用于人工接力，不能授予自动执行权。
