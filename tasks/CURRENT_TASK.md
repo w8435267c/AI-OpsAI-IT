@@ -1,54 +1,134 @@
 # OpsAI Current Task
 
-> 当前唯一下一待批准任务为 `LOCAL-DEMO-READONLY-01`。本文件只完成任务登记，不授予 Docker、数据库、HTTP 或业务验收执行权限；后续必须由项目负责人基于本次治理 Commit 的新完整 HEAD 单独授权。
+> 当前唯一下一待批准任务为 `LOCAL-DEMO-DATA-01`。本文件只归档已完成的只读验收并登记下一阶段，不授权创建容器、数据卷、演示账号或业务数据；后续必须由项目负责人基于本次 G02 治理 Commit 的新完整 HEAD 单独授权。
 >
-> Task 12“开发文章创建、草稿和版本保存”因本地演示只读验收优先而暂缓，保持 `IN_PROGRESS / codex` 历史状态，不标记为 `DONE`、`COMPLETED`、`ACCEPTED` 或 `SYNCED`；其历史成果、验收证据和未完成条件全部保留，待只读验收后由负责人决定恢复时间。
+> Task 12“开发文章创建、草稿和版本保存”因本地演示验收优先而继续暂缓，保持 `IN_PROGRESS / codex` 历史状态，不标记为 `DONE`、`COMPLETED`、`ACCEPTED` 或 `SYNCED`；其历史成果、验收证据和未完成条件全部保留。
 
 ## 1. 当前唯一下一待批准任务
 
 | 项目 | 当前值 |
 | --- | --- |
-| 任务编号 | `LOCAL-DEMO-READONLY-01` |
-| 任务名称 | OpsAI-IT 本地知识库数据及功能只读验收 |
-| 当前状态 | `AWAITING EXACT HEAD AUTHORIZATION` |
+| 任务编号 | `LOCAL-DEMO-DATA-01` |
+| 任务名称 | OpsAI 独立演示环境搭建与第一篇知识文章业务闭环验收 |
+| 当前状态 | `AWAITING EXACT HEAD IMPLEMENTATION AUTHORIZATION` |
 | 实施权限 | `NOT GRANTED` |
-| 实施 HEAD | `PENDING GOVERNANCE COMMIT HEAD` |
+| 实施 HEAD | `PENDING G02 COMMIT HEAD` |
 | 治理登记日期 | `2026-10-29` |
 | 当前分支 | `fusion/wagtail-poc` |
-| 治理授权基线 | `5f19144e7a3ebb9377c498ec02d32288168e1700` |
-| 任务目标 | 确认 Windows 本机知识库的实际数据、可用功能、员工端无知识内容的原因，以及距离领导演示仍缺少的工作。 |
-| 当前允许动作 | 仅完成 `tasks/CURRENT_TASK.md` 的本次治理登记及最多一个本地 Commit；提交后立即停止。 |
+| G02 授权基线 | `60408cdda7a281066eb1cd043e91ff13a2d7e005` |
+| 任务目标 | 建立与现有 8000/5432 环境、原数据卷和原备份完全隔离的本地演示环境，并使用正式业务 Service 完成一篇演示文章的创建、草稿保存、提交、独立审核、发布、搜索和详情验收。 |
+| 当前允许动作 | 仅完成 `tasks/CURRENT_TASK.md` 的 G02 治理登记及最多一个本地 Commit；提交后立即停止。 |
 
-## 2. 后续计划只读范围与数据库保护
+## 2. LOCAL-DEMO-READONLY-01 完成归档
 
-只有项目负责人基于本次治理 Commit 的新完整 HEAD 独立授权后，才允许执行以下操作：
+| 项目 | 归档结果 |
+| --- | --- |
+| 任务 | `LOCAL-DEMO-READONLY-01` - OpsAI-IT 本地知识库数据及功能只读验收 |
+| 状态 | `PASS / READ-ONLY ACCEPTANCE COMPLETED` |
+| 验收执行基线 | `60408cdda7a281066eb1cd043e91ff13a2d7e005` |
+| 运行环境 | Docker、PostgreSQL 与 Django 正常；当前迁移全部已应用；Web 容器通过 bind mount 使用当前工作区代码 |
+| 只读保护 | 所有 ORM 统计位于同一个 PostgreSQL `READ ONLY` 事务和连接中；查询前后 `transaction_read_only=on`，连接 PID 保持一致 |
+| 业务数据 | 知识空间、分类、文章、版本、审核记录、受众规则和审核范围均为 0；用户为 2 名，系统角色组为 0 |
+| 首页为空原因 | 数据库没有知识业务记录，不是旧代码、草稿隔离、受众拒绝或查询异常 |
+| 功能边界 | 创建、版本、提交、驳回和批准发布 Service 已存在；员工读取与搜索已存在；审核 Web 入口未实现 |
+| 健康检查 | `/health/live` 为 200；`/health/ready` 为 503，原因是 `private_media` 目录不存在 |
+| 外部影响 | 数据库、账号、源码、治理文件、Git、容器和原备份实际变更均为 0 |
 
-1. 只读检查 Docker 容器状态、Django 配置、迁移状态和 Web 容器代码版本。
-2. 使用 `SELECT` 或 Django ORM 统计知识空间、分类、文章、版本、审核、受众和用户等现有记录。
-3. 只读核对文章发布状态、员工可见条件、搜索、审核、发布和详情路由及实现。
-4. 执行不会产生业务写入的 HTTP 验证，并输出功能验收报告与演示数据建议。
+本归档不把尚未实际执行的正向展示、草稿隔离或审核页面闭环标记为 PASS。审核服务层存在不等于审核 Web 页面已经实现，也不等于当前环境已经具备领导演示条件。
 
-数据库读取必须使用数据库只读角色、只读连接、`READ ONLY` 事务或经实际回读证明等效的数据库级防写保护。必须在查询前验证保护确实生效；如果不能可靠建立或验证只读约束，立即停止数据库操作并报告，不得仅依赖操作人员承诺“不写数据”。
+## 3. DATA-01 已核实依赖与现有能力
 
-后续继续禁止：
+1. `deploy/compose.yaml` 固定项目名 `opsai-it`，映射 `127.0.0.1:5432` 与 `127.0.0.1:8000`，使用 `postgres_data` 卷，并让 Web 读取仓库根 `.env`；DATA-01 不得直接复用该 Compose 合同。
+2. `config.settings.development` 已从环境变量读取 PostgreSQL 连接并支持受控开发登录；`MEDIA_ROOT` 固定为 `/app/private_media`。独立 Compose 通过专用环境变量与独立媒体挂载即可复用现有设置，不需要修改 `base.py` 或 `development.py`。
+3. `deploy/Dockerfile` 已排除真实 `.env` 构建上下文并以 UID 10001 运行 Web；DATA-01 应从精确、干净的授权 HEAD 构建镜像，不挂载仓库源码，不修改现有 Dockerfile。
+4. `create_dev_users` 可在空的开发数据库中同步四个系统角色并创建固定的不可用密码开发身份；`seed_demo_data` 可幂等创建部门、内容用户组、空间、分类及员工关联，但不会创建文章、审核范围或发布数据。
+5. 文章创建、版本保存、提交和批准发布应分别复用 `create_article`、`manual_save_draft`、`submit_article_for_review` 与 `approve_and_publish_article_version`；不得修改这些已建立的安全关键 Service 或绕过其权限、锁、幂等、审计与 Outbox 语义。
+6. `ReviewerSpaceScope`、系统角色、空间、分类、文章受众、审核记录、审计、幂等与 Outbox 模型均已存在。审核 `views.py` 没有可用 HTTP/UI，DATA-01 只允许在隔离数据库中通过现有 Service 完成审核，并把审核 Web 页面明确标记为 `NOT IMPLEMENTED`。
+7. 当前代码只在业务事务中生成待处理 `WorkflowOutboxEvent`；未发现 Outbox Worker、邮件、Webhook 或钉钉发送客户端。独立 Compose 仍必须只启动数据库与 Web，不注入外部通知凭据，并在验收时证明实际外部发送次数为 0。
 
-- `INSERT`、`UPDATE`、`DELETE`、`TRUNCATE`、DDL、`migrate`，以及任何会修改持久数据库的测试或命令；
-- 创建、修改、审核、发布或删除文章及演示数据；
-- 修改用户、密码、权限、源码、模板、CSS、配置、Migration、容器、镜像或数据卷；
-- 发送真实外部通知，执行 Git Push、Merge、Reset、Clean，或启动 Autopilot LIVE。
+## 4. 独立演示环境冻结合同
 
-## 3. 后续验收目标
+DATA-01 后续只能在下列隔离身份全部实际回读一致后写入：
 
-`LOCAL-DEMO-READONLY-01` 后续必须基于实际只读证据回答：
+| 资源 | 冻结要求 |
+| --- | --- |
+| Compose Project | 精确为 `opsai-local-demo` |
+| Web 地址 | 精确为 `http://127.0.0.1:8001/`；不得占用或代理原网站 8000 |
+| 数据库 | 新建空 PostgreSQL 17 数据库；数据库名必须使用 `opsai_local_demo` 前缀，使用独立演示角色和独立随机凭据 |
+| 数据库端口 | 不向宿主机发布 5432；Web 只通过独立 Compose 网络访问 `db:5432` |
+| 容器 | 只能创建 `opsai-local-demo-*` 容器；不得重建、重启、进入或复用 `opsai-it-db-1`、`opsai-it-web-1` |
+| 数据卷 | 只能创建 `opsai-local-demo_*` 命名卷；不得挂载或引用 `opsai-it_postgres_data` |
+| 网络 | 使用 `opsai-local-demo` 独立网络；运行期不得加入原 `opsai-it` 网络，计划配置为无外部通知出口的最小网络 |
+| 源码 | 从负责人批准的精确、干净 Git HEAD 构建镜像；演示容器不 bind mount 项目工作区 |
+| 媒体目录 | 独立挂载到容器 `/app/private_media`，实际验证 UID 10001 可写和 `/health/ready` 为 200；不得复用项目现有 `private_media` |
+| 配置 | 仅从独立、未跟踪的演示配置注入变量；不得读取、复制或修改仓库根 `.env`，不得注入真实钉钉、邮件、Webhook 或企业凭据 |
 
-1. 各类业务记录数量和员工首页没有知识内容的真实原因；
-2. 已可用功能、只有页面但尚未形成业务闭环的功能，以及明确缺陷；
-3. 当前 Web 容器是否使用当前项目代码；
-4. 创建、审核、发布、搜索和详情的正确业务入口；
-5. 是否适合在隔离数据库准备演示数据，以及是否适合向领导展示；
-6. 如果尚不适合展示，最短剩余任务是什么。
+后续允许新建的外部资源候选范围仅为：
 
-结果必须区分 `PASS`、`FAIL`、`NOT TESTED`；代码存在不能替代实际业务流程验收。
+- `D:\Temp\OpsAI-Local-Demo\Config\local-demo.env`：未跟踪演示配置，只保存本地随机测试凭据；
+- `D:\Temp\OpsAI-Local-Demo\private_media\`：独立演示媒体目录；
+- `D:\Temp\OpsAI-Local-Demo\evidence\`：脱敏验收证据与浏览器截图；
+- `D:\OpsAI-Backups\Database\LocalDemo\`：独立演示数据库备份及恢复演练文件。
+
+创建任何资源前必须核对同名容器、网络、卷和目录是否已存在。存在未知残留时立即停止，不得清理、覆盖、复用、改名绕过或触碰原迁移前备份 `D:\OpsAI-Backups\Database\OpsAI_迁移前备份_20261029-222705.dump`。
+
+## 5. DATA-01 数据准备与闭环顺序
+
+1. 完成精确 HEAD、工作区和独立 Compose 渲染检查；启动前确认渲染配置中没有原容器、原卷、8000、宿主机 5432、根 `.env` 或外部通知凭据。
+2. 创建独立数据库、媒体资源和 Web 容器，应用当前迁移；迁移只允许落到新建空演示数据库。
+3. 在空演示库中执行 `create_dev_users` 与 `seed_demo_data`，得到编辑者、独立审核者、普通员工、知识管理员、空间和分类。
+4. 新的受控演示命令必须验证 `DEBUG=True`、开发登录已开启、独立演示标记、数据库名称、数据库主机和固定演示身份；任一不符时在写入前失败关闭。
+5. 创建审核者空间范围；使用编辑者调用 `create_article` 创建《网络打印机无法打印——故障排查 SOP（演示）》及首个 DRAFT，并建立与普通员工匹配的明确受众规则。
+6. 使用 `manual_save_draft` 固化一个 `SAVED` 历史并产生新 DRAFT；再依次调用 `submit_article_for_review` 和 `approve_and_publish_article_version`，每个动作使用独立固定格式的幂等键。
+7. 独立审核者不得是文章创建者或提交者；批准后必须核对 ReviewRecord、PUBLISHED 指针、后继 DRAFT、AuditEvent、幂等记录和待处理 Outbox。
+8. 使用普通员工完成首页、搜索和详情正向验收，并验证未登录、无权限、DRAFT 与 `SAVED` 历史不泄露。
+9. 演示命令首次执行允许创建；再次执行只允许在最终状态和摘要完全一致时做只读确认。任何偏差、半完成状态或不确定结果必须停止，不得自动补写、重新提交或再次批准。
+10. 审核 Web 页面继续标记为 `NOT IMPLEMENTED`；不得用 Service 验收冒充审核员已通过网页点击完成审核。
+
+## 6. DATA-01 后续精确候选文件白名单
+
+以下文件当前均不存在，仅作为下一轮基于 G02 新完整 HEAD 的候选新增范围；G02 本轮不创建这些文件：
+
+| 文件 | 用途 |
+| --- | --- |
+| `deploy/compose.local-demo.yaml` | 定义 `opsai-local-demo` 的独立 db/web、8001 端口、独立卷/网络/媒体挂载和零外部通知运行边界 |
+| `deploy/local-demo.env.example` | 只列出演示变量名、占位值和安全说明；不得包含真实凭据 |
+| `apps/knowledge/management/commands/seed_local_demo_article.py` | 只编排现有角色、数据和正式业务 Service，建立一篇演示文章闭环；不得复制状态机逻辑 |
+| `apps/knowledge/tests/test_seed_local_demo_article.py` | 覆盖隔离门禁、权限、顺序、幂等、冲突失败关闭、记录数量和零通知发送 |
+| `docs/06-Process/LOCAL-DEMO-DATA-01-SOP.md` | 记录启动、隔离回读、迁移、数据准备、浏览器演示、备份恢复与安全停止步骤 |
+
+经本轮代码核实，DATA-01 不需要修改 `deploy/Dockerfile`、`.gitignore`、`config/settings/base.py`、`config/settings/development.py`、现有 `create_dev_users` / `seed_demo_data`、Grant/审核状态机、模板或 CSS。若后续实际实施证明必须修改现有文件或增加第六个仓库文件，必须停止并提交精确证据申请追加授权，不得自行扩大范围。
+
+## 7. DATA-01 验收标准
+
+1. `docker compose config` 与 Docker inspect 证明 Project、容器、镜像、数据库身份、网络、卷、端口、媒体目录和源码 HEAD 全部属于 `opsai-local-demo`。
+2. DATA-01 前后分别证明原 8000 网站、`opsai-it-db-1`、`opsai-it-web-1`、`opsai-it_postgres_data` 和原备份身份、状态及摘要未变化。
+3. 独立演示数据库从空库迁移成功，且只包含本任务预期的演示身份、业务记录和系统生成证据。
+4. 独立 `private_media` 可写，`/health/live` 与 `/health/ready` 均返回 200；不得跳过媒体检查或修改健康检查强制返回成功。
+5. 演示角色、编辑者、独立审核者、普通员工、知识管理员及 Reviewer Scope 符合最小权限设计，没有可用密码或真实钉钉身份。
+6. 演示文章由正式 Service 创建、保存、提交、批准与发布；不得直接 UPDATE 状态、指针、审核结论或受众权限。
+7. 普通员工在首页、搜索和详情页能看到正式文章；未登录、无权身份、DRAFT 和 `SAVED` 历史不能泄露。
+8. 版本、审核、审计、幂等和 Outbox 记录与服务合同一致；重复命令不产生第二篇文章、第二次批准或重复通知。
+9. 实际外部通知发送次数为 0；只允许保留未消费的本地 Outbox 证据，不启动 Worker。
+10. 自动测试、Django check、迁移一致性、Compose 配置检查、静态检查和 `git diff --check` 全部通过。
+11. 完成桌面及 `390 × 844` 浏览器验收，保留脱敏证据，并明确审核 Web 页面为 `NOT IMPLEMENTED`。
+12. 形成独立演示数据库备份并完成一次恢复验证；恢复资源仍必须属于 `opsai-local-demo`，不得覆盖当前演示库或原数据库。
+13. 完成可重复启动、演示、停止和恢复 SOP；停止操作默认保留演示数据卷，任何删除卷动作须另行人工确认。
+
+## 8. DATA-01 停止条件与当前禁令
+
+出现以下任一情况，后续实施必须在写入前停止：精确 HEAD、分支或工作区不符；同名资源已存在；渲染配置引用原 `.env`、原容器、原网络、原卷、8000 或宿主机 5432；无法证明数据库为空且独立；媒体目录不可写；开发身份或演示数据发生冲突；外部通知能力已启用；需要修改候选白名单外文件；任何业务调用结果不确定。
+
+G02 本轮以及 DATA-01 获得下一次独立授权前继续禁止：
+
+- 创建、启动、停止或重建任何 Docker 资源；
+- 连接或写入任何数据库，执行 Migration，创建账号、角色、空间、分类、文章或审核记录；
+- 读取、复制或修改根 `.env` 及任何真实凭据；
+- 修改业务代码、测试、Compose、设置、模板、CSS、`AGENTS.md` 或 `tasks/TASKS.yaml`；
+- 启动真实通知、钉钉、邮件、Webhook、Autopilot LIVE，或执行 Push、Merge、Reset、Clean、Stash；
+- 自动开始 DATA-01、审核 Web 页面开发或恢复 Task 12。
+
+## 9. 历史治理记录（以下原章节编号与证据保持原样）
 
 ## 4. Task 12 暂缓状态与历史身份
 
@@ -69,7 +149,7 @@
 | 已归档 PG07 | `apps/workflow/tests/test_pg_concurrency.py` 已纳入 Git；SHA-256 `4C994737B880CDFE1E75391B99C601F94D702F149B4EFBBEB6AC9C500260854A`，Git 提交统计新增 993 行 |
 | 历史原始版本 | 归档前原始文件 SHA-256 为 `08E6DAE26FFD8959592C47FB77BA5604B69A2543308F36CDB855C08D7E143E23`，已在独立 Evidence 目录备份 |
 | P3-UI-02 | 下一项试点候选；不是 `READY`，不是当前任务，未获执行授权 |
-| 恢复条件 | 完成 `LOCAL-DEMO-READONLY-01` 后，由负责人基于届时完整 HEAD 单独决定是否恢复 Task 12。 |
+| 恢复条件 | 完成 `LOCAL-DEMO-DATA-01` 后，由负责人基于届时完整 HEAD 单独决定是否恢复 Task 12；本登记不授权自动恢复。 |
 
 ## 5. Task 12 已完成阶段
 
@@ -204,4 +284,4 @@ ADR-0004 证明负责人选择了 Reviewer Scope 方案 B，但现有资料未�
 - 正式内容权威保持 `Article + ArticleVersion`；Wagtail 尚未进入正式根依赖、settings、路由或正式运行时。
 - 正式员工读取继续只走 `current_published_version`，不得暴露草稿、`SAVED` 历史或管理预览。
 - 本轮治理阶段不读取真实 `.env`，不连接 PostgreSQL，不执行 Docker 或 HTTP 操作，不执行 Migration，不开发审核工作台。
-- 本轮治理 Commit 完成后立即停止；`LOCAL-DEMO-READONLY-01` 在负责人基于新完整 HEAD 单独授权前不得执行。P3-UI-02 继续只是未授权候选，不 Push、Merge、Reset 或 Clean。`docs/HANDOFF.md` 只能用于人工接力，不能授予自动执行权。
+- 本轮 G02 治理 Commit 完成后立即停止；`LOCAL-DEMO-DATA-01` 在负责人基于 G02 新完整 HEAD 单独授权前不得执行。P3-UI-02 继续只是未授权候选，不 Push、Merge、Reset 或 Clean。`docs/HANDOFF.md` 只能用于人工接力，不能授予自动执行权。
