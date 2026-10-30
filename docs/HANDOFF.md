@@ -1,27 +1,28 @@
 # OpsAI AI Handoff
 
-> 当前业务主任务仍为 Task 12“开发文章创建、草稿和版本保存”，`IN_PROGRESS / codex`。Task 13-08 核心修复与 Task 13-08-ARCHIVE 单文件归档均已完成。P3-UI-02 仅为下一项试点候选，尚无执行授权。本文件仅供人工接力，不构成自动 Resume、任务领取或业务执行授权。
+> `LOCAL-DEMO-DATA-01` 已完成并按实际证据归档。当前没有已授权的业务开发任务；唯一下一待批准任务为 `LOCAL-DEMO-REVIEW-WEB-01`，状态 `AWAITING EXACT HEAD IMPLEMENTATION AUTHORIZATION`。Task 12 继续暂停，Task 13 继续为 BACKLOG。本文件仅供人工接力，不构成自动 Resume、任务领取或业务执行授权。
 
 ## 1. 当前交接状态
 
-当前没有真实的 Agent 切换事件。Task 11“开发 P0 搜索”已正式封板为 `DONE / codex`；Task 12 继续为 `IN_PROGRESS / codex`。Task 12A～12E 已完成，Task 12E 为 `DONE / ACCEPTED`。本轮治理起始基线为 `a066b8e158d53770b2f9dab5e2c7e70c87817975`，未联网核验远端，不得沿用历史结果宣称三端同步。Task 13 六个既有提交保留；Task 13-08 核心修复及 PostgreSQL 修正夹具复验证据已完成登记，PG07 已由单文件 Commit 正式归档，但 Task 13 主任务仍未完成。
+当前没有真实的 Agent 切换事件。本次只是把 DATA-01 实现结果同步到治理文档，不虚构上一 Agent、接管时间或交接事件。Git 基线为 `d184033ee06630c1b1e23081c8060eb12848f4dd`；该 Commit 只新增五个 DATA-01 文件，并带有专项测试、全量业务回归、浏览器和备份恢复证据。Task 12 保持暂停，Task 13 六个既有提交保留但主任务仍未完成。
 
 | 项目 | 当前值 |
 | --- | --- |
-| 当前业务主任务 | `12` - 开发文章创建、草稿和版本保存 |
-| 已完成局部后继任务 | `13-08-ARCHIVE` - PG07 已验证夹具正式归档；`DONE / unassigned`，Commit `a066b8e158d53770b2f9dab5e2c7e70c87817975` |
-| 最近完成任务 | `11` - 开发 P0 搜索，`DONE / codex` |
-| 当前状态 | `IN_PROGRESS / codex` |
-| 开工日期 | `2026-10-05` |
-| 依赖 | 任务 `11`，状态为 `DONE / codex` |
-| 架构基线 | `docs/07-ADR/0003-Task12正式文章写入与版本链架构决策.md`，`Accepted` |
-| 本轮治理起始基线 | `a066b8e158d53770b2f9dab5e2c7e70c87817975` |
-| 远端实时状态 | 本轮未联网核验；GitHub、Gitee 当前状态均不作新声明 |
-| 业务实施状态 | Task 12A～12E 已完成；Task 12E `DONE / ACCEPTED` |
-| 当前收口状态 | Task 12 主任务尚缺负责人最终验收、`390 × 844` 窄屏视觉验收或书面豁免、Gitee 当前远端核验及必要治理同步 |
-| 当前等待动作 | 负责人决定 Task 12 窄屏验收/豁免和最终验收；P3-UI-02 如需试点，须另行批准新完整 HEAD、独立 Worktree 和精确文件范围 |
-| 当前禁止动作 | 不执行 P3-UI-02，不继续 Task 13 开发，不重做 Task 13-08，不自动恢复 Task 13-07，不重复归档 PG07，不正式接入 Wagtail，不操作持久数据库或读取真实 `.env` |
+| 当前已授权开发任务 | 无 |
+| 最近完成任务 | `LOCAL-DEMO-DATA-01`；`DONE / LOCAL DEMO ACCEPTANCE COMPLETED`，Commit `d184033ee06630c1b1e23081c8060eb12848f4dd` |
+| 唯一下一待批准任务 | `LOCAL-DEMO-REVIEW-WEB-01` - OpsAI 审核 Web 页面与本地演示审核闭环 |
+| 下一任务状态 | `AWAITING EXACT HEAD IMPLEMENTATION AUTHORIZATION`；实施权限 `NOT GRANTED` |
+| 下一任务实施 HEAD | `PENDING G03 COMMIT HEAD` |
+| 本轮治理起始基线 | `d184033ee06630c1b1e23081c8060eb12848f4dd` |
+| 远端实时状态 | 最近一次核验：GitHub `fusion/wagtail-poc` 为 `5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e`，本地基线纯领先 11 个提交；Gitee 因 SSL 连接失败为 `UNKNOWN`；未 Push |
+| DATA-01 验证 | 专项 `10 passed`；`apps/tests` `837 passed`、`23 skipped`、`712 subtests`；live/ready 200、浏览器链路与备份恢复通过 |
+| Task 12 | `PAUSED / IN_PROGRESS HISTORY PRESERVED`；未完成封板条件完整保留 |
+| Task 13 | `BACKLOG / unassigned`；审核 Web 候选不代表 Task 13 全面开工 |
+| 当前等待动作 | 负责人审查 G03 Commit，并在需要时基于其新完整 HEAD 单独授权审核 Web 候选的精确文件范围 |
+| 当前禁止动作 | 不启动审核 Web、Task 12 或 Task 13；不重做 DATA-01/Task 13-08，不操作原持久数据库或真实 `.env`，不 Push、Merge 或部署 |
 | Agent 切换状态 | 未发生 |
+
+DATA-01 的事实边界：实现 Commit 只新增独立 Compose、演示配置样例、正式 Service 编排命令、10 项安全测试和 SOP。演示环境完成创建、保存、提交、独立审核、批准发布、员工搜索/详情、未登录与无权隔离、幂等和备份恢复验证，外部通知发送次数为 0。审核动作由命令调用正式 Service 完成，审核 Web 页面仍为 `NOT IMPLEMENTED`；本地演示结果不得描述为生产上线。
 
 Task 12 V1 的正式内容权威为 `Article + ArticleVersion`，Task 12B～12D 已完成模型、原子创建与版本链实现，Task 12E 已完成正式管理端创建、编辑、保存、历史、恢复和草稿预览入口。autosave 使用 `expected_lock_version` 乐观 CAS，过期 token 不会 last-write-wins；manual save 执行 `DRAFT(n) → SAVED(n) + 新 DRAFT`，后续版本号在 Article 行锁下按最大值加一；`SAVED` 历史不可由正式 Writer / Admin 修改；restore 创建带 `restored_from_version` 血缘的新 `DRAFT`，不修改来源历史。`current_published_version` 保持不变，员工仍只读取正式 `PUBLISHED` 版本。
 
@@ -45,7 +46,7 @@ Task 12E 的累计自动化证据为 `717 passed`、`9 skipped`、`571 subtests`
 
 两项非阻塞遗留为 Create 表单视觉一致性与 Edit 页“预览草稿”/“保存版本并继续编辑”的视觉层级；均进入管理端 UI 统一精修 Backlog。窄屏验收为 `NOT_EXECUTED_BROWSER_CAPABILITY`，正式持久 PostgreSQL 与 Task 13 均未在本次浏览器验收中执行。详细证据见 `docs/06-Process/Task12E-管理端知识编辑链验收.md`。
 
-Task 12 主任务在负责人最终验收、`390 × 844` 窄屏视觉验收或负责人书面豁免、Gitee 当前远端 HEAD 核验及必要治理同步完成前，继续保持 `IN_PROGRESS / codex`，不得标记为 `DONE`、`ACCEPTED` 或 `SYNCED`。
+Task 12 主任务在负责人最终验收、`390 × 844` 窄屏视觉验收或负责人书面豁免、Gitee 当前远端 HEAD 核验及必要治理同步完成前，继续保持 `PAUSED / IN_PROGRESS HISTORY PRESERVED`，不得标记为 `DONE`、`ACCEPTED` 或 `SYNCED`。
 
 ### 1.1 Task 13 既有实现与验收缺口
 
@@ -254,8 +255,9 @@ Task 10 最终验证为页面专项 `30 passed`、knowledge `310 passed`、正�
 - 正式员工读取来源为 `current_published_version`；列表 Reader 为 `employee_visible_articles`，详情 Reader 为 `get_employee_article_detail`；V1 正文使用 `body_plaintext → body_text`。
 - Task 10 V1 正式前端为 Django Templates + 项目自有 CSS；Bootstrap / HTMX 当前不要求接入。
 - Task 11A、11B 已完成并双端同步，项目负责人视觉验收与 PostgreSQL 隔离专项均 PASS；Task 11 当前为 `DONE / codex`，不需要 Task 11C。
-- Task 12A～12E 已完成，ADR-0003 为 `Accepted`；Task 12E 为 `DONE / ACCEPTED`，收口 Commit 为 `411535b32db4a40991e3c64228d018e9cebb17ed`，Task 12 主任务仍为 `IN_PROGRESS / codex`。
-- 当前没有真实 Agent 切换；如后续切换，下一 Agent 必须先读 ADR-0003、ADR-0004、Task 12E 验收文档及 Task 13-08-001/002 Evidence，不得自行继续 Task 13、重做 Task 13-08、恢复 Task 13-07、重复归档 PG07 或执行 P3-UI-02。
+- Task 12A～12E 已完成，ADR-0003 为 `Accepted`；Task 12E 为 `DONE / ACCEPTED`，收口 Commit 为 `411535b32db4a40991e3c64228d018e9cebb17ed`，Task 12 主任务仍为 `PAUSED / IN_PROGRESS HISTORY PRESERVED`。
+- LOCAL-DEMO-DATA-01 已由 Commit `d184033ee06630c1b1e23081c8060eb12848f4dd` 完成；只证明隔离本地演示能力，审核 Web 页面仍未实现。
+- 当前没有真实 Agent 切换；如后续切换，下一 Agent 必须先核验 G03 新 HEAD、DATA-01 Commit/SOP、ADR-0003、ADR-0004 及 Task 13 既有证据，不得自行启动审核 Web、Task 12、Task 13 或重做 DATA-01。
 - 任务 8J 保持 `BLOCKED / unassigned`；Task 13 保持 `BACKLOG / unassigned`。
 - Task 13 六个既有提交已经覆盖 submit、reject、approve/publish 和 Reader 等底层能力；Task 13-08 核心修复、修正夹具并发复验及 PG07 正式归档已完成，但 HTTP/UI、Worker/通知、持久环境和负责人独立整体验收仍缺失，因此 Task 13 未完成。
-- 本文件与 `tasks/CURRENT_TASK.md`、`tasks/TASKS.yaml` 的 Task 12/12E/13/13-07/13-08/13-08-ARCHIVE 状态保持一致；HANDOFF 文本不能授予执行权，未经单独授权不得执行 P3-UI-02、继续 Task 13、正式接入 Wagtail 或操作持久数据库。
+- 本文件与 `tasks/CURRENT_TASK.md`、`tasks/TASKS.yaml` 的 DATA-01、审核 Web 候选、Task 12/12E/13/13-07/13-08/13-08-ARCHIVE 状态保持一致；HANDOFF 文本不能授予执行权，未经单独授权不得实施审核 Web、继续 Task 13、正式接入 Wagtail 或操作原持久数据库。

@@ -6,18 +6,18 @@
 
 | 项目 | 当前状态 |
 | --- | --- |
-| 快照日期 | 2026-10-25 |
+| 快照日期 | 2026-10-31 |
 | 当前工作区 | `D:\Desktop\OpsAI\AI-OpsAI-IT-wagtail-poc` |
 | 当前分支 | `fusion/wagtail-poc` |
-| 本轮治理起始基线 HEAD | `a066b8e158d53770b2f9dab5e2c7e70c87817975` |
-| 远端实时核验 | 本轮未联网核验 GitHub 或 Gitee；不得沿用历史远端状态宣称当前三端同步 |
-| 当前阶段 | PG07 已完成归档后的治理状态收口；不授权 P3-UI-02 或其他业务开发 |
+| 本轮治理起始基线 HEAD | `d184033ee06630c1b1e23081c8060eb12848f4dd` |
+| 远端实时核验 | 最近一次实时证据：GitHub `fusion/wagtail-poc` 为 `5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e`，本地基线纯领先 11 个提交；Gitee 因 SSL 连接失败为 `UNKNOWN`；本轮禁止 Push |
+| 当前阶段 | LOCAL-DEMO-DATA-01 已归档；审核 Web 页面为唯一下一待授权候选，不授权实施 |
 | 正式技术主体 | Python 3.13 + Django 5.2 LTS 模块化单体 |
 | Wagtail 状态 | 融合方向已确认，F02～F08 已形成隔离 PoC 证据，尚未进入正式根依赖、正式 settings 或正式路由 |
 | 电脑 B 环境 | Python、正式项目依赖、WSL 2、Docker Desktop、Docker Engine 和 Docker Compose 已恢复；根目录 `.env` 存在、被 Git 忽略且未跟踪，内容与适用性未验证 |
-| 当前接力元数据任务 | Task 13-08-ARCHIVE 完成证据登记；仅五份治理文档及一次本地 Commit |
-| 最近完成开发 | Task 12E 管理端知识编辑链已 `DONE / ACCEPTED` |
-| 当前开发任务 | Task 12“开发文章创建、草稿和版本保存”，`IN_PROGRESS / codex` |
+| 当前接力元数据任务 | `LOCAL-DEMO-G03`；只同步四份治理文档及最多一次本地 Commit |
+| 最近完成开发 | `LOCAL-DEMO-DATA-01`，Commit `d184033ee06630c1b1e23081c8060eb12848f4dd`，`DONE / LOCAL DEMO ACCEPTANCE COMPLETED` |
+| 当前开发任务 | 无已授权开发任务；`LOCAL-DEMO-REVIEW-WEB-01` 为 `AWAITING EXACT HEAD IMPLEMENTATION AUTHORIZATION` |
 | Task 10 功能 | PASS |
 | Task 10 安全 | PASS |
 | Task 10 视觉 | PASS |
@@ -25,11 +25,11 @@
 | Task 11 PostgreSQL 隔离专项 | PASS；PostgreSQL 17.11，临时资源已全部清理 |
 | Task 12D PostgreSQL 并发补证 | PASS；PostgreSQL 17.11、临时端口 15432、tmpfs、六类竞争与 Lock wait 均通过，资源已清理；不等同 8J |
 | Task 12E 真实浏览器验收 | `PASS_WITH_VISUAL_FINDINGS`；P0/P1/P2 均为 0，P3 为 2 |
-| 当前业务主线 | Task 12A～12E 已完成；Task 12E 收口 Commit 为 `411535b32db4a40991e3c64228d018e9cebb17ed`；Task 12 主任务尚未正式封板 |
+| 当前业务主线 | 本地演示数据与服务闭环已完成；审核 Web 页面尚未实现；Task 12 暂停且主任务尚未正式封板，Task 13 仍为 BACKLOG |
 | Task 13 代码现状 | 六个既有提交保留；Task 13-08 核心修复 Commit `1050b8fbf1fc384a79a90fcc86ae9320e5afb67e` 已完成并有修正夹具 PostgreSQL 14 PASS 证据，Task 13 主任务仍未完成 |
-| 当前交接状态 | Task 12 保持 `IN_PROGRESS / codex`；Task 12E 保持 `DONE / ACCEPTED`；Task 13 保持 `BACKLOG / unassigned`；Task 13-07 历史 `BLOCKED`；Task 13-08 与 Task 13-08-ARCHIVE 均为 `DONE / unassigned` |
+| 当前交接状态 | 无真实 Agent 切换；DATA-01 已完成；Task 12 为 `PAUSED / IN_PROGRESS HISTORY PRESERVED`；Task 13 为 `BACKLOG / unassigned`；审核 Web 候选尚未授权 |
 
-本快照的总体结论是：Task 10、Task 11 均已正式 `DONE / codex`。Task 12A～12E 的历史成果保留，Task 12E 为 `DONE / ACCEPTED`，但 Task 12 主任务继续为 `IN_PROGRESS / codex`。Task 13 的六个底层提交仍只登记为已有实现；Task 13-08 局部核心修复已经完成，13-08-002 在修正夹具下为 PostgreSQL 14 PASS，修正 PG07 已由单文件 Commit `a066b8e158d53770b2f9dab5e2c7e70c87817975` 正式归档。Task 13 整体仍未完成。正式内容权威保持 `Article + ArticleVersion`，8J 仍为 `BLOCKED / unassigned`。
+本快照的总体结论是：Task 10、Task 11 均已正式 `DONE / codex`；Task 12A～12E 的历史成果保留，但 Task 12 主任务暂停且未封板。DATA-01 已在独立本地演示环境中证明正式 Service 的创建、保存、提交、独立审核、发布、员工搜索与详情链路可运行，不能外推为生产上线。Task 13 的底层 Service、Reader、审计、幂等和 Outbox 基础已存在，但审核 HTTP/UI 与 Worker 仍缺失，Task 13 整体继续为 `BACKLOG / unassigned`。正式内容权威保持 `Article + ArticleVersion`，8J 仍为 `BLOCKED / unassigned`。
 
 ## 2. 状态证据规则
 
@@ -85,6 +85,15 @@
 - Compose 使用命名卷 `postgres_data`，并要求由未跟踪的真实 `.env` 提供数据库变量。
 - 该配置已经过无插值、无 env 解析、无路径解析的结构校验；这只证明 Compose 配置结构可解析，不证明真实变量、镜像、容器、数据卷或数据库可用。
 
+### 3.5 LOCAL-DEMO-DATA-01 独立演示能力
+
+- 实现 Commit `d184033ee06630c1b1e23081c8060eb12848f4dd` 只新增 `deploy/compose.local-demo.yaml`、演示配置样例、演示初始化命令、对应测试和操作 SOP 五个文件。
+- `opsai-local-demo` 使用独立 Project、8001 端口、PostgreSQL 数据卷、媒体卷、网络和仓库外配置；实施证据显示原 `opsai-it` 容器、原数据卷、原数据库、原账号与迁移前备份未被修改。
+- 演示初始化通过正式 Service 完成文章创建、手动保存、提交审核和独立审核员批准发布；重复执行保持幂等，外部通知发送次数为 0。
+- 自动证据为专项 `10 passed`，正式 `apps/tests` 回归 `837 passed`、`23 skipped`、`712 subtests`；Ruff、格式、Python 编译、Compose 解析、Django check 与差异检查通过。
+- 实际运行证据包括 live/ready 200、员工首页、搜索、正式详情、未登录和无权隔离的浏览器验收，以及演示数据库备份恢复成功。
+- 这是一套本地隔离演示能力，不是生产上线。审核动作由演示初始化命令调用 Service 完成；审核 Web 页面仍为 `NOT IMPLEMENTED`。
+
 ## 4. Wagtail 融合状态与边界
 
 ### 4.1 已有隔离 PoC 证据
@@ -118,7 +127,7 @@
 | 项目虚拟环境 | 仓库根目录 `.venv` 已建立，解释器为 Python 3.13.13 | READY |
 | 正式项目依赖 | 已在 `.venv` 中执行 `pip install -e ".[dev]"` | READY |
 | 依赖一致性 | `pip check` 输出 `No broken requirements found.` | PASS |
-| 正式工程自动测试 | 最新 Task 13 Reader 提交记录的历史证据：`827 passed`、`9 skipped`、`712 subtests`、`0 failed`；本轮文档治理未重跑业务测试 | HISTORICAL PASS |
+| 正式工程自动测试 | DATA-01 实现提交记录：`apps/tests` 为 `837 passed`、`23 skipped`、`712 subtests`；本轮文档治理未重跑业务测试 | HISTORICAL PASS |
 | Django system check | `System check identified no issues (0 silenced).` | PASS |
 | 迁移一致性检查 | `No changes detected` | PASS |
 | Ruff 静态检查 | `All checks passed!` | PASS |
@@ -130,7 +139,7 @@
 | PostgreSQL Compose 声明 | `postgres:17.11-alpine3.24` 已在配置中定义 | READY TO CREATE |
 | 真实 `.env` | 根目录文件存在，被 Git 忽略且未跟踪；未读取或验证内容、来源、变量完整性及 PostgreSQL 适用性 | BLOCKED / WAITING OWNER |
 
-正式工程测试使用 SQLite test settings。Task 12E 累计正式自动化证据为 `717 passed`、`9 skipped`、`571 subtests`、`0 failed`；Task 13 六个提交逐步记录至最新 `827 passed`、`9 skipped`、`712 subtests`、`0 failed`。这些均是对应历史提交证据，本轮文档治理不重跑业务测试。9 个 skipped 项包括 SQLite 设置下的 PostgreSQL 专项，不能视为 PostgreSQL 已验收。Task 12E-09A 使用仓库外 acceptance settings 与独立 SQLite，未读取真实 `.env`、未操作 Docker、未连接 PostgreSQL。
+正式工程测试使用 SQLite test settings。Task 12E 累计正式自动化证据为 `717 passed`、`9 skipped`、`571 subtests`、`0 failed`；Task 13 六个提交逐步记录至 `827 passed`、`9 skipped`、`712 subtests`、`0 failed`；DATA-01 实现提交进一步记录 `apps/tests` 为 `837 passed`、`23 skipped`、`712 subtests`。这些均是对应历史提交证据，本轮文档治理不重跑业务测试。DATA-01 的独立 PostgreSQL 演示与备份恢复证据只适用于 `opsai-local-demo`，不解除 8J 的原持久环境阻塞。
 
 ## 6. 测试范围与 Wagtail 收集边界
 
@@ -167,16 +176,13 @@ Task 10 的 10A～10E 分别对应 Commit `cf8bf1ff1692dedd69e5fbf97f0632a460d66
 
 ## 7. PostgreSQL 与持久数据状态
 
-电脑 B 当前只完成 Docker 与 Compose 基础环境恢复：
+电脑 B 的原 `opsai-it` 环境与 DATA-01 隔离演示环境必须分开解释：
 
 - 仓库根目录 `.env` 当前存在、被 Git 忽略且未跟踪；本项目未读取或验证其内容、来源、变量完整性及 PostgreSQL 适用性。
 - 未为 OPS-H05 创建或复制 `.env`。
-- 未启动 OpsAI Compose 或 PostgreSQL。
-- 未拉取项目 PostgreSQL 镜像。
-- 未创建 OpsAI 容器、命名卷或数据库。
-- 未执行 `migrate`。
-- 未查询、访问或修改任何持久数据库数据。
-- 当前电脑 B 的迁移应用状态、数据库注释、PostgreSQL 查询/排序行为和 Wagtail PostgreSQL 行为均未验证。
+- 原 `opsai-it` 环境的根 `.env` 安全来源和适用性仍未纳入 8J 验收；DATA-01 没有把演示配置或结论写回原环境。
+- `opsai-local-demo` 已在独立数据库执行迁移、创建演示数据并完成备份恢复；这些写入受 DATA-01 授权且仅属于隔离演示资源。
+- DATA-01 不证明原持久数据库、生产数据库、数据库注释、生产容量或 Wagtail PostgreSQL 行为已通过验收。
 
 在项目负责人确认 `.env` 的安全来源和使用范围，并明确授权 PostgreSQL 启动、migration 状态检查、持久数据验证范围及回退边界前，后续 Agent 不得自行填写假密码、启动 PostgreSQL、执行迁移或修改持久数据。
 
@@ -186,12 +192,12 @@ Task 10 的 10A～10E 分别对应 Commit `cf8bf1ff1692dedd69e5fbf97f0632a460d66
 - 旧内容批量迁移、正式切换、失败恢复和回退方案。
 - PostgreSQL 下的查询、排序、迁移状态、数据库注释和 Wagtail 行为验证。
 - 并发写入、锁策略和冲突处理；现有 `atomic()` 不能单独证明并发安全。
-- Task 13 的 HTTP/UI、审核工作台、Outbox Worker/通知发送、持久数据库迁移前置检查及负责人独立整体验收。Service 与 Reader 底层实现及 Task 13-08 行锁核心修复已存在，不得再描述为“尚未开始”。
+- Task 13 的完整 HTTP/UI、审核工作台、Outbox Worker/通知发送、原持久数据库迁移前置检查及负责人独立整体验收。Service 与 Reader 底层实现、Task 13-08 行锁核心修复及 DATA-01 的隔离服务链验收已存在，不得再描述为“尚未开始”。
 - PG07 正式测试归档已完成，不再属于未完成项；Commit `a066b8e158d53770b2f9dab5e2c7e70c87817975` 仅新增该测试文件，已归档 SHA-256 为 `4C994737B880CDFE1E75391B99C601F94D702F149B4EFBBEB6AC9C500260854A`。
-- 附件与完整审核发布生命周期；员工首页、分类、详情、P0 搜索和 Task 12E 管理端知识编辑链已完成。
+- 审核 Web 页面、附件与完整生产审核发布生命周期；员工首页、分类、详情、P0 搜索、Task 12E 管理端知识编辑链和 DATA-01 隔离演示服务链已完成。
 - 钉钉免登、通讯录同步、工作通知及真实钉钉联调。
 - `workflow` 已有 Task 13 Service/Reader/Outbox/幂等基础，`audit` 已有 AuditEvent 基础；两者的完整 HTTP/UI、Worker 与运行闭环仍未形成。`dingtalk`、`service_desk` 仍主要处于骨架或规划状态，`search` 的标签/别名、高亮和日志能力尚未纳入 V1。
-- 生产部署、移动端 Task 12E 视觉验收、正式持久 PostgreSQL、容量、备份恢复和上线安全验证。
+- 生产部署、移动端 Task 12E 视觉验收、正式持久 PostgreSQL、容量和上线安全验证；DATA-01 的演示备份恢复不能替代生产备份恢复。
 
 ## 9. 阻塞、风险与技术债
 
@@ -205,7 +211,7 @@ Task 10 的 10A～10E 分别对应 Commit `cf8bf1ff1692dedd69e5fbf97f0632a460d66
 
 - 仓库迁移文件和历史报告不能证明电脑 B 的持久数据库已应用相同迁移。
 - Wagtail PoC 使用 SQLite 内存库和合成数据，不能外推为 PostgreSQL 或生产可用。
-- 正式员工首页、分类、详情、P0 搜索读取路径和 Task 12E 管理端知识编辑链已经形成；Task 12D 的 SQLite 版本链整体验证与 PostgreSQL 17.11 真实并发补证均已通过，Task 12E-09A 真实浏览器主链也已通过。Task 13 已有发布事务、审核证据和 Reader 的底层实现，Task 13-08-002 的修正夹具隔离并发 14 项通过，PG07 也已正式归档；但 HTTP/UI、Worker、持久环境与独立整体验收仍未形成完整端到端闭环，Task 12E 窄屏视觉、附件和生产容量仍未验证。
+- 正式员工首页、分类、详情、P0 搜索读取路径和 Task 12E 管理端知识编辑链已经形成；DATA-01 又在独立演示环境中完成了一篇文章的 Service 审核发布、员工搜索/详情、权限隔离和备份恢复。Task 13 已有发布事务、审核证据和 Reader 的底层实现，Task 13-08-002 的修正夹具隔离并发 14 项通过，PG07 也已正式归档；但审核 Web、Worker、原持久环境与独立整体验收仍未形成生产闭环，Task 12E 窄屏视觉、附件和生产容量仍未验证。
 - Task 12D 已覆盖六类真实竞争与 Lock wait；更大规模批量数据、生产失败恢复和正式切换仍缺少实际运行证据。
 
 ### 9.3 已知技术债与待决策项
@@ -237,13 +243,16 @@ Task 10 的 10A～10E 分别对应 Commit `cf8bf1ff1692dedd69e5fbf97f0632a460d66
 - Task 13-08 核心修复 Commit `1050b8fbf1fc384a79a90fcc86ae9320e5afb67e` 只修改 `apps/workflow/services.py` 及 Submit/Reject 两个测试文件；提交内 RED 2 项、GREEN 2 项及 199 项唯一回归通过。
 - Task 13-08-001 为 PostgreSQL 13 PASS、1 FAIL；Task 13-08-002 的修正夹具为 14 PASS、0 FAIL。二者均为保留的隔离 Evidence；正式归档由后续单文件 Commit 独立完成，不得把归档描述成重新运行 PostgreSQL。
 - Task 13-08-ARCHIVE Commit `a066b8e158d53770b2f9dab5e2c7e70c87817975` 的父提交为 `8049e17eabf97148b42a6c6b0196ac098bf1613c`，只新增 `apps/workflow/tests/test_pg_concurrency.py`；SHA-256 为 `4C994737B880CDFE1E75391B99C601F94D702F149B4EFBBEB6AC9C500260854A`，Git 提交统计为新增 993 行。Python 编译、Ruff lint、format check 和 Git 检查通过，归档时没有重新执行 PostgreSQL；原始版本已在独立 Evidence 目录备份。
-- 本轮未联网核验远端；历史 GitHub/Gitee 状态不作为当前同步证据。
-- Task 12 当前保持 `IN_PROGRESS / codex`；Task 13 保持 `BACKLOG / unassigned`，任务 8J 保持 `BLOCKED / unassigned`。
+- LOCAL-DEMO-G01 治理 Commit 为 `60408cdda7a281066eb1cd043e91ff13a2d7e005`；G02 治理 Commit 为 `04d9cea907d3b35e143a3475568aa05291115243`；DATA-01 实现 Commit 为 `d184033ee06630c1b1e23081c8060eb12848f4dd`。
+- DATA-01 实现提交只新增五个授权文件；专项 10 PASS、正式 `apps/tests` 837 PASS、浏览器验收和备份恢复证据均已写入提交及 SOP。
+- 最近一次实时远端核验中，GitHub `fusion/wagtail-poc` 为 `5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e`，本地 DATA-01 基线相对其纯领先 11 个提交；Gitee 因 SSL 连接失败为 `UNKNOWN`。本状态不宣称三端同步，G03 不执行 Push。
+- Task 12 当前保持 `PAUSED / IN_PROGRESS HISTORY PRESERVED`；Task 13 保持 `BACKLOG / unassigned`，任务 8J 保持 `BLOCKED / unassigned`。
+- `LOCAL-DEMO-REVIEW-WEB-01` 是唯一下一待批准业务任务，状态为 `AWAITING EXACT HEAD IMPLEMENTATION AUTHORIZATION`，实施权限 `NOT GRANTED`。
 - Task 12D-00 为 `DONE / SYNCED`，12D-01 为 `DESIGN PASS`，12D-02～12D-06 均为 `DONE / SYNCED`；PostgreSQL 17.11 临时并发补证使用端口 15432 与 tmpfs，六类竞争和 Lock wait 均 PASS，资源已完全清理，且不构成 8J 验收。
 
 ## 11. 下一步边界
 
-Task 11 已正式 `DONE / codex`。Task 12 继续为 `IN_PROGRESS / codex`，Task 12A～12E 已完成，Task 12E 为 `DONE / ACCEPTED`；Task 12 主任务只有在负责人最终验收、`390 × 844` 窄屏视觉验收或书面豁免、Gitee 当前远端 HEAD 核验及必要治理同步完成后，才具备申请正式封板的条件。Task 13 六个既有提交保留，正式状态仍为 `BACKLOG / unassigned`；Task 13-08 核心修复与 Task 13-08-ARCHIVE 单文件归档均为 `DONE / unassigned`。P3-UI-02 只是下一项试点候选，未登记为 `READY` 或当前任务，必须等待负责人独立授权。
+DATA-01 已正式归档为本地演示完成。当前没有已授权的业务开发任务；唯一下一待批准任务是 `LOCAL-DEMO-REVIEW-WEB-01`，须由负责人基于 G03 新完整 HEAD 单独授权。Task 12 继续暂停，只有在负责人最终验收、`390 × 844` 窄屏视觉验收或书面豁免、Gitee 当前远端 HEAD 核验及必要治理同步完成后，才具备申请正式封板的条件。Task 13 六个既有提交保留，正式状态仍为 `BACKLOG / unassigned`；审核 Web 候选只是其 HTTP/UI 缺口的受限切片，不代表 Task 13 全面开工。
 
 当前边界继续禁止自动执行：
 
@@ -251,7 +260,7 @@ Task 11 已正式 `DONE / codex`。Task 12 继续为 `IN_PROGRESS / codex`，Tas
 - 启动 PostgreSQL 或 OpsAI Compose；
 - 执行真实 `migrate` 或修改持久数据；
 - 把 Wagtail 加入正式根依赖、settings 或路由；
-- 创建 Task 11C、修改已完成的 Task 11 / Task 12E 业务范围，或实现审核发布、附件、钉钉或生产部署；
+- 创建 Task 11C、修改已完成的 Task 11 / Task 12E / DATA-01 业务范围，或未经授权实现审核 Web、附件、钉钉或生产部署；
 - 创建 Article 假数据或绕过正式编号规则；
-- 继续开发 Task 13、重做 Task 13-08、自动恢复 Task 13-07、重复归档 `apps/workflow/tests/test_pg_concurrency.py`、执行 P3-UI-02 或修复其他非阻塞 P3，或扩大已冻结的 Task 12 V1 范围；
+- 继续开发 Task 13、启动 `LOCAL-DEMO-REVIEW-WEB-01`、重做 DATA-01 或 Task 13-08、自动恢复 Task 13-07、重复归档 `apps/workflow/tests/test_pg_concurrency.py`、执行 P3-UI-02 或扩大已冻结的 Task 12 V1 范围；
 - 未经单独授权创建 Commit 或 Push。
