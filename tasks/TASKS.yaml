@@ -14,7 +14,7 @@ evidence_boundary:
   - "PG07 归档前的正式仓库原始版本 SHA-256 为 08E6DAE26FFD8959592C47FB77BA5604B69A2543308F36CDB855C08D7E143E23；Task 13-08-002 已验证并最终归档的修正版本为 4C994737B880CDFE1E75391B99C601F94D702F149B4EFBBEB6AC9C500260854A，二者是不同版本。"
   - "Task 13-08-ARCHIVE 已由单文件 Commit a066b8e158d53770b2f9dab5e2c7e70c87817975 完成；该提交仅新增 apps/workflow/tests/test_pg_concurrency.py，归档不构成 Task 13 主任务完成或其他业务执行授权。"
   - "LOCAL-DEMO-DATA-01 已由 Commit d184033ee06630c1b1e23081c8060eb12848f4dd 完成：只新增五个授权文件；专项 10 passed，apps/tests 回归 837 passed、23 skipped、712 subtests；独立演示环境、浏览器链路及备份恢复验收通过。"
-  - "LOCAL-DEMO-DATA-01 只证明隔离本地演示能力；审核 Web 页面仍为 NOT IMPLEMENTED，不得据此宣称 Task 13、生产环境或完整审核页面闭环已完成。"
+  - "LOCAL-DEMO-DATA-01 只证明隔离本地演示能力；后续审核 Web 实现也不等于 Task 13、生产环境或完整浏览器验收完成。"
   - "最近一次远端实时证据：GitHub fusion/wagtail-poc 为 5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e，本地 DATA-01 基线相对其纯领先 11 个提交；Gitee 实时状态因 SSL 连接失败为 UNKNOWN。"
 
 tasks:
@@ -563,7 +563,7 @@ tasks:
       - "演示文章只能通过正式 Service 完成创建、保存、提交、审核与发布，不得直接改写状态或绕过权限。"
       - "普通员工可搜索并阅读正式文章；未登录、无权限、DRAFT 与 SAVED 历史不得泄露。"
       - "重复初始化幂等，外部通知发送次数为 0，演示数据库备份与恢复演练通过。"
-      - "明确区分服务层审核完成与审核 Web 页面 NOT IMPLEMENTED；本地演示不得描述为生产上线。"
+      - "明确区分 DATA-01 当时仅验证服务层审核；本地演示不得描述为生产上线。"
     verification:
       - "Git：Commit d184033ee06630c1b1e23081c8060eb12848f4dd，父提交 04d9cea907d3b35e143a3475568aa05291115243，只新增五个批准文件。"
       - "自动验证：初始化命令测试 10 passed；apps/tests 回归 837 passed、23 skipped、712 subtests；Ruff、格式、Python 编译、Compose 解析、Django check 与 git diff --check 通过。"
@@ -580,13 +580,13 @@ tasks:
   - id: "LOCAL-DEMO-REVIEW-WEB-01"
     title: "OpsAI 审核 Web 页面与本地演示审核闭环"
     priority: MUST
-    status: "AWAITING EXACT HEAD IMPLEMENTATION AUTHORIZATION"
-    owner: unassigned
+    status: DONE
+    owner: codex
     dependencies:
       - "LOCAL-DEMO-DATA-01"
     objective: >
       在不改写既有审核状态机的前提下，为有效审核员提供待审核列表、审核详情、本人已审核记录和
-      批准/驳回 Web 操作，使隔离演示环境能够通过真实页面完成审核；本登记不构成实施授权。
+      批准/驳回 Web 操作，并保持既有审核状态机的安全语义。
     acceptance:
       - "列表、详情与操作严格执行当前审核身份、Reviewer Scope、作者/提交者不可自审和失效账号拒绝规则。"
       - "批准与驳回只能调用既有正式 Service，保留 CSRF、POST-only、幂等、事务、审计和 Outbox 语义。"
@@ -595,15 +595,16 @@ tasks:
       - "相关自动测试、Django check、迁移一致性、Ruff、格式及全量业务回归通过，并在独立演示环境完成桌面与 390×844 浏览器验收。"
       - "外部通知发送次数保持 0；不修改模型、Migration、Docker、.env、生产数据或冻结的审核状态机。"
     verification:
-      - "实施前必须由负责人基于 G03 新完整 HEAD 单独批准精确文件白名单；当前状态不得自动领取。"
-      - "候选范围：现有 apps/workflow/views.py、config/urls.py；候选新增 apps/workflow/urls.py、两个审核模板和 apps/workflow/tests/test_review_web.py。"
-      - "apps/workflow/readers.py 与 apps/workflow/services.py 仅作为冻结依赖读取；如必须修改或增加第七个文件，停止并申请追加授权。"
+      - "新建审核 Web 专项测试覆盖队列、详情、权限范围、自审拒绝、提交、批准、驳回、CSRF、幂等、过期请求、草稿隔离和员工可见性。"
+      - "专项及关联回归 51 passed、118 subtests；workflow 回归 94 passed、14 skipped、130 subtests；apps/tests 全量离线回归 846 passed、23 skipped、712 subtests。"
+      - "Ruff、格式、Python 编译、Django check 和 git diff --check 通过；迁移 dry-run 未发现模型变更，但默认 PostgreSQL 未运行而产生连接超时警告。"
     result:
       commits: []
-      verification: []
+      verification:
+        - "浏览器验收未执行：Docker Engine 未运行，127.0.0.1:8001 不可达；不得据此把本地演示描述为生产或完整浏览器验收通过。"
       notes:
-        - "该任务是 Task 13 HTTP/UI 缺口的受限候选切片；Task 13 主任务继续 BACKLOG / unassigned，不因本登记自动开工。"
-        - "实施权限 NOT GRANTED；实施 HEAD 为 PENDING G03 COMMIT HEAD。"
+        - "实现只接线现有 Reader 和 Service；未修改 models、Migration、Docker、.env、审核 Service、审核 Reader 或生产数据。"
+        - "该任务只补足 Task 13 的受限 HTTP/UI 切片；Task 13 主任务继续 BACKLOG / unassigned。"
 
   - id: "14"
     title: "开发反馈、下架和复审"

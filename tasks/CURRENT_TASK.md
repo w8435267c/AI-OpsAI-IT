@@ -1,37 +1,34 @@
 # OpsAI Current Task
 
-> `LOCAL-DEMO-DATA-01` 已按实际 Git、测试、浏览器和恢复证据归档为 `DONE / LOCAL DEMO ACCEPTANCE COMPLETED`。当前唯一下一待批准业务任务为 `LOCAL-DEMO-REVIEW-WEB-01`；它只完成任务登记，实施权限为 `NOT GRANTED`，后续必须由项目负责人基于 G03 治理 Commit 的新完整 HEAD 单独授权。
+> `LOCAL-DEMO-REVIEW-WEB-01` 已在授权基线 `176131758efa01658ffe3a9fee5dee517937154a` 上完成代码与离线自动化验收，状态为 `DONE / OFFLINE WEB IMPLEMENTATION COMPLETED`。独立演示环境的浏览器验收尚未执行：Docker Engine 未运行且 `127.0.0.1:8001` 不可达；不得把此结果描述为生产上线或完整浏览器验收通过。当前没有已授权的下一项业务开发任务。
 >
 > Task 12“开发文章创建、草稿和版本保存”继续保持 `PAUSED / IN_PROGRESS HISTORY PRESERVED`，不标记为 `DONE`、`COMPLETED`、`ACCEPTED` 或 `SYNCED`；Task 13 继续为 `BACKLOG / unassigned`。本登记不启动 Task 12、Task 13 或审核 Web 开发。
 
-## 1. 当前唯一下一待批准任务
+## 1. 本轮完成任务
 
 | 项目 | 当前值 |
 | --- | --- |
 | 任务编号 | `LOCAL-DEMO-REVIEW-WEB-01` |
 | 任务名称 | OpsAI 审核 Web 页面与本地演示审核闭环 |
-| 当前状态 | `AWAITING EXACT HEAD IMPLEMENTATION AUTHORIZATION` |
-| 实施权限 | `NOT GRANTED` |
-| 实施 HEAD | `PENDING G03 COMMIT HEAD` |
+| 当前状态 | `DONE / OFFLINE WEB IMPLEMENTATION COMPLETED` |
+| 实施权限 | 已由项目负责人单独授权 |
+| 实施 HEAD | `176131758efa01658ffe3a9fee5dee517937154a` |
 | 治理登记日期 | `2026-10-31` |
 | 当前分支 | `fusion/wagtail-poc` |
-| G03 授权基线 | `d184033ee06630c1b1e23081c8060eb12848f4dd` |
+| G03 登记基线 | `d184033ee06630c1b1e23081c8060eb12848f4dd` |
 | 任务目标 | 在不改写既有审核状态机的前提下，为已授权审核员提供待审核列表、审核详情、本人已审核记录以及批准/驳回 Web 操作，使隔离演示环境能够通过真实页面完成审核。 |
 | 依赖 | `LOCAL-DEMO-DATA-01` 已完成；复用 Task 13 既有 Reader、Submit/Reject/Approve Service、Reviewer Scope、审计、幂等和 Outbox 语义；Task 13 主任务仍为 `BACKLOG`。 |
-| 当前允许动作 | 仅完成 G03 四份治理文档同步及最多一个本地 Commit；不得实施页面、运行数据库或启动容器。 |
+| 实现结果 | 新增审核路由、列表、详情、本人已审核记录、提交审核及批准/驳回页面；全部状态变更仍只调用既有 Service。 |
 
-### 1.1 后续实施候选范围（未授权）
+### 1.1 实际实现范围
 
-后续实施只可在负责人基于 G03 新完整 HEAD 单独批准后进行。候选文件范围为：现有 `apps/workflow/views.py`、`config/urls.py`；候选新增 `apps/workflow/urls.py`、`apps/workflow/templates/workflow/review_queue.html`、`apps/workflow/templates/workflow/review_detail.html`、`apps/workflow/tests/test_review_web.py`。`apps/workflow/readers.py` 与 `apps/workflow/services.py` 只作为已冻结依赖读取；如必须修改它们、知识编辑页面、模型、Migration、CSS 或第七个文件，必须停止并申请精确追加授权。
+实际修改 `apps/workflow/views.py`、`apps/workflow/urls.py`、`config/urls.py`、两个审核模板、专项测试，以及知识编辑页的“提交审核”入口和对应页面测试。`apps/workflow/readers.py`、`apps/workflow/services.py` 保持冻结，只作为依赖调用；未修改模型、Migration、CSS、Docker、`.env` 或持久数据库。
 
-### 1.2 后续验收标准（未执行）
+### 1.2 实际验收
 
-1. 待审核、审核详情和本人已审核列表只展示当前有效审核身份及 Reviewer Scope 允许的数据，作者、提交者、无范围、失效账号和普通员工均不得越权。
-2. 批准与驳回只调用既有正式 Service；必须保留 CSRF、POST-only、幂等、状态冲突、作者不可自审、审计与 Outbox 事务语义，不得直接改状态或复制状态机。
-3. 重复提交、并发冲突、过期页面、异常回滚和未知结果均失败关闭；不得重复批准、重复驳回或发布错误版本。
-4. 审核前后的员工可见性、草稿隔离、正式版本指针和无权限统一拒绝行为不得退化。
-5. 自动测试、Django check、迁移一致性、Ruff、格式检查与全量业务回归通过；在独立演示环境完成桌面及 `390 × 844` 浏览器验收，外部通知发送次数保持 0。
-6. 不修改模型、Migration、`.env`、Docker 或生产数据；不把本地演示验收描述为生产上线，不自动 Push、Merge 或领取 Task 13 的其他范围。
+1. 专项与关联测试 `51 passed`、`118 subtests`，工作流测试 `94 passed`、`14 skipped`、`130 subtests`，全量离线回归 `846 passed`、`23 skipped`、`712 subtests`。
+2. Ruff、格式检查、Python 编译、Django check 和差异检查通过；迁移 dry-run 未发现模型变更，但默认 PostgreSQL 未运行导致连接超时警告。
+3. 浏览器桌面及 `390 × 844` 验收为 `NOT TESTED`：Docker Engine 未运行，独立 `opsai-local-demo` 不可达；恢复隔离环境后须单独执行，不得自动启动。
 
 ## 2. LOCAL-DEMO-DATA-01 完成归档
 
@@ -44,7 +41,7 @@
 | 自动验证 | 初始化命令测试 `10 passed`；正式 `apps/tests` 回归 `837 passed`、`23 skipped`、`712 subtests`；Ruff、格式、Python 编译、Compose 解析、Django check 与 `git diff --check` 通过 |
 | 运行验收 | `opsai-local-demo` 独立环境 live/ready 均为 200；首页、搜索、正式详情、未登录和无权隔离已用浏览器验证；演示数据库备份恢复成功 |
 | 业务证据 | 通过正式 Service 完成创建、保存、提交、独立审核、批准发布；重复初始化保持幂等，外部通知发送次数为 0 |
-| 明确边界 | 审核 Web 页面仍为 `NOT IMPLEMENTED`；全仓裸跑的 16 个可选 Wagtail 实验收集错误未改写为通过；本地演示不等于生产上线 |
+| 明确边界 | 本表记录 DATA-01 完成时审核页面尚未实现；本轮已补足离线 Web 实现。全仓裸跑的 16 个可选 Wagtail 实验收集错误未改写为通过；本地演示不等于生产上线 |
 | 原环境保护 | 实现 Commit 只新增五个授权文件；未修改原业务数据库、容器、数据卷、账号或既有业务代码 |
 
 ## 3. LOCAL-DEMO-READONLY-01 完成归档
@@ -58,7 +55,7 @@
 | 只读保护 | 所有 ORM 统计位于同一个 PostgreSQL `READ ONLY` 事务和连接中；查询前后 `transaction_read_only=on`，连接 PID 保持一致 |
 | 业务数据 | 知识空间、分类、文章、版本、审核记录、受众规则和审核范围均为 0；用户为 2 名，系统角色组为 0 |
 | 首页为空原因 | 数据库没有知识业务记录，不是旧代码、草稿隔离、受众拒绝或查询异常 |
-| 功能边界 | 创建、版本、提交、驳回和批准发布 Service 已存在；员工读取与搜索已存在；审核 Web 入口未实现 |
+| 功能边界 | 创建、版本、提交、驳回和批准发布 Service、员工读取与搜索均已存在；本轮已新增受限审核 Web 入口，浏览器验收待独立环境恢复 |
 | 健康检查 | `/health/live` 为 200；`/health/ready` 为 503，原因是 `private_media` 目录不存在 |
 | 外部影响 | 数据库、账号、源码、治理文件、Git、容器和原备份实际变更均为 0 |
 
@@ -71,7 +68,7 @@
 3. `deploy/Dockerfile` 已排除真实 `.env` 构建上下文并以 UID 10001 运行 Web；DATA-01 应从精确、干净的授权 HEAD 构建镜像，不挂载仓库源码，不修改现有 Dockerfile。
 4. `create_dev_users` 可在空的开发数据库中同步四个系统角色并创建固定的不可用密码开发身份；`seed_demo_data` 可幂等创建部门、内容用户组、空间、分类及员工关联，但不会创建文章、审核范围或发布数据。
 5. 文章创建、版本保存、提交和批准发布应分别复用 `create_article`、`manual_save_draft`、`submit_article_for_review` 与 `approve_and_publish_article_version`；不得修改这些已建立的安全关键 Service 或绕过其权限、锁、幂等、审计与 Outbox 语义。
-6. `ReviewerSpaceScope`、系统角色、空间、分类、文章受众、审核记录、审计、幂等与 Outbox 模型均已存在。审核 `views.py` 没有可用 HTTP/UI，DATA-01 只允许在隔离数据库中通过现有 Service 完成审核，并把审核 Web 页面明确标记为 `NOT IMPLEMENTED`。
+6. `ReviewerSpaceScope`、系统角色、空间、分类、文章受众、审核记录、审计、幂等与 Outbox 模型均已存在。DATA-01 时审核仅可在隔离数据库中通过现有 Service 完成；本轮已在不改写这些能力的前提下补足 HTTP/UI。
 7. 当前代码只在业务事务中生成待处理 `WorkflowOutboxEvent`；未发现 Outbox Worker、邮件、Webhook 或钉钉发送客户端。独立 Compose 仍必须只启动数据库与 Web，不注入外部通知凭据，并在验收时证明实际外部发送次数为 0。
 
 ## 5. 独立演示环境冻结合同（历史实施合同）
@@ -111,7 +108,7 @@ DATA-01 后续只能在下列隔离身份全部实际回读一致后写入：
 7. 独立审核者不得是文章创建者或提交者；批准后必须核对 ReviewRecord、PUBLISHED 指针、后继 DRAFT、AuditEvent、幂等记录和待处理 Outbox。
 8. 使用普通员工完成首页、搜索和详情正向验收，并验证未登录、无权限、DRAFT 与 `SAVED` 历史不泄露。
 9. 演示命令首次执行允许创建；再次执行只允许在最终状态和摘要完全一致时做只读确认。任何偏差、半完成状态或不确定结果必须停止，不得自动补写、重新提交或再次批准。
-10. 审核 Web 页面继续标记为 `NOT IMPLEMENTED`；不得用 Service 验收冒充审核员已通过网页点击完成审核。
+10. 审核 Web 页面已经离线实现；不得用自动化测试冒充尚未执行的独立环境浏览器点击验收。
 
 ## 7. DATA-01 精确文件白名单（已实施）
 
@@ -139,7 +136,7 @@ DATA-01 后续只能在下列隔离身份全部实际回读一致后写入：
 8. 版本、审核、审计、幂等和 Outbox 记录与服务合同一致；重复命令不产生第二篇文章、第二次批准或重复通知。
 9. 实际外部通知发送次数为 0；只允许保留未消费的本地 Outbox 证据，不启动 Worker。
 10. 自动测试、Django check、迁移一致性、Compose 配置检查、静态检查和 `git diff --check` 全部通过。
-11. 完成桌面及 `390 × 844` 浏览器验收，保留脱敏证据，并明确审核 Web 页面为 `NOT IMPLEMENTED`。
+11. 完成桌面及 `390 × 844` 浏览器验收并保留脱敏证据；本轮因 Docker Engine 未运行而未执行。
 12. 形成独立演示数据库备份并完成一次恢复验证；恢复资源仍必须属于 `opsai-local-demo`，不得覆盖当前演示库或原数据库。
 13. 完成可重复启动、演示、停止和恢复 SOP；停止操作默认保留演示数据卷，任何删除卷动作须另行人工确认。
 
@@ -147,14 +144,14 @@ DATA-01 后续只能在下列隔离身份全部实际回读一致后写入：
 
 出现以下任一情况，后续实施必须在写入前停止：精确 HEAD、分支或工作区不符；同名资源已存在；渲染配置引用原 `.env`、原容器、原网络、原卷、8000 或宿主机 5432；无法证明数据库为空且独立；媒体目录不可写；开发身份或演示数据发生冲突；外部通知能力已启用；需要修改候选白名单外文件；任何业务调用结果不确定。
 
-G03 本轮及下一任务获得独立授权前继续禁止：
+后续任何新任务获得独立授权前继续禁止：
 
 - 创建、启动、停止或重建任何 Docker 资源；
 - 连接或写入任何数据库，执行 Migration，创建账号、角色、空间、分类、文章或审核记录；
 - 读取、复制或修改根 `.env` 及任何真实凭据；
 - 修改业务代码、测试、Compose、设置、模板、CSS、`AGENTS.md` 或 `tasks/TASKS.yaml`；
 - 启动真实通知、钉钉、邮件、Webhook、Autopilot LIVE，或执行 Push、Merge、Reset、Clean、Stash；
-- 重复执行 DATA-01、自动开始审核 Web 页面开发、恢复 Task 12 或启动 Task 13。
+- 重复执行 DATA-01、自动启动后续任务、恢复 Task 12 或启动 Task 13。
 
 ## 10. 历史治理记录（以下原章节编号与证据保持原样）
 
@@ -311,5 +308,4 @@ ADR-0004 证明负责人选择了 Reviewer Scope 方案 B，但现有资料未�
 - 001 和 002 的 Worktree、Evidence、未跟踪文件与 002 已停止容器必须原样保留，不得覆盖或清理。
 - 正式内容权威保持 `Article + ArticleVersion`；Wagtail 尚未进入正式根依赖、settings、路由或正式运行时。
 - 正式员工读取继续只走 `current_published_version`，不得暴露草稿、`SAVED` 历史或管理预览。
-- 本轮治理阶段不读取真实 `.env`，不连接 PostgreSQL，不执行 Docker 或 HTTP 操作，不执行 Migration，不开发审核工作台。
-- 本轮 G03 治理 Commit 完成后立即停止；`LOCAL-DEMO-REVIEW-WEB-01` 在负责人基于 G03 新完整 HEAD 单独授权前不得执行。P3-UI-02 继续只是未授权候选，不 Push、Merge、Reset 或 Clean。`docs/HANDOFF.md` 只能用于人工接力，不能授予自动执行权。
+- 本轮实施未读取真实 `.env`、未连接持久 PostgreSQL、未执行 Migration，也未启动 Docker 或 HTTP 写入；P3-UI-02 继续只是未授权候选，不 Push、Merge、Reset 或 Clean。`docs/HANDOFF.md` 只能用于人工接力，不能授予自动执行权。

@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}{% if submission %}提交审核{% else %}审核详情{% endif %} | OpsAI IT 故障问答知识库{% endblock %}
+
+{% block content %}
+  {% if submission %}
+    <a href="{% url 'knowledge_manage:edit' submission.kb_no %}">返回草稿编辑</a>
+    <section aria-labelledby="submission-title">
+      <h1 id="submission-title">提交审核</h1>
+      <p>{{ submission.kb_no }} · v{{ submission.version_no }}</p>
+      <h2>{{ submission.title }}</h2>
+      <p>{{ submission.summary }}</p>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="draft_id" value="{{ submission.draft_id }}">
+        <input type="hidden" name="expected_lock_version" value="{{ submission.lock_version }}">
+        <input type="hidden" name="idempotency_key" value="{{ idempotency_key }}">
+        <button type="submit">确认提交审核</button>
+      </form>
+    </section>
+  {% else %}
+    <nav aria-label="审核导航">
+      <a href="{% url 'workflow:queue' %}">返回待审核</a>
+      <a href="{% url 'workflow:reviewed' %}">我已审核</a>
+    </nav>
+    <article aria-labelledby="review-title">
+      <header>
+        <p>{{ detail.article.kb_no }} · {{ detail.article.space_name }}</p>
+        <h1 id="review-title">待审核版本 v{{ detail.target.version_no }}</h1>
+        <p>当前审核状态：{{ detail.target.status }}</p>
+        <h2>{{ detail.target.title }}</h2>
+        <p>{{ detail.target.summary }}</p>
+      </header>
+      <section aria-labelledby="review-body-title">
+        <h2 id="review-body-title">正文</h2>
+        <p>{{ detail.target.body_plaintext|linebreaksbr }}</p>
+      </section>
+      <section aria-labelledby="review-action-title">
+        <h2 id="review-action-title">审核操作</h2>
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="idempotency_key" value="{{ idempotency_key }}">
+          <label for="review-comment">审核意见</label>
+          <textarea id="review-comment" name="comment" rows="4"></textarea>
+          <p>驳回时必须填写原因。</p>
+          <button type="submit" name="action" value="approve">批准并发布</button>
+          <button type="submit" name="action" value="reject">驳回</button>
+        </form>
+      </section>
+      <section aria-labelledby="review-record-title">
+        <h2 id="review-record-title">本人可见的审核记录</h2>
+        {% if detail.review_records %}
+          <ul>
+            {% for record in detail.review_records %}
+              <li>{{ record.decision }} · {{ record.reviewed_at }} · {{ record.comment }}</li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p>暂无本人可见的审核记录。</p>
+        {% endif %}
+      </section>
+    </article>
+  {% endif %}
+{% endblock %}

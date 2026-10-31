@@ -566,7 +566,9 @@ class ManageArticleEditPageTests(TestCase):
         self.assertContains(page, 'id="working-lock-label"')
         self.assertContains(page, 'id="restored-from-row"')
         self.assertContains(page, "js/knowledge_editor.js")
-        self.assertNotContains(page, "提交审核")
+        submission_url = reverse("workflow:submission", args=[self.article.kb_no])
+        self.assertContains(page, f'href="{submission_url}"')
+        self.assertContains(page, "提交审核")
         self.assertNotContains(page, "发布")
         self.assertNotContains(page, "当前阶段尚未接入保存功能")
 

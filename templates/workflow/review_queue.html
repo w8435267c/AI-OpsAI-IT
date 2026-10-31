@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} | OpsAI IT 故障问答知识库{% endblock %}
+
+{% block content %}
+  <nav aria-label="审核导航">
+    <a href="{% url 'workflow:queue' %}">待审核</a>
+    <a href="{% url 'workflow:reviewed' %}">我已审核</a>
+  </nav>
+  <section aria-labelledby="review-page-title">
+    <h1 id="review-page-title">{{ page_title }}</h1>
+    {% if pending_reviews %}
+      <ul>
+        {% for item in pending_reviews %}
+          <li>
+            <a href="{% url 'workflow:detail' item.version_id %}">{{ item.kb_no }} · {{ item.title }}</a>
+            <span>v{{ item.version_no }} · {{ item.space_name }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    {% elif reviewed_records %}
+      <ul>
+        {% for item in reviewed_records %}
+          <li>
+            <a href="{% url 'workflow:detail' item.version_id %}">{{ item.kb_no }} · {{ item.title }}</a>
+            <span>{{ item.decision }} · {{ item.reviewed_at }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>当前没有可显示的审核记录。</p>
+    {% endif %}
+  </section>
+{% endblock %}

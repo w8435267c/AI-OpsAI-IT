@@ -14,6 +14,7 @@ urlpatterns = [
 ]
 
 urlpatterns += [
+    path("manage/reviews/", include("apps.workflow.urls")),
     path("manage/knowledge/", include("apps.knowledge.manage_urls")),
     path("", include("apps.search.urls")),
     path("", include("apps.knowledge.urls")),

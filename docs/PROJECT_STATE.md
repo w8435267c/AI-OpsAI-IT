@@ -9,15 +9,14 @@
 | 快照日期 | 2026-10-31 |
 | 当前工作区 | `D:\Desktop\OpsAI\AI-OpsAI-IT-wagtail-poc` |
 | 当前分支 | `fusion/wagtail-poc` |
-| 本轮治理起始基线 HEAD | `d184033ee06630c1b1e23081c8060eb12848f4dd` |
+| 本轮实施授权基线 HEAD | `176131758efa01658ffe3a9fee5dee517937154a` |
 | 远端实时核验 | 最近一次实时证据：GitHub `fusion/wagtail-poc` 为 `5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e`，本地基线纯领先 11 个提交；Gitee 因 SSL 连接失败为 `UNKNOWN`；本轮禁止 Push |
-| 当前阶段 | LOCAL-DEMO-DATA-01 已归档；审核 Web 页面为唯一下一待授权候选，不授权实施 |
+| 当前阶段 | LOCAL-DEMO-REVIEW-WEB-01 已完成离线 Web 实现与自动化验收；独立演示浏览器验收待环境恢复 |
 | 正式技术主体 | Python 3.13 + Django 5.2 LTS 模块化单体 |
 | Wagtail 状态 | 融合方向已确认，F02～F08 已形成隔离 PoC 证据，尚未进入正式根依赖、正式 settings 或正式路由 |
 | 电脑 B 环境 | Python、正式项目依赖、WSL 2、Docker Desktop、Docker Engine 和 Docker Compose 已恢复；根目录 `.env` 存在、被 Git 忽略且未跟踪，内容与适用性未验证 |
-| 当前接力元数据任务 | `LOCAL-DEMO-G03`；只同步四份治理文档及最多一次本地 Commit |
-| 最近完成开发 | `LOCAL-DEMO-DATA-01`，Commit `d184033ee06630c1b1e23081c8060eb12848f4dd`，`DONE / LOCAL DEMO ACCEPTANCE COMPLETED` |
-| 当前开发任务 | 无已授权开发任务；`LOCAL-DEMO-REVIEW-WEB-01` 为 `AWAITING EXACT HEAD IMPLEMENTATION AUTHORIZATION` |
+| 最近完成开发 | `LOCAL-DEMO-REVIEW-WEB-01`，`DONE / OFFLINE WEB IMPLEMENTATION COMPLETED` |
+| 当前开发任务 | 无；后续必须基于新的完整 HEAD 单独授权 |
 | Task 10 功能 | PASS |
 | Task 10 安全 | PASS |
 | Task 10 视觉 | PASS |
@@ -25,9 +24,9 @@
 | Task 11 PostgreSQL 隔离专项 | PASS；PostgreSQL 17.11，临时资源已全部清理 |
 | Task 12D PostgreSQL 并发补证 | PASS；PostgreSQL 17.11、临时端口 15432、tmpfs、六类竞争与 Lock wait 均通过，资源已清理；不等同 8J |
 | Task 12E 真实浏览器验收 | `PASS_WITH_VISUAL_FINDINGS`；P0/P1/P2 均为 0，P3 为 2 |
-| 当前业务主线 | 本地演示数据与服务闭环已完成；审核 Web 页面尚未实现；Task 12 暂停且主任务尚未正式封板，Task 13 仍为 BACKLOG |
+| 当前业务主线 | 本地演示数据、Service 闭环和审核 Web 已实现；浏览器验收待独立环境恢复；Task 12 暂停且主任务尚未正式封板，Task 13 仍为 BACKLOG |
 | Task 13 代码现状 | 六个既有提交保留；Task 13-08 核心修复 Commit `1050b8fbf1fc384a79a90fcc86ae9320e5afb67e` 已完成并有修正夹具 PostgreSQL 14 PASS 证据，Task 13 主任务仍未完成 |
-| 当前交接状态 | 无真实 Agent 切换；DATA-01 已完成；Task 12 为 `PAUSED / IN_PROGRESS HISTORY PRESERVED`；Task 13 为 `BACKLOG / unassigned`；审核 Web 候选尚未授权 |
+| 当前交接状态 | 无真实 Agent 切换；审核 Web 离线实现已完成；Task 12 为 `PAUSED / IN_PROGRESS HISTORY PRESERVED`；Task 13 为 `BACKLOG / unassigned` |
 
 本快照的总体结论是：Task 10、Task 11 均已正式 `DONE / codex`；Task 12A～12E 的历史成果保留，但 Task 12 主任务暂停且未封板。DATA-01 已在独立本地演示环境中证明正式 Service 的创建、保存、提交、独立审核、发布、员工搜索与详情链路可运行，不能外推为生产上线。Task 13 的底层 Service、Reader、审计、幂等和 Outbox 基础已存在，但审核 HTTP/UI 与 Worker 仍缺失，Task 13 整体继续为 `BACKLOG / unassigned`。正式内容权威保持 `Article + ArticleVersion`，8J 仍为 `BLOCKED / unassigned`。
 
@@ -92,7 +91,7 @@
 - 演示初始化通过正式 Service 完成文章创建、手动保存、提交审核和独立审核员批准发布；重复执行保持幂等，外部通知发送次数为 0。
 - 自动证据为专项 `10 passed`，正式 `apps/tests` 回归 `837 passed`、`23 skipped`、`712 subtests`；Ruff、格式、Python 编译、Compose 解析、Django check 与差异检查通过。
 - 实际运行证据包括 live/ready 200、员工首页、搜索、正式详情、未登录和无权隔离的浏览器验收，以及演示数据库备份恢复成功。
-- 这是一套本地隔离演示能力，不是生产上线。审核动作由演示初始化命令调用 Service 完成；审核 Web 页面仍为 `NOT IMPLEMENTED`。
+- 这是一套本地隔离演示能力，不是生产上线。审核 Web 页面现已实现，但本轮无法启动 Docker Engine，独立演示环境浏览器验收仍为 `NOT TESTED`。
 
 ## 4. Wagtail 融合状态与边界
 
@@ -247,12 +246,12 @@ Task 10 的 10A～10E 分别对应 Commit `cf8bf1ff1692dedd69e5fbf97f0632a460d66
 - DATA-01 实现提交只新增五个授权文件；专项 10 PASS、正式 `apps/tests` 837 PASS、浏览器验收和备份恢复证据均已写入提交及 SOP。
 - 最近一次实时远端核验中，GitHub `fusion/wagtail-poc` 为 `5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e`，本地 DATA-01 基线相对其纯领先 11 个提交；Gitee 因 SSL 连接失败为 `UNKNOWN`。本状态不宣称三端同步，G03 不执行 Push。
 - Task 12 当前保持 `PAUSED / IN_PROGRESS HISTORY PRESERVED`；Task 13 保持 `BACKLOG / unassigned`，任务 8J 保持 `BLOCKED / unassigned`。
-- `LOCAL-DEMO-REVIEW-WEB-01` 是唯一下一待批准业务任务，状态为 `AWAITING EXACT HEAD IMPLEMENTATION AUTHORIZATION`，实施权限 `NOT GRANTED`。
+- `LOCAL-DEMO-REVIEW-WEB-01` 已完成离线实现：审核队列、详情、本人已审核记录、提交、批准与驳回页面均复用既有 Reader/Service；专项与关联测试 `51 passed`、`118 subtests`，全量离线回归 `846 passed`、`23 skipped`、`712 subtests`。
 - Task 12D-00 为 `DONE / SYNCED`，12D-01 为 `DESIGN PASS`，12D-02～12D-06 均为 `DONE / SYNCED`；PostgreSQL 17.11 临时并发补证使用端口 15432 与 tmpfs，六类竞争和 Lock wait 均 PASS，资源已完全清理，且不构成 8J 验收。
 
 ## 11. 下一步边界
 
-DATA-01 已正式归档为本地演示完成。当前没有已授权的业务开发任务；唯一下一待批准任务是 `LOCAL-DEMO-REVIEW-WEB-01`，须由负责人基于 G03 新完整 HEAD 单独授权。Task 12 继续暂停，只有在负责人最终验收、`390 × 844` 窄屏视觉验收或书面豁免、Gitee 当前远端 HEAD 核验及必要治理同步完成后，才具备申请正式封板的条件。Task 13 六个既有提交保留，正式状态仍为 `BACKLOG / unassigned`；审核 Web 候选只是其 HTTP/UI 缺口的受限切片，不代表 Task 13 全面开工。
+DATA-01 与审核 Web 离线实现均已完成。当前没有已授权的业务开发任务；恢复独立 `opsai-local-demo` 后，须单独执行审核页面的桌面和 `390 × 844` 浏览器验收。Task 12 继续暂停，只有在负责人最终验收、`390 × 844` 窄屏视觉验收或书面豁免、Gitee 当前远端 HEAD 核验及必要治理同步完成后，才具备申请正式封板的条件。Task 13 六个既有提交保留，正式状态仍为 `BACKLOG / unassigned`；本任务只补足受限 HTTP/UI 切片，不代表 Task 13 全面开工。
 
 当前边界继续禁止自动执行：
 
@@ -260,7 +259,7 @@ DATA-01 已正式归档为本地演示完成。当前没有已授权的业务开
 - 启动 PostgreSQL 或 OpsAI Compose；
 - 执行真实 `migrate` 或修改持久数据；
 - 把 Wagtail 加入正式根依赖、settings 或路由；
-- 创建 Task 11C、修改已完成的 Task 11 / Task 12E / DATA-01 业务范围，或未经授权实现审核 Web、附件、钉钉或生产部署；
+- 创建 Task 11C、修改已完成的 Task 11 / Task 12E / DATA-01 业务范围，或未经授权实现后续审核功能、附件、钉钉或生产部署；
 - 创建 Article 假数据或绕过正式编号规则；
-- 继续开发 Task 13、启动 `LOCAL-DEMO-REVIEW-WEB-01`、重做 DATA-01 或 Task 13-08、自动恢复 Task 13-07、重复归档 `apps/workflow/tests/test_pg_concurrency.py`、执行 P3-UI-02 或扩大已冻结的 Task 12 V1 范围；
+- 继续开发 Task 13、自动重做 DATA-01、Task 13-08 或审核 Web、自动恢复 Task 13-07、重复归档 `apps/workflow/tests/test_pg_concurrency.py`、执行 P3-UI-02 或扩大已冻结的 Task 12 V1 范围；
 - 未经单独授权创建 Commit 或 Push。
