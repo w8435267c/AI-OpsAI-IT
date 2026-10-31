@@ -8,8 +8,8 @@
 
 - 当前正式开发基线：PRD V1.1A（钉钉集成核心试点版）。
 - 历史参考版本：PRD V1.1，不作为当前开发范围的判定依据。
-- 当前阶段：Task 12A～12E 历史成果已完成，Task 12 主任务保持 `IN_PROGRESS / codex`；Task 13 六个底层实现提交已存在，但正式状态仍为 `BACKLOG / unassigned`，统一待治理确认与独立验收。
-- 本轮治理核验代码基线：`5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e`。GitHub 实时分支 HEAD 与其一致；Gitee 因 SSL 连接错误为 `UNKNOWN`，不得宣称三端同步。
+- 当前阶段：`LOCAL-DEMO-DATA-01` 已完成隔离本地演示环境和第一篇演示知识的业务闭环验收；Task 12 主任务保持 `PAUSED / IN_PROGRESS HISTORY PRESERVED`，Task 13 保持 `BACKLOG / unassigned`。
+- 当前没有已授权的业务开发任务；`LOCAL-DEMO-REVIEW-WEB-01`（审核 Web 页面与本地演示审核闭环）是唯一下一待授权任务，实施权限为 `NOT GRANTED`。动态任务状态以 `tasks/CURRENT_TASK.md` 和 `docs/PROJECT_STATE.md` 为准；远端同步状态必须实时核验，不以本文档中的历史提交哈希代替。
 
 需求、架构或实现说明发生冲突时，应以 V1.1A PRD 和架构文档为准，并在继续开发前报告冲突。
 
@@ -190,7 +190,7 @@ docker compose --env-file .env -f deploy/compose.yaml exec -T web python manage.
 - Task 12D PostgreSQL 17.11 临时隔离并发补证；
 - Task 12E 真实 Chromium 主链、Employee Published-only 隔离及双标签 CAS 验收。
 
-Task 12A～12E 的历史成果保留。Task 12E 为 `DONE / ACCEPTED`，收口 Commit 为 `411535b32db4a40991e3c64228d018e9cebb17ed`；但 Task 12 主任务仍为 `IN_PROGRESS / codex`，正式封板尚缺：
+Task 12A～12E 的历史成果保留。Task 12E 为 `DONE / ACCEPTED`，收口 Commit 为 `411535b32db4a40991e3c64228d018e9cebb17ed`；Task 12 主任务现为 `PAUSED / IN_PROGRESS HISTORY PRESERVED`，正式封板尚缺：
 
 - 项目负责人最终验收；
 - `390 × 844` 窄屏视觉验收，或项目负责人明确书面豁免；
@@ -208,6 +208,8 @@ Task 13 当前正式状态为 `BACKLOG / unassigned`。以下六个提交由负�
 | `e422b16ba0826064a629604a217b93978101d5f7` | 原子批准发布与重新发布 | `818 passed`、`9 skipped`、`697 subtests` |
 | `5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e` | 待审、详情、已审核、提交状态和驳回上下文 Reader | `827 passed`、`9 skipped`、`712 subtests` |
 
-Task 13 尚未完成 PostgreSQL 持久数据兼容预检、并发/锁/事务隔离验收、审核 HTTP/UI、Outbox Worker/通知及负责人独立验收。未跟踪文件 `apps/workflow/tests/test_pg_concurrency.py` 的 SHA-256 为 `08E6DAE26FFD8959592C47FB77BA5604B69A2543308F36CDB855C08D7E143E23`，疑似 Task 13-07 验收草稿；来源未确认、未执行、未验收并保持未跟踪。Task 13-07 仅为下一候选技术验收任务，尚未获执行授权，未来只能在一次性隔离 PostgreSQL 环境中按单独合同执行。
+Task 13 尚未完成 PostgreSQL 持久数据兼容预检、审核 HTTP/UI、Outbox Worker/通知及负责人独立整体验收。`apps/workflow/tests/test_pg_concurrency.py` 已由单文件 Commit `a066b8e158d53770b2f9dab5e2c7e70c87817975` 正式纳入 Git；已归档版本 SHA-256 为 `4C994737B880CDFE1E75391B99C601F94D702F149B4EFBBEB6AC9C500260854A`，其 14/14 PASS 属于此前隔离复验证据，不等于 Task 13 整体完成。
+
+`LOCAL-DEMO-DATA-01` 已通过独立 Compose、独立数据库和正式 Service 编排完成本地演示验收，包括创建、保存、提交、独立审核、批准发布、员工搜索和详情访问；该结果只证明隔离本地演示能力，不代表生产上线。审核动作目前仍由受控命令调用既有 Service 完成，审核 Web 页面尚未实现，后续只能在 `LOCAL-DEMO-REVIEW-WEB-01` 获得精确 HEAD 独立授权后开发。
 
 当前迁移文件包括 `accounts.0001`～`0002`、`knowledge.0001`～`0006`、`audit.0001` 与 `workflow.0001`。文件存在不代表当前持久数据库已应用；本轮未连接 PostgreSQL、未执行迁移，也未读取真实 `.env`。
