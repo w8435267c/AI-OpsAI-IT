@@ -1,52 +1,49 @@
 # OpsAI Current Task
 
-> 本文件登记唯一当前业务任务。`TASK13-REVIEW-WEB-E2E-01` 已由项目负责人授权执行并完成收口；Task 13 主任务仍保持 `BACKLOG / unassigned`。本收口不得解释为生产上线、Task 13 主任务完成或钉钉接入授权。
+> 本文件登记唯一当前业务任务。钉钉任务现仅完成登记，尚未获得代码实施或真实钉钉联调授权；不得将其状态解释为已接入、可上线或可使用真实凭据。
 
 ## 1. 当前任务
 
 | 项目 | 当前值 |
 | --- | --- |
-| 任务编号 | `TASK13-REVIEW-WEB-E2E-01` |
-| 任务名称 | Task 13 审核发布 Web 端到端验收 |
-| 任务状态 | `DONE / PASS` |
-| 任务性质 | `ISOLATED E2E VERIFICATION ONLY` |
-| 登记基线 | `2cb07591a7bbe60028f5e8d6908e27fc9748dd0b` |
+| 任务编号 | `DINGTALK-H5-SSO-MVP-01` |
+| 任务名称 | 钉钉 H5 免登与员工身份映射 MVP |
+| 任务状态 | `REGISTERED / NOT STARTED` |
+| 任务性质 | `DEVELOPMENT PREPARATION ONLY / NO REAL DINGTALK EXECUTION` |
+| 登记基线 | `09ec8c47b12da5c71c3637bce5d8f39dcf1ee4eb` |
 | 目标分支 | `fusion/wagtail-poc` |
-| 前置依赖 | `LOCAL-DEMO-REVIEW-WEB-01` 已完成离线 Web 实现与自动化验证；Task 13 既有 Service、Reader、Reviewer Scope、审计与 Outbox 语义仅作为既有依赖。 |
-| 执行基线 | `01529d2a23c7e2c46bb81fa984eb838080eeb63f` |
-| 完成证据 | `D:\Temp\OpsAI-Task13-E2E-01\evidence\TEST_EVIDENCE.md`；SHA-256：`43B600CEB6410A503276A1DA37534D50BCE2627DA4810253D1A665F921ABF989`。 |
-| 验收结果 | 五阶段均 PASS；隔离 PostgreSQL 定向回归 `114` 项 PASS；桌面 `1280 × 720` 与手机 `390 × 844` 真实浏览器验收 PASS；未触碰 `opsai-local-demo-*`。 |
+| 前置依赖 | `TASK13-REVIEW-WEB-E2E-01` 已 `DONE / PASS`；现有 `accounts.User` 的 `dingtalk_corp_id`、`dingtalk_user_id`、`dingtalk_union_id` 及服务端受众过滤只作为既有依赖。 |
+| 当前授权 | 本轮只允许任务登记与版本保存；未授权编写代码、修改数据库、迁移、调用钉钉 API、使用真实 Token/AppSecret 或启动测试租户联调。 |
 
-## 2. 已完成验收目标
+## 2. 下一轮需单独授权的实施目标
 
-1. 当前 HEAD 的审核 Web 页面实际可访问。
-2. 编辑人员完成创建知识、保存草稿、提交审核并查看状态。
-3. 审核员完成待审查看、批准发布、驳回并填写原因。
-4. 员工可搜索并阅读刚发布的正式知识；草稿、待审核和驳回版本不得泄露。
-5. 越权审核、自审、重复提交与重复审批均被正确拒绝。
-6. PostgreSQL 隔离验证通过。
-7. Windows 桌面浏览器验收通过。
-8. `390 × 844` 手机窄屏浏览器验收通过。
+1. 实现钉钉 H5 受控入口：授权码一次性提交到服务端，服务端换取可信身份后创建 Django Session 并恢复安全目标页。
+2. 按 `(corp_id, user_id)` 映射既有 `accounts.User`，核验账号状态、组织关联和既有知识受众过滤；不得创建权限绕过。
+3. 登录失败、身份缺失、企业不匹配、禁用账号和重放授权码必须失败关闭，不泄露 Token、AppSecret 或员工敏感信息。
+4. 保持开发模拟登录入口的现有安全边界：只在 DEBUG 与显式开关同时开启时可用，生产设置必须继续硬关闭。
+5. 先完成本地模拟与无凭据单元测试；真实钉钉测试环境仅在负责人提供受控测试租户和独立凭据注入方案后另行验收。
 
-## 3. 实际执行的精确隔离范围
+## 3. 拟议实施范围与停止条件
 
-下列操作已在项目负责人对 `01529d2a23c7e2c46bb81fa984eb838080eeb63f` 的单独执行授权范围内完成：
+拟议实现仅限钉钉适配层、其测试、必要的路由接线以及在确有映射缺口时最小的 `accounts` 服务/测试调整。具体可修改文件必须在下一轮实施授权中逐项白名单化；本登记不授权任何代码文件。
 
-- 创建独立 Docker Compose 项目、独立 PostgreSQL 数据卷和独立私有媒体数据卷；不得复用或覆盖 `opsai-local-demo-*` 容器及其卷。
-- 使用不为 `8000`、`8001` 的独立端口，并且不连接生产数据库。
-- 仅使用合成测试账号和合成知识数据；允许在该隔离数据库内执行迁移和种子数据初始化。
-- 运行 Task 13 PostgreSQL 验收、Windows 桌面浏览器验收与 `390 × 844` 窄屏验收。
-- 保存独立验收证据；任何代码缺陷只报告根因、最小修改范围和修复建议，未经后续授权不得修改业务代码。
+- 不扩大到通讯录全量同步、工作通知、回调、生产部署或服务台集成。
+- 不得读取、复制、输出或提交 `AppSecret`、Access Token、授权码、Cookie、`.env` 或其他凭据。
+- 没有独立测试租户、企业标识、回调白名单、HTTPS/域名方案及受控凭据注入时，不得进行真实钉钉调用。
 
-## 4. 历史状态与保护边界
+## 4. 当前安全边界
 
-- `LOCAL-DEMO-REVIEW-WEB-01`：`DONE / OFFLINE WEB IMPLEMENTATION COMPLETED`；本任务已补足其独立隔离浏览器与 PostgreSQL 验收，不改变 Task 13 主任务状态。
+- `TASK13-REVIEW-WEB-E2E-01`：`DONE / PASS`；证据报告为 `.ai/reports/task13-review-web-e2e-acceptance.md`，不改变 Task 13 主任务状态。
 - Task 12 保持 `PAUSED / IN_PROGRESS HISTORY PRESERVED`；Task 13 保持 `BACKLOG / unassigned`。
 - 禁止触碰 `opsai-local-demo-web-1`、`opsai-local-demo-db-1`、`opsai-local-demo-postgres-data` 和 `opsai-local-demo-private-media`。
 - 禁止操作历史 Task 13-07/13-08 工作区与证据；不得读取或修改 `.env`、生产配置或 Autopilot/R9 文件。
-- 未经单独授权不得 Push、Merge、Reset、Clean、Stash、部署或启动后续功能开发。
+- 未经单独授权不得 Push、Merge、Reset、Clean、Stash、部署或启动钉钉功能开发。
 
 ## 5. 已替换的前一当前任务登记（历史保留）
+
+`TASK13-REVIEW-WEB-E2E-01` 已在执行基线 `01529d2a23c7e2c46bb81fa984eb838080eeb63f` 完成五阶段隔离 E2E 验收，状态为 `DONE / PASS`。原始证据为 `D:\Temp\OpsAI-Task13-E2E-01\evidence\TEST_EVIDENCE.md`，SHA-256 为 `43B600CEB6410A503276A1DA37534D50BCE2627DA4810253D1A665F921ABF989`。其隔离 PostgreSQL 定向回归为 `114` 项 OK，桌面 `1280 × 720` 及手机 `390 × 844` 真实浏览器验收均 PASS；没有触碰 `opsai-local-demo-*`。Task 13 主任务仍为 `BACKLOG / unassigned`。
+
+## 6. 更早的历史当前任务登记（历史保留）
 
 以下内容保留为 `LOCAL-DEMO-REVIEW-WEB-01` 的历史登记，不再定义当前唯一任务：
 

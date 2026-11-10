@@ -8,9 +8,9 @@
 
 | 项目 | 当前值 |
 | --- | --- |
-| 当前已授权开发任务 | 无；下一项必须经独立登记和实施授权 |
+| 当前已登记任务 | `DINGTALK-H5-SSO-MVP-01`；`REGISTERED / NOT STARTED`，尚无实施授权 |
 | 最近完成任务 | `TASK13-REVIEW-WEB-E2E-01`；`DONE / PASS` |
-| 后续待授权事项 | 钉钉 H5 免登与员工身份映射 MVP；不自动启动 |
+| 后续待授权事项 | 钉钉 H5 免登与员工身份映射 MVP 的逐文件实施范围、测试租户与凭据注入方式；不自动启动 |
 | 本轮实施授权基线 | `01529d2a23c7e2c46bb81fa984eb838080eeb63f` |
 | 远端实时状态 | 最近一次核验：GitHub `fusion/wagtail-poc` 为 `5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e`，本地基线纯领先 11 个提交；Gitee 因 SSL 连接失败为 `UNKNOWN`；未 Push |
 | 本轮验证 | 五阶段隔离 E2E PASS；PostgreSQL 定向回归 `114` 项 OK；桌面 `1280 × 720`、手机 `390 × 844` 真实浏览器 PASS |
@@ -254,8 +254,9 @@ Task 10 最终验证为页面专项 `30 passed`、knowledge `310 passed`、正�
 - Task 10 V1 正式前端为 Django Templates + 项目自有 CSS；Bootstrap / HTMX 当前不要求接入。
 - Task 11A、11B 已完成并双端同步，项目负责人视觉验收与 PostgreSQL 隔离专项均 PASS；Task 11 当前为 `DONE / codex`，不需要 Task 11C。
 - Task 12A～12E 已完成，ADR-0003 为 `Accepted`；Task 12E 为 `DONE / ACCEPTED`，收口 Commit 为 `411535b32db4a40991e3c64228d018e9cebb17ed`，Task 12 主任务仍为 `PAUSED / IN_PROGRESS HISTORY PRESERVED`。
-- LOCAL-DEMO-DATA-01 已由 Commit `d184033ee06630c1b1e23081c8060eb12848f4dd` 完成；只证明隔离本地演示能力。审核 Web 已完成离线实现，但尚未完成独立环境浏览器验收。
+- LOCAL-DEMO-DATA-01 已由 Commit `d184033ee06630c1b1e23081c8060eb12848f4dd` 完成；只证明隔离本地演示能力。审核 Web 的独立环境浏览器与 PostgreSQL 验收已由 `TASK13-REVIEW-WEB-E2E-01` 完成，但不等同生产验收。
 - 当前没有真实 Agent 切换；如后续切换，下一 Agent 必须先核验本轮新 HEAD、DATA-01 Commit/SOP、ADR-0003、ADR-0004 及 Task 13 既有证据，不得自行启动后续审核、Task 12、Task 13 或重做 DATA-01。
 - 任务 8J 保持 `BLOCKED / unassigned`；Task 13 保持 `BACKLOG / unassigned`。
-- Task 13 六个既有提交已经覆盖 submit、reject、approve/publish 和 Reader 等底层能力；Task 13-08 核心修复、修正夹具并发复验及 PG07 正式归档已完成，但 HTTP/UI、Worker/通知、持久环境和负责人独立整体验收仍缺失，因此 Task 13 未完成。
+- Task 13 六个既有提交已经覆盖 submit、reject、approve/publish 和 Reader 等底层能力；其审核 HTTP/UI、隔离 PostgreSQL 与桌面/手机 E2E 已由 `TASK13-REVIEW-WEB-E2E-01` 完成，但 Worker/通知、持久环境和负责人对完整主任务的独立验收仍缺失，因此 Task 13 未完成。
+- `DINGTALK-H5-SSO-MVP-01` 已登记为下一项唯一业务任务，范围仅为 H5 免登、可信身份映射和既有受众权限复用；尚未获得实施、测试租户、真实凭据或生产接入授权。
 - 本文件与 `tasks/CURRENT_TASK.md`、`tasks/TASKS.yaml` 的 DATA-01、审核 Web、Task 12/12E/13/13-07/13-08/13-08-ARCHIVE 状态保持一致；HANDOFF 文本不能授予执行权，未经单独授权不得继续 Task 13、正式接入 Wagtail 或操作原持久数据库。

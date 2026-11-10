@@ -194,7 +194,7 @@ Task 10 的 10A～10E 分别对应 Commit `cf8bf1ff1692dedd69e5fbf97f0632a460d66
 - Task 13 的 Outbox Worker/通知发送、原持久数据库迁移前置检查及负责人对完整主任务范围的独立整体验收。Service、Reader、审核 HTTP/UI、Task 13-08 行锁核心修复及 DATA-01/E2E 的隔离验收已存在，不得再描述为“尚未开始”。
 - PG07 正式测试归档已完成，不再属于未完成项；Commit `a066b8e158d53770b2f9dab5e2c7e70c87817975` 仅新增该测试文件，已归档 SHA-256 为 `4C994737B880CDFE1E75391B99C601F94D702F149B4EFBBEB6AC9C500260854A`。
 - 附件与完整生产审核发布生命周期；审核 Web 已完成独立 E2E 验收，但不等同生产上线。员工首页、分类、详情、P0 搜索、Task 12E 管理端知识编辑链和 DATA-01 隔离演示服务链已完成。
-- 钉钉免登、通讯录同步、工作通知及真实钉钉联调。
+- `DINGTALK-H5-SSO-MVP-01` 已登记但未开始：钉钉 H5 免登、员工身份映射和既有受众权限复用属于其拟议最小范围；通讯录同步、工作通知及真实钉钉联调仍未开发。
 - `workflow` 已有 Task 13 Service/Reader/Outbox/幂等基础，`audit` 已有 AuditEvent 基础；两者的完整 HTTP/UI、Worker 与运行闭环仍未形成。`dingtalk`、`service_desk` 仍主要处于骨架或规划状态，`search` 的标签/别名、高亮和日志能力尚未纳入 V1。
 - 生产部署、移动端 Task 12E 视觉验收、正式持久 PostgreSQL、容量和上线安全验证；DATA-01 的演示备份恢复不能替代生产备份恢复。
 
@@ -251,7 +251,7 @@ Task 10 的 10A～10E 分别对应 Commit `cf8bf1ff1692dedd69e5fbf97f0632a460d66
 
 ## 11. 下一步边界
 
-DATA-01 与审核 Web 离线实现均已完成；`TASK13-REVIEW-WEB-E2E-01` 已在独立环境完成审核页面的桌面和 `390 × 844` 浏览器验收以及 PostgreSQL 定向回归。Task 12 继续暂停，只有在负责人最终验收、`390 × 844` 窄屏视觉验收或书面豁免、Gitee 当前远端 HEAD 核验及必要治理同步完成后，才具备申请正式封板的条件。Task 13 六个既有提交保留，主任务正式状态仍为 `BACKLOG / unassigned`；本 E2E 子任务不代表 Task 13 全面开工或完成。
+DATA-01 与审核 Web 离线实现均已完成；`TASK13-REVIEW-WEB-E2E-01` 已在独立环境完成审核页面的桌面和 `390 × 844` 浏览器验收以及 PostgreSQL 定向回归。`DINGTALK-H5-SSO-MVP-01` 已登记为唯一下一项业务任务，但没有代码实施、真实钉钉调用或凭据访问授权。Task 12 继续暂停，只有在负责人最终验收、`390 × 844` 窄屏视觉验收或书面豁免、Gitee 当前远端 HEAD 核验及必要治理同步完成后，才具备申请正式封板的条件。Task 13 六个既有提交保留，主任务正式状态仍为 `BACKLOG / unassigned`；本 E2E 子任务不代表 Task 13 全面开工或完成。
 
 当前边界继续禁止自动执行：
 
@@ -259,7 +259,7 @@ DATA-01 与审核 Web 离线实现均已完成；`TASK13-REVIEW-WEB-E2E-01` 已�
 - 启动 PostgreSQL 或 OpsAI Compose；
 - 执行真实 `migrate` 或修改持久数据；
 - 把 Wagtail 加入正式根依赖、settings 或路由；
-- 创建 Task 11C、修改已完成的 Task 11 / Task 12E / DATA-01 业务范围，或未经授权实现后续审核功能、附件、钉钉或生产部署；
+- 创建 Task 11C、修改已完成的 Task 11 / Task 12E / DATA-01 业务范围，或未经逐文件实施授权实现后续审核功能、附件、钉钉或生产部署；
 - 创建 Article 假数据或绕过正式编号规则；
 - 继续开发 Task 13、自动重做 DATA-01、Task 13-08 或审核 Web、自动恢复 Task 13-07、重复归档 `apps/workflow/tests/test_pg_concurrency.py`、执行 P3-UI-02 或扩大已冻结的 Task 12 V1 范围；
 - 未经单独授权创建 Commit 或 Push。

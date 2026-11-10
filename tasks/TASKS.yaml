@@ -636,6 +636,32 @@ tasks:
       notes:
         - "DONE 仅表示本独立隔离 E2E 验收切片完成；不表示 Task 13 主任务完成、生产上线或获得钉钉接入授权。"
 
+  - id: "DINGTALK-H5-SSO-MVP-01"
+    title: "钉钉 H5 免登与员工身份映射 MVP"
+    priority: MUST
+    status: "REGISTERED / NOT STARTED"
+    owner: codex
+    dependencies:
+      - "TASK13-REVIEW-WEB-E2E-01"
+    objective: >
+      为员工从钉钉工作台进入 OpsAI 知识库设计并实现最小 H5 免登、可信身份校验、现有 accounts.User 映射
+      与受众权限复用；本任务不包含通讯录全量同步、消息通知、回调或生产接入。
+    acceptance:
+      - "钉钉 H5 授权码仅提交给服务端并按一次性语义处理；服务端成功换取可信身份后创建 Django Session 并恢复安全目标页。"
+      - "按 corp_id 与 user_id 映射既有 accounts.User，核验账号状态、组织关联和既有服务端知识受众过滤；不得因登录接入绕过已发布知识权限。"
+      - "企业不匹配、身份缺失、账号禁用、授权码重放、第三方失败和签名/配置异常均失败关闭，不泄露员工资料、Token 或 AppSecret。"
+      - "保留开发模拟登录的 DEBUG 加显式开关门禁，生产设置继续硬关闭该入口。"
+      - "先完成本地模拟与无凭据自动化测试；真实钉钉测试环境联调仅在独立测试租户、受控凭据注入和负责人单独执行授权齐备后进行。"
+    verification:
+      - "下一轮实施前必须核验精确 HEAD、唯一当前任务、逐文件白名单、测试命令和回滚边界；本登记不构成任何代码、数据库、Docker 或真实钉钉调用授权。"
+      - "拟议责任范围为 apps/dingtalk、相关测试、必要的路由接线，以及经证实存在映射缺口时最小的 accounts 服务/测试调整；不得据此修改 settings、模型、迁移或凭据文件。"
+      - "AppSecret、Access Token、授权码、Cookie 和 .env 均不得进入 Git、日志、测试固件或报告。"
+    result:
+      commits: []
+      verification: []
+      notes:
+        - "REGISTERED / NOT STARTED 只表示下一项业务任务已登记；当前未获得实施、真实钉钉测试、生产部署或凭据访问授权。"
+
   - id: "14"
     title: "开发反馈、下架和复审"
     priority: MUST
