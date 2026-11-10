@@ -639,7 +639,7 @@ tasks:
   - id: "DINGTALK-H5-SSO-MVP-01"
     title: "钉钉 H5 免登与员工身份映射 MVP"
     priority: MUST
-    status: "AUTHORIZED / IN PROGRESS"
+    status: "DONE / OFFLINE IDENTITY FLOW PASS"
     owner: codex
     dependencies:
       - "TASK13-REVIEW-WEB-E2E-01"
@@ -657,10 +657,14 @@ tasks:
       - "允许文件白名单为 tasks/CURRENT_TASK.md、tasks/TASKS.yaml、apps/dingtalk/{views,urls,services,authentication,providers}.py、apps/dingtalk/tests/{test_sso,test_authentication}.py、config/urls.py、config/settings/{base,development,test}.py；不得修改 accounts、knowledge、search 模型、迁移或凭据文件。"
       - "AppSecret、Access Token、授权码、Cookie 和 .env 均不得进入 Git、日志、测试固件或报告。"
     result:
-      commits: []
-      verification: []
+      commits:
+        - "967283d9a795a7dd146bd89d1e7295b96eb67e8c"
+      verification:
+        - "实施基线 3391f8a8b756422889b7d2625da8511a74de7cb5；钉钉专项离线测试 14 项通过。"
+        - "全量离线回归 791 项通过、23 项跳过；Ruff、格式、Django check、迁移 dry-run 与 compileall 通过。"
+        - "默认身份提供者失败关闭；未调用真实钉钉 API、未使用凭据、未操作 Docker/数据库、未产生迁移。"
       notes:
-        - "项目负责人已授权离线实现与自动化验收；真实钉钉测试、生产部署和凭据访问仍未授权。"
+        - "DONE 仅代表 OFFLINE IDENTITY FLOW PASS；真实钉钉测试、生产部署和凭据访问仍未授权。"
 
   - id: "14"
     title: "开发反馈、下架和复审"

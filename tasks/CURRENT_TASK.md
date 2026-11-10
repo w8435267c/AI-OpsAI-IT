@@ -1,6 +1,6 @@
 # OpsAI Current Task
 
-> 本文件登记唯一当前业务任务。钉钉任务现仅完成登记，尚未获得代码实施或真实钉钉联调授权；不得将其状态解释为已接入、可上线或可使用真实凭据。
+> 本文件登记唯一当前业务任务。钉钉任务已完成离线身份流实现与自动化验收；不得将其状态解释为真实钉钉已接入、可上线或可使用真实凭据。
 
 ## 1. 当前任务
 
@@ -8,14 +8,22 @@
 | --- | --- |
 | 任务编号 | `DINGTALK-H5-SSO-MVP-01` |
 | 任务名称 | 钉钉 H5 免登与员工身份映射 MVP |
-| 任务状态 | `AUTHORIZED / IN PROGRESS` |
+| 任务状态 | `DONE / OFFLINE IDENTITY FLOW PASS` |
 | 任务性质 | `LOCAL OFFLINE DEVELOPMENT / NO REAL DINGTALK EXECUTION` |
 | 登记基线 | `09ec8c47b12da5c71c3637bce5d8f39dcf1ee4eb` |
 | 目标分支 | `fusion/wagtail-poc` |
 | 前置依赖 | `TASK13-REVIEW-WEB-E2E-01` 已 `DONE / PASS`；现有 `accounts.User` 的 `dingtalk_corp_id`、`dingtalk_user_id`、`dingtalk_union_id` 及服务端受众过滤只作为既有依赖。 |
-| 当前授权 | 项目负责人已授权在逐文件白名单内完成本地无凭据开发、自动化测试、隔离验收、Git 本地提交及任务状态收口；未授权修改数据库、迁移、调用钉钉 API、使用真实 Token/AppSecret 或启动测试租户联调。 |
+| 当前授权 | 本轮离线开发、自动化测试、隔离验收与功能本地提交已完成；真实钉钉 API、真实 Token/AppSecret、测试租户联调、生产接入、数据库迁移和 Docker 操作仍未授权。 |
 
-## 2. 下一轮需单独授权的实施目标
+## 2. 本轮完成证据
+
+- 功能提交：`967283d9a795a7dd146bd89d1e7295b96eb67e8c`（实施基线：`3391f8a8b756422889b7d2625da8511a74de7cb5`）。
+- 钉钉专项离线测试：`14` 项通过；全量离线回归：`791` 项通过、`23` 项跳过。
+- Ruff、格式检查、Django check、`makemigrations --check --dry-run` 与 `compileall` 均通过；没有新增迁移。
+- 仅使用显式注入的测试身份提供者；默认身份提供者安全拒绝。未调用真实钉钉 API，未读取或使用真实凭据，未操作 Docker、数据库或 Task 13 证据。
+- 本次 PASS 仅代表 `OFFLINE IDENTITY FLOW PASS`；真实钉钉 SSO 仍为 `NOT VERIFIED`。
+
+## 3. 下一轮需单独授权的实施目标
 
 1. 实现钉钉 H5 受控入口：授权码一次性提交到服务端，服务端换取可信身份后创建 Django Session 并恢复安全目标页。
 2. 按 `(corp_id, user_id)` 映射既有 `accounts.User`，核验账号状态、组织关联和既有知识受众过滤；不得创建权限绕过。
@@ -23,7 +31,7 @@
 4. 保持开发模拟登录入口的现有安全边界：只在 DEBUG 与显式开关同时开启时可用，生产设置必须继续硬关闭。
 5. 先完成本地模拟与无凭据单元测试；真实钉钉测试环境仅在负责人提供受控测试租户和独立凭据注入方案后另行验收。
 
-## 3. 拟议实施范围与停止条件
+## 4. 拟议实施范围与停止条件
 
 拟议实现仅限钉钉适配层、其测试、必要的路由接线以及在确有映射缺口时最小的 `accounts` 服务/测试调整。具体可修改文件必须在下一轮实施授权中逐项白名单化；本登记不授权任何代码文件。
 
@@ -31,7 +39,7 @@
 - 不得读取、复制、输出或提交 `AppSecret`、Access Token、授权码、Cookie、`.env` 或其他凭据。
 - 没有独立测试租户、企业标识、回调白名单、HTTPS/域名方案及受控凭据注入时，不得进行真实钉钉调用。
 
-## 4. 当前安全边界
+## 5. 当前安全边界
 
 - `TASK13-REVIEW-WEB-E2E-01`：`DONE / PASS`；证据报告为 `.ai/reports/task13-review-web-e2e-acceptance.md`，不改变 Task 13 主任务状态。
 - Task 12 保持 `PAUSED / IN_PROGRESS HISTORY PRESERVED`；Task 13 保持 `BACKLOG / unassigned`。
@@ -39,11 +47,11 @@
 - 禁止操作历史 Task 13-07/13-08 工作区与证据；不得读取或修改 `.env`、生产配置或 Autopilot/R9 文件。
 - 未经单独授权不得 Push、Merge、Reset、Clean、Stash、部署或启动钉钉功能开发。
 
-## 5. 已替换的前一当前任务登记（历史保留）
+## 6. 已替换的前一当前任务登记（历史保留）
 
 `TASK13-REVIEW-WEB-E2E-01` 已在执行基线 `01529d2a23c7e2c46bb81fa984eb838080eeb63f` 完成五阶段隔离 E2E 验收，状态为 `DONE / PASS`。原始证据为 `D:\Temp\OpsAI-Task13-E2E-01\evidence\TEST_EVIDENCE.md`，SHA-256 为 `43B600CEB6410A503276A1DA37534D50BCE2627DA4810253D1A665F921ABF989`。其隔离 PostgreSQL 定向回归为 `114` 项 OK，桌面 `1280 × 720` 及手机 `390 × 844` 真实浏览器验收均 PASS；没有触碰 `opsai-local-demo-*`。Task 13 主任务仍为 `BACKLOG / unassigned`。
 
-## 6. 更早的历史当前任务登记（历史保留）
+## 7. 更早的历史当前任务登记（历史保留）
 
 以下内容保留为 `LOCAL-DEMO-REVIEW-WEB-01` 的历史登记，不再定义当前唯一任务：
 
