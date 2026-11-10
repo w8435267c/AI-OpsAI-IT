@@ -1,5 +1,55 @@
 # OpsAI Current Task
 
+> 本文件登记唯一当前业务任务。Task 13 主任务保持 `BACKLOG / unassigned`；本登记只授权其独立的隔离端到端验收切片，不得将登记或后续验收结果自动解释为 Task 13 主任务完成、生产上线或钉钉接入授权。
+
+## 1. 当前任务
+
+| 项目 | 当前值 |
+| --- | --- |
+| 任务编号 | `TASK13-REVIEW-WEB-E2E-01` |
+| 任务名称 | Task 13 审核发布 Web 端到端验收 |
+| 任务状态 | `AUTHORIZED / NOT STARTED` |
+| 任务性质 | `ISOLATED E2E VERIFICATION ONLY` |
+| 登记基线 | `2cb07591a7bbe60028f5e8d6908e27fc9748dd0b` |
+| 目标分支 | `fusion/wagtail-poc` |
+| 前置依赖 | `LOCAL-DEMO-REVIEW-WEB-01` 已完成离线 Web 实现与自动化验证；Task 13 既有 Service、Reader、Reviewer Scope、审计与 Outbox 语义仅作为既有依赖。 |
+| 当前授权 | 仅完成任务登记；本轮不得启动 Docker、连接或写入数据库、执行迁移、创建合成数据、执行 PostgreSQL 验收或浏览器验收。 |
+
+## 2. 下一轮待单独执行授权的验收目标
+
+1. 当前 HEAD 的审核 Web 页面实际可访问。
+2. 编辑人员完成创建知识、保存草稿、提交审核并查看状态。
+3. 审核员完成待审查看、批准发布、驳回并填写原因。
+4. 员工可搜索并阅读刚发布的正式知识；草稿、待审核和驳回版本不得泄露。
+5. 越权审核、自审、重复提交与重复审批均被正确拒绝。
+6. PostgreSQL 隔离验证通过。
+7. Windows 桌面浏览器验收通过。
+8. `390 × 844` 手机窄屏浏览器验收通过。
+
+## 3. 下一轮拟申请的精确隔离范围
+
+下列操作必须在未来获得单独、明确的执行授权后才能开始：
+
+- 创建独立 Docker Compose 项目、独立 PostgreSQL 数据卷和独立私有媒体数据卷；不得复用或覆盖 `opsai-local-demo-*` 容器及其卷。
+- 使用不为 `8000`、`8001` 的独立端口，并且不连接生产数据库。
+- 仅使用合成测试账号和合成知识数据；允许在该隔离数据库内执行迁移和种子数据初始化。
+- 运行 Task 13 PostgreSQL 验收、Windows 桌面浏览器验收与 `390 × 844` 窄屏验收。
+- 保存独立验收证据；任何代码缺陷只报告根因、最小修改范围和修复建议，未经后续授权不得修改业务代码。
+
+## 4. 历史状态与保护边界
+
+- `LOCAL-DEMO-REVIEW-WEB-01`：`DONE / OFFLINE WEB IMPLEMENTATION COMPLETED`。其浏览器验收尚未作为当前任务之前的完成证据；完整记录保留在 `tasks/TASKS.yaml` 与 `docs/HANDOFF.md`。
+- Task 12 保持 `PAUSED / IN_PROGRESS HISTORY PRESERVED`；Task 13 保持 `BACKLOG / unassigned`。
+- 禁止触碰 `opsai-local-demo-web-1`、`opsai-local-demo-db-1`、`opsai-local-demo-postgres-data` 和 `opsai-local-demo-private-media`。
+- 禁止操作历史 Task 13-07/13-08 工作区与证据；不得读取或修改 `.env`、生产配置或 Autopilot/R9 文件。
+- 未经单独授权不得 Push、Merge、Reset、Clean、Stash、部署或启动后续功能开发。
+
+## 5. 已替换的前一当前任务登记（历史保留）
+
+以下内容保留为 `LOCAL-DEMO-REVIEW-WEB-01` 的历史登记，不再定义当前唯一任务：
+
+# OpsAI Current Task
+
 > `LOCAL-DEMO-REVIEW-WEB-01` 已在授权基线 `176131758efa01658ffe3a9fee5dee517937154a` 上完成代码与离线自动化验收，状态为 `DONE / OFFLINE WEB IMPLEMENTATION COMPLETED`。独立演示环境的浏览器验收尚未执行：Docker Engine 未运行且 `127.0.0.1:8001` 不可达；不得把此结果描述为生产上线或完整浏览器验收通过。当前没有已授权的下一项业务开发任务。
 >
 > Task 12“开发文章创建、草稿和版本保存”继续保持 `PAUSED / IN_PROGRESS HISTORY PRESERVED`，不标记为 `DONE`、`COMPLETED`、`ACCEPTED` 或 `SYNCED`；Task 13 继续为 `BACKLOG / unassigned`。本登记不启动 Task 12、Task 13 或审核 Web 开发。

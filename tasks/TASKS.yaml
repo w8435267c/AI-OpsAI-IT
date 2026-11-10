@@ -606,6 +606,31 @@ tasks:
         - "实现只接线现有 Reader 和 Service；未修改 models、Migration、Docker、.env、审核 Service、审核 Reader 或生产数据。"
         - "该任务只补足 Task 13 的受限 HTTP/UI 切片；Task 13 主任务继续 BACKLOG / unassigned。"
 
+  - id: "TASK13-REVIEW-WEB-E2E-01"
+    title: "Task 13 审核发布 Web 端到端验收"
+    priority: MUST
+    status: "AUTHORIZED / NOT STARTED"
+    owner: codex
+    dependencies:
+      - "LOCAL-DEMO-REVIEW-WEB-01"
+    objective: >
+      在未来单独批准的隔离环境中，使用当前基线的审核 Web 页面验证编辑创建、草稿保存、提交审核、
+      审核员批准或驳回、员工搜索和正式详情读取的端到端业务闭环；本任务不改变 Task 13 主任务状态。
+    acceptance:
+      - "当前 HEAD 的审核 Web 页面可访问，编辑人员可完成创建、保存草稿、提交审核和状态查看。"
+      - "审核员可查看待审核内容、批准发布或驳回并填写原因；越权、自审、重复提交和重复审批必须被拒绝。"
+      - "普通员工只能搜索和查看有权限的正式知识，草稿、待审核和已驳回版本不得泄露。"
+      - "Task 13 的 PostgreSQL 隔离验证、Windows 桌面浏览器验收和 390 × 844 窄屏验收均有独立、如实的执行证据。"
+      - "验收仅使用独立 Docker Compose 项目、独立 PostgreSQL/私有媒体卷、独立端口、合成账号和合成知识；不得影响现有 opsai-local-demo 环境。"
+    verification:
+      - "本登记不构成 Docker、数据库、迁移、种子、PostgreSQL 测试或浏览器执行许可；上述每项均需项目负责人针对当时完整 HEAD 的单独执行授权。"
+      - "执行前必须重新核验分支、完整 HEAD、工作区、隔离资源名称/端口/卷不存在性，以及历史 Task 13-07/13-08 证据未被触碰。"
+    result:
+      commits: []
+      verification: []
+      notes:
+        - "AUTHORIZED / NOT STARTED 只表示任务登记已获批准，不表示已经部署、验收通过、Task 13 完成或获得生产/钉钉授权。"
+
   - id: "14"
     title: "开发反馈、下架和复审"
     priority: MUST
