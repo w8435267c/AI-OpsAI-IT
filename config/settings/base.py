@@ -87,6 +87,10 @@ AUTH_USER_MODEL = "accounts.User"
 # 模拟登录 View 必须同时满足 DEBUG=True 且本开关为 True 才可用。
 DEV_LOGIN_ENABLED = False
 
+# 钉钉 H5 授权码关联状态仅在服务端 Session 中保存；真实身份提供者尚未接入时，
+# dingtalk.providers 的默认实现必须失败关闭。此值不是凭据，也不能启用模拟身份。
+DINGTALK_SSO_STATE_TTL_SECONDS = 300
+
 # “仅 IT”内容受众绑定：通过环境变量 KNOWLEDGE_IT_USER_GROUP_ID 指定一个
 # accounts.UserGroup 主键，作为 it_only 受众的唯一身份来源。缺省未配置（None）。
 # 属于权限配置，由部署管理者显式设置；不按显示名称、角色名或部门名猜测 IT 身份。

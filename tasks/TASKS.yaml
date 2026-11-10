@@ -639,7 +639,7 @@ tasks:
   - id: "DINGTALK-H5-SSO-MVP-01"
     title: "钉钉 H5 免登与员工身份映射 MVP"
     priority: MUST
-    status: "REGISTERED / NOT STARTED"
+    status: "AUTHORIZED / IN PROGRESS"
     owner: codex
     dependencies:
       - "TASK13-REVIEW-WEB-E2E-01"
@@ -653,14 +653,14 @@ tasks:
       - "保留开发模拟登录的 DEBUG 加显式开关门禁，生产设置继续硬关闭该入口。"
       - "先完成本地模拟与无凭据自动化测试；真实钉钉测试环境联调仅在独立测试租户、受控凭据注入和负责人单独执行授权齐备后进行。"
     verification:
-      - "下一轮实施前必须核验精确 HEAD、唯一当前任务、逐文件白名单、测试命令和回滚边界；本登记不构成任何代码、数据库、Docker 或真实钉钉调用授权。"
-      - "拟议责任范围为 apps/dingtalk、相关测试、必要的路由接线，以及经证实存在映射缺口时最小的 accounts 服务/测试调整；不得据此修改 settings、模型、迁移或凭据文件。"
+      - "实施基线为 3391f8a8b756422889b7d2625da8511a74de7cb5；仅允许本地无凭据开发、自动化测试、隔离验收和本地 Git 提交，不构成真实钉钉、数据库、Docker 或生产调用授权。"
+      - "允许文件白名单为 tasks/CURRENT_TASK.md、tasks/TASKS.yaml、apps/dingtalk/{views,urls,services,authentication,providers}.py、apps/dingtalk/tests/{test_sso,test_authentication}.py、config/urls.py、config/settings/{base,development,test}.py；不得修改 accounts、knowledge、search 模型、迁移或凭据文件。"
       - "AppSecret、Access Token、授权码、Cookie 和 .env 均不得进入 Git、日志、测试固件或报告。"
     result:
       commits: []
       verification: []
       notes:
-        - "REGISTERED / NOT STARTED 只表示下一项业务任务已登记；当前未获得实施、真实钉钉测试、生产部署或凭据访问授权。"
+        - "项目负责人已授权离线实现与自动化验收；真实钉钉测试、生产部署和凭据访问仍未授权。"
 
   - id: "14"
     title: "开发反馈、下架和复审"

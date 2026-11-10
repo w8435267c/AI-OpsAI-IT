@@ -11,6 +11,7 @@ urlpatterns = [
     path("health/ready", ready, name="health-ready"),
     # 本地开发专用模拟登录入口；生产环境由开关强制关闭（返回 404）。
     path("dev/", include("apps.accounts.urls")),
+    path("dingtalk/", include("apps.dingtalk.urls")),
 ]
 
 urlpatterns += [

@@ -8,12 +8,12 @@
 | --- | --- |
 | 任务编号 | `DINGTALK-H5-SSO-MVP-01` |
 | 任务名称 | 钉钉 H5 免登与员工身份映射 MVP |
-| 任务状态 | `REGISTERED / NOT STARTED` |
-| 任务性质 | `DEVELOPMENT PREPARATION ONLY / NO REAL DINGTALK EXECUTION` |
+| 任务状态 | `AUTHORIZED / IN PROGRESS` |
+| 任务性质 | `LOCAL OFFLINE DEVELOPMENT / NO REAL DINGTALK EXECUTION` |
 | 登记基线 | `09ec8c47b12da5c71c3637bce5d8f39dcf1ee4eb` |
 | 目标分支 | `fusion/wagtail-poc` |
 | 前置依赖 | `TASK13-REVIEW-WEB-E2E-01` 已 `DONE / PASS`；现有 `accounts.User` 的 `dingtalk_corp_id`、`dingtalk_user_id`、`dingtalk_union_id` 及服务端受众过滤只作为既有依赖。 |
-| 当前授权 | 本轮只允许任务登记与版本保存；未授权编写代码、修改数据库、迁移、调用钉钉 API、使用真实 Token/AppSecret 或启动测试租户联调。 |
+| 当前授权 | 项目负责人已授权在逐文件白名单内完成本地无凭据开发、自动化测试、隔离验收、Git 本地提交及任务状态收口；未授权修改数据库、迁移、调用钉钉 API、使用真实 Token/AppSecret 或启动测试租户联调。 |
 
 ## 2. 下一轮需单独授权的实施目标
 
