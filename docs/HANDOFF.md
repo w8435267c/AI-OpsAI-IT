@@ -1,26 +1,26 @@
 # OpsAI AI Handoff
 
-> `LOCAL-DEMO-REVIEW-WEB-01` 已完成离线 Web 实现与自动化验收。Docker Engine 当前未运行，独立演示环境浏览器验收为 `NOT TESTED`；当前没有已授权的下一项业务开发任务。Task 12 继续暂停，Task 13 继续为 BACKLOG。本文件仅供人工接力，不构成自动 Resume、任务领取或业务执行授权。
+> `TASK13-REVIEW-WEB-E2E-01` 已完成独立隔离环境验收：五阶段 PASS、隔离 PostgreSQL 定向回归 114/114 PASS、桌面与 `390 × 844` 真实浏览器 PASS。Task 13 主任务继续为 BACKLOG；本文件不构成自动 Resume、任务领取或业务执行授权。
 
 ## 1. 当前交接状态
 
-当前没有真实的 Agent 切换事件。审核 Web 实施授权基线为 `176131758efa01658ffe3a9fee5dee517937154a`；实现复用既有审核 Reader/Service，未修改状态机、模型或持久数据。Task 12 保持暂停，Task 13 六个既有提交保留但主任务仍未完成。
+当前没有真实的 Agent 切换事件。审核 Web 实施复用既有 Reader/Service，未修改状态机、模型或持久数据；E2E 执行基线为 `01529d2a23c7e2c46bb81fa984eb838080eeb63f`，原始证据的 SHA-256 为 `43B600CEB6410A503276A1DA37534D50BCE2627DA4810253D1A665F921ABF989`。Task 12 保持暂停，Task 13 六个既有提交保留且主任务仍未完成。
 
 | 项目 | 当前值 |
 | --- | --- |
-| 当前已授权开发任务 | 无 |
-| 最近完成任务 | `LOCAL-DEMO-REVIEW-WEB-01`；`DONE / OFFLINE WEB IMPLEMENTATION COMPLETED` |
-| 后续待授权事项 | 恢复 `opsai-local-demo` 后完成审核网页的桌面及 `390 × 844` 浏览器验收 |
-| 本轮实施授权基线 | `176131758efa01658ffe3a9fee5dee517937154a` |
+| 当前已授权开发任务 | 无；下一项必须经独立登记和实施授权 |
+| 最近完成任务 | `TASK13-REVIEW-WEB-E2E-01`；`DONE / PASS` |
+| 后续待授权事项 | 钉钉 H5 免登与员工身份映射 MVP；不自动启动 |
+| 本轮实施授权基线 | `01529d2a23c7e2c46bb81fa984eb838080eeb63f` |
 | 远端实时状态 | 最近一次核验：GitHub `fusion/wagtail-poc` 为 `5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e`，本地基线纯领先 11 个提交；Gitee 因 SSL 连接失败为 `UNKNOWN`；未 Push |
-| 本轮验证 | 专项及关联 `51 passed`、`118 subtests`；workflow `94 passed`、`14 skipped`、`130 subtests`；全量 `846 passed`、`23 skipped`、`712 subtests` |
+| 本轮验证 | 五阶段隔离 E2E PASS；PostgreSQL 定向回归 `114` 项 OK；桌面 `1280 × 720`、手机 `390 × 844` 真实浏览器 PASS |
 | Task 12 | `PAUSED / IN_PROGRESS HISTORY PRESERVED`；未完成封板条件完整保留 |
 | Task 13 | `BACKLOG / unassigned`；审核 Web 候选不代表 Task 13 全面开工 |
-| 当前等待动作 | 负责人决定是否授权恢复隔离 Docker 环境并完成浏览器验收，或登记新的独立任务 |
+| 当前等待动作 | 负责人对钉钉 MVP 的精确实施范围、测试租户与凭据注入方式作出单独授权 |
 | 当前禁止动作 | 不自动开展后续审核 Web、Task 12 或 Task 13；不重做 DATA-01/Task 13-08，不操作原持久数据库或真实 `.env`，不 Push、Merge 或部署 |
 | Agent 切换状态 | 未发生 |
 
-DATA-01 的事实边界：实现 Commit 只新增独立 Compose、演示配置样例、正式 Service 编排命令、10 项安全测试和 SOP。演示环境完成创建、保存、提交、独立审核、批准发布、员工搜索/详情、未登录与无权隔离、幂等和备份恢复验证，外部通知发送次数为 0。本轮审核 Web 只接线既有 Reader/Service，浏览器验收尚未执行；本地演示结果不得描述为生产上线。
+DATA-01 的事实边界：实现 Commit 只新增独立 Compose、演示配置样例、正式 Service 编排命令、10 项安全测试和 SOP。演示环境完成创建、保存、提交、独立审核、批准发布、员工搜索/详情、未登录与无权隔离、幂等和备份恢复验证，外部通知发送次数为 0。审核 Web 只接线既有 Reader/Service；后续 `TASK13-REVIEW-WEB-E2E-01` 已在另一套独立资源完成浏览器与 PostgreSQL 验收，仍不得描述为生产上线。
 
 Task 12 V1 的正式内容权威为 `Article + ArticleVersion`，Task 12B～12D 已完成模型、原子创建与版本链实现，Task 12E 已完成正式管理端创建、编辑、保存、历史、恢复和草稿预览入口。autosave 使用 `expected_lock_version` 乐观 CAS，过期 token 不会 last-write-wins；manual save 执行 `DRAFT(n) → SAVED(n) + 新 DRAFT`，后续版本号在 Article 行锁下按最大值加一；`SAVED` 历史不可由正式 Writer / Admin 修改；restore 创建带 `restored_from_version` 血缘的新 `DRAFT`，不修改来源历史。`current_published_version` 保持不变，员工仍只读取正式 `PUBLISHED` 版本。
 

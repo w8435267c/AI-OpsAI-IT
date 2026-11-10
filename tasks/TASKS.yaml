@@ -609,7 +609,7 @@ tasks:
   - id: "TASK13-REVIEW-WEB-E2E-01"
     title: "Task 13 审核发布 Web 端到端验收"
     priority: MUST
-    status: "AUTHORIZED / NOT STARTED"
+    status: DONE
     owner: codex
     dependencies:
       - "LOCAL-DEMO-REVIEW-WEB-01"
@@ -627,9 +627,14 @@ tasks:
       - "执行前必须重新核验分支、完整 HEAD、工作区、隔离资源名称/端口/卷不存在性，以及历史 Task 13-07/13-08 证据未被触碰。"
     result:
       commits: []
-      verification: []
+      verification:
+        - "项目负责人已对执行基线 01529d2a23c7e2c46bb81fa984eb838080eeb63f 单独授权；隔离 Compose 项目 opsai-task13-e2e-01 在 127.0.0.1:18013 完成验收。"
+        - "原始证据为 D:\\Temp\\OpsAI-Task13-E2E-01\\evidence\\TEST_EVIDENCE.md；SHA-256 为 43B600CEB6410A503276A1DA37534D50BCE2627DA4810253D1A665F921ABF989。"
+        - "五阶段均 PASS：部署/健康检查、三角色业务闭环、安全与异常、桌面 1280 × 720 与手机 390 × 844 真实浏览器、最终证据核验。"
+        - "隔离 PostgreSQL 定向回归运行 114 项，结果 OK；命令见 .ai/reports/task13-review-web-e2e-acceptance.md。"
+        - "opsai-local-demo-web-1、opsai-local-demo-db-1 及其受保护卷未停止、未重建、未覆盖。"
       notes:
-        - "AUTHORIZED / NOT STARTED 只表示任务登记已获批准，不表示已经部署、验收通过、Task 13 完成或获得生产/钉钉授权。"
+        - "DONE 仅表示本独立隔离 E2E 验收切片完成；不表示 Task 13 主任务完成、生产上线或获得钉钉接入授权。"
 
   - id: "14"
     title: "开发反馈、下架和复审"

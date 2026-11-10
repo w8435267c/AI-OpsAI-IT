@@ -1,6 +1,6 @@
 # OpsAI Current Task
 
-> 本文件登记唯一当前业务任务。Task 13 主任务保持 `BACKLOG / unassigned`；本登记只授权其独立的隔离端到端验收切片，不得将登记或后续验收结果自动解释为 Task 13 主任务完成、生产上线或钉钉接入授权。
+> 本文件登记唯一当前业务任务。`TASK13-REVIEW-WEB-E2E-01` 已由项目负责人授权执行并完成收口；Task 13 主任务仍保持 `BACKLOG / unassigned`。本收口不得解释为生产上线、Task 13 主任务完成或钉钉接入授权。
 
 ## 1. 当前任务
 
@@ -8,14 +8,16 @@
 | --- | --- |
 | 任务编号 | `TASK13-REVIEW-WEB-E2E-01` |
 | 任务名称 | Task 13 审核发布 Web 端到端验收 |
-| 任务状态 | `AUTHORIZED / NOT STARTED` |
+| 任务状态 | `DONE / PASS` |
 | 任务性质 | `ISOLATED E2E VERIFICATION ONLY` |
 | 登记基线 | `2cb07591a7bbe60028f5e8d6908e27fc9748dd0b` |
 | 目标分支 | `fusion/wagtail-poc` |
 | 前置依赖 | `LOCAL-DEMO-REVIEW-WEB-01` 已完成离线 Web 实现与自动化验证；Task 13 既有 Service、Reader、Reviewer Scope、审计与 Outbox 语义仅作为既有依赖。 |
-| 当前授权 | 仅完成任务登记；本轮不得启动 Docker、连接或写入数据库、执行迁移、创建合成数据、执行 PostgreSQL 验收或浏览器验收。 |
+| 执行基线 | `01529d2a23c7e2c46bb81fa984eb838080eeb63f` |
+| 完成证据 | `D:\Temp\OpsAI-Task13-E2E-01\evidence\TEST_EVIDENCE.md`；SHA-256：`43B600CEB6410A503276A1DA37534D50BCE2627DA4810253D1A665F921ABF989`。 |
+| 验收结果 | 五阶段均 PASS；隔离 PostgreSQL 定向回归 `114` 项 PASS；桌面 `1280 × 720` 与手机 `390 × 844` 真实浏览器验收 PASS；未触碰 `opsai-local-demo-*`。 |
 
-## 2. 下一轮待单独执行授权的验收目标
+## 2. 已完成验收目标
 
 1. 当前 HEAD 的审核 Web 页面实际可访问。
 2. 编辑人员完成创建知识、保存草稿、提交审核并查看状态。
@@ -26,9 +28,9 @@
 7. Windows 桌面浏览器验收通过。
 8. `390 × 844` 手机窄屏浏览器验收通过。
 
-## 3. 下一轮拟申请的精确隔离范围
+## 3. 实际执行的精确隔离范围
 
-下列操作必须在未来获得单独、明确的执行授权后才能开始：
+下列操作已在项目负责人对 `01529d2a23c7e2c46bb81fa984eb838080eeb63f` 的单独执行授权范围内完成：
 
 - 创建独立 Docker Compose 项目、独立 PostgreSQL 数据卷和独立私有媒体数据卷；不得复用或覆盖 `opsai-local-demo-*` 容器及其卷。
 - 使用不为 `8000`、`8001` 的独立端口，并且不连接生产数据库。
@@ -38,7 +40,7 @@
 
 ## 4. 历史状态与保护边界
 
-- `LOCAL-DEMO-REVIEW-WEB-01`：`DONE / OFFLINE WEB IMPLEMENTATION COMPLETED`。其浏览器验收尚未作为当前任务之前的完成证据；完整记录保留在 `tasks/TASKS.yaml` 与 `docs/HANDOFF.md`。
+- `LOCAL-DEMO-REVIEW-WEB-01`：`DONE / OFFLINE WEB IMPLEMENTATION COMPLETED`；本任务已补足其独立隔离浏览器与 PostgreSQL 验收，不改变 Task 13 主任务状态。
 - Task 12 保持 `PAUSED / IN_PROGRESS HISTORY PRESERVED`；Task 13 保持 `BACKLOG / unassigned`。
 - 禁止触碰 `opsai-local-demo-web-1`、`opsai-local-demo-db-1`、`opsai-local-demo-postgres-data` 和 `opsai-local-demo-private-media`。
 - 禁止操作历史 Task 13-07/13-08 工作区与证据；不得读取或修改 `.env`、生产配置或 Autopilot/R9 文件。

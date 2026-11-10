@@ -24,11 +24,11 @@
 | Task 11 PostgreSQL 隔离专项 | PASS；PostgreSQL 17.11，临时资源已全部清理 |
 | Task 12D PostgreSQL 并发补证 | PASS；PostgreSQL 17.11、临时端口 15432、tmpfs、六类竞争与 Lock wait 均通过，资源已清理；不等同 8J |
 | Task 12E 真实浏览器验收 | `PASS_WITH_VISUAL_FINDINGS`；P0/P1/P2 均为 0，P3 为 2 |
-| 当前业务主线 | 本地演示数据、Service 闭环和审核 Web 已实现；浏览器验收待独立环境恢复；Task 12 暂停且主任务尚未正式封板，Task 13 仍为 BACKLOG |
+| 当前业务主线 | 本地演示数据、Service 闭环和审核 Web 已实现；`TASK13-REVIEW-WEB-E2E-01` 的独立 PostgreSQL 与桌面/手机浏览器验收已 PASS；Task 12 暂停且主任务尚未正式封板，Task 13 主任务仍为 BACKLOG |
 | Task 13 代码现状 | 六个既有提交保留；Task 13-08 核心修复 Commit `1050b8fbf1fc384a79a90fcc86ae9320e5afb67e` 已完成并有修正夹具 PostgreSQL 14 PASS 证据，Task 13 主任务仍未完成 |
-| 当前交接状态 | 无真实 Agent 切换；审核 Web 离线实现已完成；Task 12 为 `PAUSED / IN_PROGRESS HISTORY PRESERVED`；Task 13 为 `BACKLOG / unassigned` |
+| 当前交接状态 | 无真实 Agent 切换；审核 Web E2E 切片已 `DONE / PASS`；Task 12 为 `PAUSED / IN_PROGRESS HISTORY PRESERVED`；Task 13 主任务为 `BACKLOG / unassigned` |
 
-本快照的总体结论是：Task 10、Task 11 均已正式 `DONE / codex`；Task 12A～12E 的历史成果保留，但 Task 12 主任务暂停且未封板。DATA-01 已在独立本地演示环境中证明正式 Service 的创建、保存、提交、独立审核、发布、员工搜索与详情链路可运行，不能外推为生产上线。Task 13 的底层 Service、Reader、审计、幂等和 Outbox 基础已存在，但审核 HTTP/UI 与 Worker 仍缺失，Task 13 整体继续为 `BACKLOG / unassigned`。正式内容权威保持 `Article + ArticleVersion`，8J 仍为 `BLOCKED / unassigned`。
+本快照的总体结论是：Task 10、Task 11 均已正式 `DONE / codex`；Task 12A～12E 的历史成果保留，但 Task 12 主任务暂停且未封板。DATA-01 已在独立本地演示环境中证明正式 Service 的创建、保存、提交、独立审核、发布、员工搜索与详情链路可运行，不能外推为生产上线。`TASK13-REVIEW-WEB-E2E-01` 已补足审核 HTTP/UI 的独立 E2E、PostgreSQL 与浏览器证据；Task 13 主任务仍缺 Worker/通知、原持久环境前置检查和主任务级负责人验收，继续为 `BACKLOG / unassigned`。正式内容权威保持 `Article + ArticleVersion`，8J 仍为 `BLOCKED / unassigned`。
 
 ## 2. 状态证据规则
 
@@ -66,7 +66,7 @@
 - `apps/knowledge/selectors.py` 已实现 `visible_articles` 和 `can_read_article`，读取语义遵循账号门槛、文章策略与拒绝优先规则。
 - 文章后台已具备受控的联合编辑和受众校验能力；Task 12C 已通过 Service 实现 KB 编号与原子 Article 创建，新增入口不得绕过该正式写入服务。Task 9B-1 当时未创建 Article 样本，并将 Article demo 记为 `N/A - SAFE STOP`。
 - Task 9B-1 已新增开发环境专用的幂等最小演示数据命令，使用稳定业务标识创建组织、内容用户组、知识空间和分类样本；一致数据保持不变，冲突数据失败关闭并整体回滚。对应 Commit 为 `9f214d30d6b2934302602bc7a152b27f00274968`。
-- 正式员工首页 `/`、分类页 `/categories/<category_id>/`、知识详情页 `/kb/<kb_no>/` 和搜索页 `/search/` 已接入。Task 13 已存在 Service 层提交、驳回、原子批准发布以及审核 Reader，并有 AuditEvent、Outbox 与幂等持久化基础；但尚无审核 HTTP/UI、Outbox Worker/通知、PostgreSQL 并发验收或完整正式入口。附件仍未接入。
+- 正式员工首页 `/`、分类页 `/categories/<category_id>/`、知识详情页 `/kb/<kb_no>/` 和搜索页 `/search/` 已接入。Task 13 已存在 Service 层提交、驳回、原子批准发布、审核 Reader、AuditEvent、Outbox 与幂等基础；`TASK13-REVIEW-WEB-E2E-01` 已验证审核 HTTP/UI、隔离 PostgreSQL 并发/幂等回归与浏览器链路。Outbox Worker/通知和完整生产入口仍未实现；附件仍未接入。
 - 员工列表使用 `employee_visible_articles`，详情使用 `get_employee_article_detail`，正式版本来源为 `current_published_version`；Task 10 V1 正文展示使用 `body_plaintext → body_text`，不直接渲染未知 `body` JSON。
 - Task 10 V1 正式前端基线为 Django Templates + 项目自有 `static/css/opsai.css`；Bootstrap / HTMX 为 `NOT REQUIRED FOR TASK 10 V1`，后续如有真实需求再以可信固定版本本地接入。
 - Task 11A、11B 已完成并双端同步，Task 11 已正式封板为 `DONE / codex`。V1 在 `employee_visible_articles` 返回的当前员工可见正式集合中搜索 `current_published_version.title`、`summary` 和 `body_plaintext`，并实现确定性排序、每页 20 条分页、空查询、零结果、可见结果数量和 KB 详情跳转；草稿、历史版本、全库匹配总数和无权限内容不进入该链路。
@@ -191,9 +191,9 @@ Task 10 的 10A～10E 分别对应 Commit `cf8bf1ff1692dedd69e5fbf97f0632a460d66
 - 旧内容批量迁移、正式切换、失败恢复和回退方案。
 - PostgreSQL 下的查询、排序、迁移状态、数据库注释和 Wagtail 行为验证。
 - 并发写入、锁策略和冲突处理；现有 `atomic()` 不能单独证明并发安全。
-- Task 13 的完整 HTTP/UI、审核工作台、Outbox Worker/通知发送、原持久数据库迁移前置检查及负责人独立整体验收。Service 与 Reader 底层实现、Task 13-08 行锁核心修复及 DATA-01 的隔离服务链验收已存在，不得再描述为“尚未开始”。
+- Task 13 的 Outbox Worker/通知发送、原持久数据库迁移前置检查及负责人对完整主任务范围的独立整体验收。Service、Reader、审核 HTTP/UI、Task 13-08 行锁核心修复及 DATA-01/E2E 的隔离验收已存在，不得再描述为“尚未开始”。
 - PG07 正式测试归档已完成，不再属于未完成项；Commit `a066b8e158d53770b2f9dab5e2c7e70c87817975` 仅新增该测试文件，已归档 SHA-256 为 `4C994737B880CDFE1E75391B99C601F94D702F149B4EFBBEB6AC9C500260854A`。
-- 审核 Web 页面、附件与完整生产审核发布生命周期；员工首页、分类、详情、P0 搜索、Task 12E 管理端知识编辑链和 DATA-01 隔离演示服务链已完成。
+- 附件与完整生产审核发布生命周期；审核 Web 已完成独立 E2E 验收，但不等同生产上线。员工首页、分类、详情、P0 搜索、Task 12E 管理端知识编辑链和 DATA-01 隔离演示服务链已完成。
 - 钉钉免登、通讯录同步、工作通知及真实钉钉联调。
 - `workflow` 已有 Task 13 Service/Reader/Outbox/幂等基础，`audit` 已有 AuditEvent 基础；两者的完整 HTTP/UI、Worker 与运行闭环仍未形成。`dingtalk`、`service_desk` 仍主要处于骨架或规划状态，`search` 的标签/别名、高亮和日志能力尚未纳入 V1。
 - 生产部署、移动端 Task 12E 视觉验收、正式持久 PostgreSQL、容量和上线安全验证；DATA-01 的演示备份恢复不能替代生产备份恢复。
@@ -210,7 +210,7 @@ Task 10 的 10A～10E 分别对应 Commit `cf8bf1ff1692dedd69e5fbf97f0632a460d66
 
 - 仓库迁移文件和历史报告不能证明电脑 B 的持久数据库已应用相同迁移。
 - Wagtail PoC 使用 SQLite 内存库和合成数据，不能外推为 PostgreSQL 或生产可用。
-- 正式员工首页、分类、详情、P0 搜索读取路径和 Task 12E 管理端知识编辑链已经形成；DATA-01 又在独立演示环境中完成了一篇文章的 Service 审核发布、员工搜索/详情、权限隔离和备份恢复。Task 13 已有发布事务、审核证据和 Reader 的底层实现，Task 13-08-002 的修正夹具隔离并发 14 项通过，PG07 也已正式归档；但审核 Web、Worker、原持久环境与独立整体验收仍未形成生产闭环，Task 12E 窄屏视觉、附件和生产容量仍未验证。
+- 正式员工首页、分类、详情、P0 搜索读取路径和 Task 12E 管理端知识编辑链已经形成；DATA-01 又在独立演示环境中完成了一篇文章的 Service 审核发布、员工搜索/详情、权限隔离和备份恢复。Task 13 已有发布事务、审核证据、Reader 与审核 Web，Task 13-08-002 的修正夹具隔离并发 14 项通过，且 `TASK13-REVIEW-WEB-E2E-01` 已运行 114 项隔离 PostgreSQL 回归与浏览器验收；但 Worker/通知、原持久环境和完整主任务验收仍未形成生产闭环，Task 12E 窄屏视觉、附件和生产容量仍未验证。
 - Task 12D 已覆盖六类真实竞争与 Lock wait；更大规模批量数据、生产失败恢复和正式切换仍缺少实际运行证据。
 
 ### 9.3 已知技术债与待决策项
@@ -245,13 +245,13 @@ Task 10 的 10A～10E 分别对应 Commit `cf8bf1ff1692dedd69e5fbf97f0632a460d66
 - LOCAL-DEMO-G01 治理 Commit 为 `60408cdda7a281066eb1cd043e91ff13a2d7e005`；G02 治理 Commit 为 `04d9cea907d3b35e143a3475568aa05291115243`；DATA-01 实现 Commit 为 `d184033ee06630c1b1e23081c8060eb12848f4dd`。
 - DATA-01 实现提交只新增五个授权文件；专项 10 PASS、正式 `apps/tests` 837 PASS、浏览器验收和备份恢复证据均已写入提交及 SOP。
 - 最近一次实时远端核验中，GitHub `fusion/wagtail-poc` 为 `5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e`，本地 DATA-01 基线相对其纯领先 11 个提交；Gitee 因 SSL 连接失败为 `UNKNOWN`。本状态不宣称三端同步，G03 不执行 Push。
-- Task 12 当前保持 `PAUSED / IN_PROGRESS HISTORY PRESERVED`；Task 13 保持 `BACKLOG / unassigned`，任务 8J 保持 `BLOCKED / unassigned`。
+- Task 12 当前保持 `PAUSED / IN_PROGRESS HISTORY PRESERVED`；Task 13 主任务保持 `BACKLOG / unassigned`，其 `TASK13-REVIEW-WEB-E2E-01` 子任务为 `DONE / PASS`；任务 8J 保持 `BLOCKED / unassigned`。
 - `LOCAL-DEMO-REVIEW-WEB-01` 已完成离线实现：审核队列、详情、本人已审核记录、提交、批准与驳回页面均复用既有 Reader/Service；专项与关联测试 `51 passed`、`118 subtests`，全量离线回归 `846 passed`、`23 skipped`、`712 subtests`。
 - Task 12D-00 为 `DONE / SYNCED`，12D-01 为 `DESIGN PASS`，12D-02～12D-06 均为 `DONE / SYNCED`；PostgreSQL 17.11 临时并发补证使用端口 15432 与 tmpfs，六类竞争和 Lock wait 均 PASS，资源已完全清理，且不构成 8J 验收。
 
 ## 11. 下一步边界
 
-DATA-01 与审核 Web 离线实现均已完成。当前没有已授权的业务开发任务；恢复独立 `opsai-local-demo` 后，须单独执行审核页面的桌面和 `390 × 844` 浏览器验收。Task 12 继续暂停，只有在负责人最终验收、`390 × 844` 窄屏视觉验收或书面豁免、Gitee 当前远端 HEAD 核验及必要治理同步完成后，才具备申请正式封板的条件。Task 13 六个既有提交保留，正式状态仍为 `BACKLOG / unassigned`；本任务只补足受限 HTTP/UI 切片，不代表 Task 13 全面开工。
+DATA-01 与审核 Web 离线实现均已完成；`TASK13-REVIEW-WEB-E2E-01` 已在独立环境完成审核页面的桌面和 `390 × 844` 浏览器验收以及 PostgreSQL 定向回归。Task 12 继续暂停，只有在负责人最终验收、`390 × 844` 窄屏视觉验收或书面豁免、Gitee 当前远端 HEAD 核验及必要治理同步完成后，才具备申请正式封板的条件。Task 13 六个既有提交保留，主任务正式状态仍为 `BACKLOG / unassigned`；本 E2E 子任务不代表 Task 13 全面开工或完成。
 
 当前边界继续禁止自动执行：
 
