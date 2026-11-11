@@ -93,6 +93,13 @@ class ReviewDecision(models.TextChoices):
     OFFLINE = "offline", _("立即下架")
 
 
+class FeedbackOutcome(models.TextChoices):
+    """员工对已发布知识的处理结果。"""
+
+    RESOLVED = "resolved", _("已解决")
+    UNRESOLVED = "unresolved", _("未解决")
+
+
 class KnowledgeSpace(models.Model):
     """知识空间：定义知识的管理边界与默认受众策略。"""
 
@@ -1136,3 +1143,66 @@ class ReviewRecord(models.Model):
             f"{self.article_version.article.kb_no} "
             f"v{self.article_version.version_no} {self.get_decision_display()}"
         )
+
+
+class FeedbackRecord(models.Model):
+    """员工对当前已发布知识版本提交的可追溯解决反馈。"""
+
+    id = models.UUIDField(
+        _("反馈记录 ID"), primary_key=True, default=uuid.uuid4, editable=False,
+        db_comment="员工知识反馈的内部主键，不在员工端 URL 中暴露。",
+    )
+    article = models.ForeignKey(
+        Article, verbose_name=_("知识文章"), on_delete=models.PROTECT,
+        related_name="feedback_records", db_comment="反馈对应的稳定知识文章身份。",
+    )
+    article_version = models.ForeignKey(
+        ArticleVersion, verbose_name=_("已发布版本"), on_delete=models.PROTECT,
+        related_name="feedback_records", db_comment="提交反馈时员工实际阅读的已发布版本快照。",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name=_("反馈员工"),
+        on_delete=models.PROTECT,
+        related_name="knowledge_feedback_records",
+        db_comment="已通过服务端身份和文章受众校验的反馈员工。",
+    )
+    outcome = models.CharField(
+        _("解决结果"), max_length=20, choices=FeedbackOutcome.choices,
+        db_comment="员工选择的已解决或未解决结果。",
+    )
+    created_at = models.DateTimeField(
+        _("反馈时间"), auto_now_add=True, db_comment="反馈首次持久化时间。",
+    )
+
+    class Meta:
+        db_table = "kb_feedback_record"
+        db_table_comment = "员工对已发布知识版本的处理结果反馈，保留可追溯版本和员工身份。"
+        verbose_name = _("知识解决反馈")
+        verbose_name_plural = _("知识解决反馈")
+        ordering = ("-created_at",)
+        indexes = [
+            models.Index(
+                fields=("article_version", "outcome", "created_at"),
+                name="kb_feedback_ver_outcome_idx",
+            ),
+            models.Index(fields=("user", "created_at"), name="kb_feedback_user_time_idx"),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=("article_version", "user", "outcome"),
+                name="kb_feedback_version_user_outcome_uniq",
+            ),
+        ]
+
+    def clean(self) -> None:
+        super().clean()
+        if (
+            self.article_id
+            and self.article_version_id
+            and self.article_version.article_id != self.article_id
+        ):
+            raise ValidationError({"article_version": _("反馈版本必须属于对应知识文章。")})
+
+    def __str__(self) -> str:
+        return f"{self.article.kb_no} {self.user_id} {self.outcome}"

@@ -2,14 +2,17 @@
 
 import json
 
+from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import F
 from django.http import HttpRequest, HttpResponse, HttpResponseNotFound
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 
-from apps.knowledge.http import employee_get_page
+from apps.knowledge.http import employee_get_page, employee_post_request
 from apps.knowledge.models import Article, Category
 from apps.knowledge.readers import employee_visible_articles, get_employee_article_detail
+from apps.knowledge.services import EmployeeFeedbackError, submit_employee_feedback
+from apps.service_desk.services import get_configured_service_request_url
 
 HOME_RECENT_LIMIT = 12
 CATEGORY_PAGE_SIZE = 20
@@ -140,5 +143,24 @@ def employee_article_detail(request: HttpRequest, kb_no: str) -> HttpResponse:
         {
             "detail": detail,
             "applicable_scope_text": _applicable_scope_text(detail.applicable_scope),
+            "service_request_available": get_configured_service_request_url() is not None,
         },
     )
+
+
+@employee_post_request
+def employee_article_feedback(request: HttpRequest, kb_no: str) -> HttpResponse:
+    """记录当前员工对其可见正式知识的处理结果。"""
+    try:
+        _record, created = submit_employee_feedback(
+            user=request.user,
+            kb_no=kb_no,
+            outcome=request.POST.get("outcome", ""),
+        )
+    except EmployeeFeedbackError as exc:
+        if exc.code == "FEEDBACK_ARTICLE_NOT_READABLE":
+            return HttpResponseNotFound(exc.public_message)
+        return HttpResponse(exc.public_message, status=400)
+
+    messages.success(request, "已记录本次反馈。" if created else "已收到相同反馈。")
+    return redirect("knowledge:article_detail", kb_no=kb_no)

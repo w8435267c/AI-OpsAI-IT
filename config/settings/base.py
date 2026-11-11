@@ -91,6 +91,9 @@ DEV_LOGIN_ENABLED = False
 # dingtalk.providers 的默认实现必须失败关闭。此值不是凭据，也不能启用模拟身份。
 DINGTALK_SSO_STATE_TTL_SECONDS = 300
 
+# 公司现有 01_ServiceRequest 的受控入口。默认不配置，避免代码编造或接受用户提供的跳转地址。
+SERVICE_DESK_REQUEST_URL = ""
+
 # “仅 IT”内容受众绑定：通过环境变量 KNOWLEDGE_IT_USER_GROUP_ID 指定一个
 # accounts.UserGroup 主键，作为 it_only 受众的唯一身份来源。缺省未配置（None）。
 # 属于权限配置，由部署管理者显式设置；不按显示名称、角色名或部门名猜测 IT 身份。

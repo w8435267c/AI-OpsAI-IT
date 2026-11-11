@@ -57,5 +57,19 @@
         <p class="empty-state">暂无正文内容。</p>
       {% endif %}
     </section>
+
+    <section class="article-section" aria-labelledby="feedback-title">
+      <h2 id="feedback-title">问题解决了吗？</h2>
+      <form method="post" action="{% url 'knowledge:article_feedback' detail.kb_no %}">
+        {% csrf_token %}
+        <button type="submit" name="outcome" value="resolved">已解决</button>
+        <button type="submit" name="outcome" value="unresolved">未解决</button>
+      </form>
+      {% if service_request_available %}
+        <p><a href="{% url 'service_desk:request_entry' detail.kb_no %}">仍未解决？提交 IT 服务申请</a></p>
+      {% else %}
+        <p class="muted">IT 服务申请入口暂未配置，请联系 IT 支持。</p>
+      {% endif %}
+    </section>
   </article>
 {% endblock %}

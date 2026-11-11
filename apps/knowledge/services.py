@@ -26,6 +26,8 @@ from .models import (
     ArticleVersion,
     AudiencePolicy,
     Category,
+    FeedbackOutcome,
+    FeedbackRecord,
     KnowledgeNumberCounter,
     KnowledgeSpace,
     VersionStatus,
@@ -48,6 +50,8 @@ INVALID_DRAFT_STATE = "INVALID_DRAFT_STATE"
 VERSION_NUMBER_CONFLICT = "VERSION_NUMBER_CONFLICT"
 RESTORE_SOURCE_INVALID = "RESTORE_SOURCE_INVALID"
 RESTORE_SOURCE_WRONG_ARTICLE = "RESTORE_SOURCE_WRONG_ARTICLE"
+FEEDBACK_INVALID_INPUT = "FEEDBACK_INVALID_INPUT"
+FEEDBACK_ARTICLE_NOT_READABLE = "FEEDBACK_ARTICLE_NOT_READABLE"
 
 _MAX_KB_NUMBER = 999_999
 _REQUIRED_PERMISSIONS = (
@@ -96,6 +100,33 @@ class ArticleCreationError(KnowledgeServiceError):
 
 class ArticleVersionWriteError(KnowledgeServiceError):
     """版本写入失败的稳定业务异常。"""
+
+
+class EmployeeFeedbackError(KnowledgeServiceError):
+    """员工知识反馈被安全拒绝时使用的稳定业务异常。"""
+
+
+def submit_employee_feedback(*, user, kb_no: str, outcome: str) -> tuple[FeedbackRecord, bool]:
+    """为有权员工写入当前已发布版本的幂等反馈。"""
+    if outcome not in FeedbackOutcome.values:
+        raise EmployeeFeedbackError(FEEDBACK_INVALID_INPUT, "反馈结果无效。")
+
+    from apps.knowledge.readers import employee_visible_articles
+
+    with transaction.atomic():
+        article = (
+            employee_visible_articles(user, base=Article.objects.filter(kb_no=kb_no))
+            .select_for_update()
+            .first()
+        )
+        if article is None or article.current_published_version_id is None:
+            raise EmployeeFeedbackError(FEEDBACK_ARTICLE_NOT_READABLE, "未找到可查看的知识。")
+        return FeedbackRecord.objects.get_or_create(
+            article=article,
+            article_version=article.current_published_version,
+            user=user,
+            outcome=outcome,
+        )
 
 
 def _raise_invalid(message: str) -> None:

@@ -666,6 +666,30 @@ tasks:
       notes:
         - "DONE 仅代表 OFFLINE IDENTITY FLOW PASS；真实钉钉测试、生产部署和凭据访问仍未授权。"
 
+  - id: "EMPLOYEE-RESOLUTION-FEEDBACK-MVP-01"
+    title: "员工故障解决反馈与 IT 服务跳转 MVP"
+    priority: MUST
+    status: "AUTHORIZED / IN PROGRESS"
+    owner: codex
+    dependencies:
+      - "DINGTALK-H5-SSO-MVP-01"
+    objective: >
+      为已授权阅读已发布知识的员工提供“已解决 / 未解决”可追溯反馈，
+      并在未解决时通过唯一受控配置跳转现有 01_ServiceRequest；不建设新的 ITSM。
+    acceptance:
+      - "仅已登录且命中服务端文章受众的员工可对当前已发布知识提交反馈；重复相同反馈幂等。"
+      - "未解决时展示唯一受控服务入口；不接收用户目标地址、不泄露知识正文、身份或凭据。"
+      - "服务入口缺失时友好失败；不编造正式 URL、不调用外部 ITSM。"
+      - "隔离自动化测试覆盖反馈、权限、CSRF、重复提交、配置缺失、安全跳转和知识详情回归。"
+    verification:
+      - "实施基线为 b3e00e9225c7cfab31d8ae1792fdd5e2977719a6；允许文件仅限当前授权白名单。"
+      - "必须使用隔离测试数据库；不得写入现有演示或生产数据库，不得启动 Docker 或外部服务。"
+    result:
+      commits: []
+      verification: []
+      notes:
+        - "真实浏览器验收仅在已授权的隔离浏览器环境可用时执行；否则记录 NOT VERIFIED。"
+
   - id: "14"
     title: "开发反馈、下架和复审"
     priority: MUST
