@@ -738,6 +738,29 @@ tasks:
       verification: []
       notes: []
 
+  - id: "PILOT-LOCAL-LOGIN-MVP-01"
+    title: "内部试点正式员工用户名密码登录 MVP"
+    priority: MUST
+    status: "AUTHORIZED / IN PROGRESS"
+    owner: codex
+    dependencies:
+      - "EMPLOYEE-RESOLUTION-FEEDBACK-E2E-01"
+    objective: >
+      在不接入真实钉钉的前提下，为已由管理员创建或启用的员工账号提供正式 Django 用户名密码登录、退出与既有知识受众权限衔接。
+    acceptance:
+      - "正确密码建立 Django 会话；错误、禁用、离职和非激活账号安全拒绝。"
+      - "退出登录使会话失效；登录保持 CSRF、防会话固定、受控 next 跳转和登录滥用防护。"
+      - "普通员工登录后仅可访问其受众范围内的已发布知识，不能获得管理权限。"
+      - "生产设置继续硬关闭 /dev/login/；钉钉可信身份适配协议和 corpId + userId 映射保持不变。"
+      - "相关离线自动化测试、Django check、格式与静态检查通过；浏览器验收未执行时如实标记。"
+    verification:
+      - "计划：认证、退出、账号状态、会话、CSRF、开放重定向、登录滥用、知识权限、钉钉离线回归和配置隔离测试。"
+    result:
+      commits: []
+      verification: []
+      notes:
+        - "本任务仅限本地无凭据开发与隔离测试；不创建生产账号、不使用真实员工密码、不调用真实钉钉或 ITSM。"
+
   - id: "15"
     title: "开发私有附件和病毒扫描"
     priority: MUST

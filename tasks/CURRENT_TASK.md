@@ -1,27 +1,29 @@
 # OpsAI Current Task
 
-> 本文件登记唯一当前业务验收任务。本轮只在隔离环境验证员工反馈闭环；不进行业务功能扩展、生产部署或真实外部系统调用。
+> 本文件登记唯一当前业务开发任务。本轮实现隔离测试可验证的正式员工用户名/密码登录；不接入真实钉钉、生产凭据或外部系统。
 
 ## 1. 当前任务
 
 | 项目 | 当前值 |
 | --- | --- |
-| 任务编号 | `EMPLOYEE-RESOLUTION-FEEDBACK-E2E-01` |
-| 任务名称 | 员工反馈业务闭环隔离 E2E 验收 |
-| 任务状态 | `DONE / PASS` |
-| 任务性质 | `ISOLATED E2E VERIFICATION ONLY` |
-| 登记基线 | `cc6215c114b469bb06afe2d91bbaa78e42f43981` |
+| 任务编号 | `PILOT-LOCAL-LOGIN-MVP-01` |
+| 任务名称 | 内部试点正式员工用户名密码登录 MVP |
+| 任务状态 | `AUTHORIZED / IN PROGRESS` |
+| 任务性质 | `LOCAL DEVELOPMENT AND ISOLATED VERIFICATION ONLY` |
+| 登记基线 | `2fde8fd150de55f2ee0a03b84923a87269ed4f5f` |
 | 目标分支 | `fusion/wagtail-poc` |
-| 前置依赖 | `EMPLOYEE-RESOLUTION-FEEDBACK-MVP-01` 已 `DONE / AUTOMATED ACCEPTANCE PASS`，功能提交 `e16125c4329a366a88f872cd90e4de5058373dd5`。 |
-| 当前授权 | 仅允许独立 Docker/PostgreSQL/私有媒体隔离环境、合成数据、自动化数据库和浏览器验收、证据报告、任务收口与本地提交；不使用真实钉钉、ITSM、凭据或现有演示数据。 |
+| 前置依赖 | `EMPLOYEE-RESOLUTION-FEEDBACK-E2E-01` 已 `DONE / PASS`，收口提交 `2fde8fd150de55f2ee0a03b84923a87269ed4f5f`。 |
+| 当前授权 | 仅允许任务登记、正式账号登录实现、离线测试、隔离验收、任务收口和本地提交；不使用真实员工密码、真实钉钉、ITSM、生产或演示数据。 |
 
 ## 2. 本轮实施范围与验收
 
- - 仓库内允许修改仅为 `tasks/CURRENT_TASK.md`、`tasks/TASKS.yaml` 和 `.ai/reports/employee-feedback-e2e-01.md`；业务代码、测试和生产配置全部只读。
- - 隔离资源固定为 Compose 项目 `opsai-feedback-e2e-01`、端口 `127.0.0.1:18014`、独立 PostgreSQL 与私有媒体卷；不得操作 `opsai-local-demo-*`、`opsai-task13-e2e-01`、8001 或 18013。
- - 使用合成员工、已发布文章、草稿和无权文章验证已解决、未解决、幂等、权限、CSRF、持久化、搜索和受控跳转；不调用真实钉钉或 ITSM。
- - 所有部署、PostgreSQL、桌面 1280×720、手机 390×844 和证据完整性阶段必须逐阶段 PASS；FAIL、BLOCKED 或 UNKNOWN 立即停止，不修复业务代码。
- - 允许在外部证据目录保存截图和运行日志；仓库报告必须记录命令、结果、资源、哈希和已知限制。
+ - 仓库内允许修改仅为 `tasks/CURRENT_TASK.md`、`tasks/TASKS.yaml`、`apps/accounts/forms.py`、`apps/accounts/views.py`、`apps/accounts/urls.py`、`apps/accounts/templates/accounts/employee_login.html`、`apps/accounts/tests/test_employee_login.py`、`config/urls.py`、`config/settings/base.py`、`config/settings/production.py`；需要扩展文件范围时必须停止。
+ - 复用 Django 密码哈希、认证和会话机制；管理员负责创建或启用账号，不提供公开注册、共享账号或自动权限提升。
+ - 覆盖正确/错误密码、禁用/离职/非激活账号、退出、会话轮换、CSRF、开放重定向、登录滥用、知识受众权限、管理后台隔离和钉钉离线身份映射回归。
+ - `/dev/login/` 必须继续仅在 `DEBUG=True` 与显式开关同时开启时可用；生产必须硬关闭。不得修改钉钉身份提供者协议或接入真实钉钉 API。
+ - 若浏览器隔离验收未获执行授权，必须记录为未验证，不得将 HTTP/自动化测试描述为浏览器 PASS。
+
+## 前一任务历史记录
 
 ## 2026-11-11 阻塞记录
 
