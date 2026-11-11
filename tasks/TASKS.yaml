@@ -695,6 +695,29 @@ tasks:
         - "真实浏览器验收未获本轮隔离部署授权，状态为 NOT VERIFIED；不得将自动化 HTTP 验收描述为浏览器 PASS。"
         - "未调用真实 ITSM、钉钉或外部凭据；未启动 Docker，未写入现有演示或生产数据库。"
 
+  - id: "EMPLOYEE-RESOLUTION-FEEDBACK-E2E-01"
+    title: "员工反馈业务闭环隔离 E2E 验收"
+    priority: MUST
+    status: "AUTHORIZED / IN PROGRESS"
+    owner: codex
+    dependencies:
+      - "EMPLOYEE-RESOLUTION-FEEDBACK-MVP-01"
+    objective: >
+      在独立 Docker、PostgreSQL、媒体卷和浏览器环境中，验证员工搜索、阅读、
+      已解决/未解决反馈持久化及受控 IT 服务入口跳转；不扩展业务功能。
+    acceptance:
+      - "迁移、合成数据、反馈持久化、幂等、版本关联、权限、草稿/未发布隔离、CSRF 和搜索在独立 PostgreSQL 环境通过。"
+      - "1280×720 与 390×844 的真实浏览器均验证已解决、未解决、成功提示、刷新后持久化和受控测试地址跳转。"
+      - "未登录、无权、任意 URL 和未配置入口均安全拒绝或友好失败；证据报告、截图/日志哈希可复核。"
+    verification:
+      - "Compose 项目固定为 opsai-feedback-e2e-01，端口固定为 127.0.0.1:18014，使用新建专用卷。"
+      - "不得触碰 opsai-local-demo-*、opsai-task13-e2e-01、8001、18013、真实钉钉、真实 ITSM 或生产数据。"
+    result:
+      commits: []
+      verification: []
+      notes:
+        - "发生 FAIL、BLOCKED 或 UNKNOWN 时停止，不修改业务代码掩盖问题。"
+
   - id: "14"
     title: "开发反馈、下架和复审"
     priority: MUST
