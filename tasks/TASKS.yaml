@@ -741,7 +741,7 @@ tasks:
   - id: "PILOT-LOCAL-LOGIN-MVP-01"
     title: "内部试点正式员工用户名密码登录 MVP"
     priority: MUST
-    status: "AUTHORIZED / IN PROGRESS"
+    status: "DONE / PASS"
     owner: codex
     dependencies:
       - "EMPLOYEE-RESOLUTION-FEEDBACK-E2E-01"
@@ -756,10 +756,16 @@ tasks:
     verification:
       - "计划：认证、退出、账号状态、会话、CSRF、开放重定向、登录滥用、知识权限、钉钉离线回归和配置隔离测试。"
     result:
-      commits: []
-      verification: []
+      commits:
+        - "d26c27f877964f6c506a247900fe58f1aaed65a7"
+      verification:
+        - "2026-11-11：正式登录专项 13/13 PASS；accounts、钉钉适配、员工阅读/反馈及搜索相关回归 224/224 PASS。"
+        - "2026-11-11：Django check、迁移一致性、Ruff、格式、compileall 与 Git 差异检查 PASS；Django 模板由渲染测试验证。"
+        - "2026-11-11：隔离 PostgreSQL 部署既有卷未重建；容器内认证专项 13/13 PASS，且只读核验反馈唯一关联合成员工、KB-000001 和已发布版本。"
+        - "2026-11-11：真实浏览器桌面 1280×720 与手机 390×844 均完成登录、搜索、详情、反馈区、POST 退出和登出后受保护页面拒绝；手机无横向溢出。"
       notes:
         - "本任务仅限本地无凭据开发与隔离测试；不创建生产账号、不使用真实员工密码、不调用真实钉钉或 ITSM。"
+        - "完成范围仅为本地隔离试点登录；未调用真实钉钉或 ITSM，未使用真实员工凭据，未验证生产部署。"
 
   - id: "15"
     title: "开发私有附件和病毒扫描"

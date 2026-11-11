@@ -8,7 +8,7 @@
 | --- | --- |
 | 任务编号 | `PILOT-LOCAL-LOGIN-MVP-01` |
 | 任务名称 | 内部试点正式员工用户名密码登录 MVP |
-| 任务状态 | `AUTHORIZED / IN PROGRESS` |
+| 任务状态 | `DONE / PASS` |
 | 任务性质 | `LOCAL DEVELOPMENT AND ISOLATED VERIFICATION ONLY` |
 | 登记基线 | `2fde8fd150de55f2ee0a03b84923a87269ed4f5f` |
 | 目标分支 | `fusion/wagtail-poc` |
@@ -17,11 +17,21 @@
 
 ## 2. 本轮实施范围与验收
 
- - 仓库内允许修改仅为 `tasks/CURRENT_TASK.md`、`tasks/TASKS.yaml`、`apps/accounts/forms.py`、`apps/accounts/views.py`、`apps/accounts/urls.py`、`apps/accounts/templates/accounts/employee_login.html`、`apps/accounts/tests/test_employee_login.py`、`config/urls.py`、`config/settings/base.py`、`config/settings/production.py`；需要扩展文件范围时必须停止。
+- 仓库内允许修改仅为 `tasks/CURRENT_TASK.md`、`tasks/TASKS.yaml`、`apps/accounts/forms.py`、`apps/accounts/views.py`、`apps/accounts/urls.py`、`apps/accounts/templates/accounts/employee_login.html`、`apps/accounts/tests/test_employee_login.py`、`config/urls.py`、`config/settings/base.py`、`config/settings/production.py`、`templates/base.html`；需要扩展文件范围时必须停止。
  - 复用 Django 密码哈希、认证和会话机制；管理员负责创建或启用账号，不提供公开注册、共享账号或自动权限提升。
  - 覆盖正确/错误密码、禁用/离职/非激活账号、退出、会话轮换、CSRF、开放重定向、登录滥用、知识受众权限、管理后台隔离和钉钉离线身份映射回归。
  - `/dev/login/` 必须继续仅在 `DEBUG=True` 与显式开关同时开启时可用；生产必须硬关闭。不得修改钉钉身份提供者协议或接入真实钉钉 API。
  - 若浏览器隔离验收未获执行授权，必须记录为未验证，不得将 HTTP/自动化测试描述为浏览器 PASS。
+
+## 2.1 2026-11-11 离线实施、E2E 与收口记录
+
+- 已完成：新增正式员工用户名/密码登录与仅限 POST 的退出入口；复用 Django 密码哈希、认证及会话轮换，不提供公开注册、账号自动创建或权限提升。
+- 安全边界：禁用、离职及非激活账号拒绝登录；`next` 仅接受当前站点安全路径；登录失败按经 SHA-256 处理的来源地址/用户名组合限流；生产设置继续硬关闭 `/dev/login/` 并启用 Secure、HttpOnly、SameSite 会话与 CSRF Cookie。
+- 实际离线验证：专项认证测试 `13/13` 通过；accounts、钉钉适配、员工阅读/反馈及搜索相关回归 `224/224` 通过；`manage.py check`、`makemigrations --check --dry-run`、Ruff lint、格式检查、compileall 与 Git 差异检查通过。Django 模板由渲染测试验证，不以 Python Ruff 解析模板。
+- 已执行：`opsai-login-e2e-01` 独立 PostgreSQL/媒体卷与 `127.0.0.1:18015` 隔离部署成功；数据库卷未重建、未重跑迁移或种子。容器内 PostgreSQL 认证专项 `13/13` 通过；只读核验 `KB-000001` 的合成员工反馈为唯一 `resolved` 记录，关联已发布版本。
+- 已获补充授权：`templates/base.html` 仅可用于补充正式员工的 POST + CSRF 退出入口；不得改变其他导航、业务逻辑或认证边界。
+- 浏览器验收：真实浏览器完成桌面 `1280×720` 与手机 `390×844` 的登录、首页退出入口、搜索、详情、反馈区、POST 退出及退出后受保护首页/详情拒绝；手机两页 `scrollWidth == clientWidth == 375`，未见横向溢出。匿名登录页不显示退出入口。验收截图、导航与哈希保留于 `D:\Temp\OpsAI-Login-E2E-01\evidence`。
+- 功能提交：`d26c27f877964f6c506a247900fe58f1aaed65a7`。本任务仅代表本地隔离试点登录 PASS；真实钉钉、真实 ITSM、生产部署和真实员工凭据仍未授权、未验证。
 
 ## 前一任务历史记录
 
