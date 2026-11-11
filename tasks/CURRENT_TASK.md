@@ -1,6 +1,6 @@
 # OpsAI Current Task
 
-> 本文件登记唯一当前业务任务。本轮仅实现员工反馈与受控 IT 服务入口 MVP；不接入真实钉钉、ITSM 或生产环境。
+> 本文件保留最近完成的唯一业务任务。其完成仅限隔离自动化验证；不代表真实 ITSM、浏览器环境或生产环境已验收。
 
 ## 1. 当前任务
 
@@ -8,19 +8,23 @@
 | --- | --- |
 | 任务编号 | `EMPLOYEE-RESOLUTION-FEEDBACK-MVP-01` |
 | 任务名称 | 员工故障解决反馈与 IT 服务跳转 MVP |
-| 任务状态 | `AUTHORIZED / IN PROGRESS` |
+| 任务状态 | `DONE / AUTOMATED ACCEPTANCE PASS` |
 | 任务性质 | `LOCAL DEVELOPMENT / NO EXTERNAL ITSM EXECUTION` |
 | 登记基线 | `b3e00e9225c7cfab31d8ae1792fdd5e2977719a6` |
 | 目标分支 | `fusion/wagtail-poc` |
 | 前置依赖 | 已发布知识详情、服务端受众过滤与 `DINGTALK-H5-SSO-MVP-01` 的离线身份基础均只读复用。 |
-| 当前授权 | 仅允许任务登记、知识反馈持久化、详情页 UI、受控服务入口、隔离测试、必要迁移与本地提交；不使用外部凭据、真实 ITSM、Docker 或现有演示数据。 |
+| 功能提交 | `e16125c4329a366a88f872cd90e4de5058373dd5` |
+| 当前授权 | 本轮授权范围已完成并收口；未授权真实 ITSM、Docker、现有演示数据、Push、Merge 或后续独立业务任务。 |
 
-## 2. 本轮实施范围与验收
+## 2. 本轮完成证据与安全边界
 
 - 允许文件：`tasks/CURRENT_TASK.md`、`tasks/TASKS.yaml`、`apps/knowledge/`、`apps/service_desk/`、`templates/knowledge/article_detail.html`、`config/urls.py`、`config/settings/` 下必要文件，以及上述 App 的测试和必要迁移。
 - 仅对通过服务端阅读权限的已登录员工记录“已解决 / 未解决”；重复相同反馈必须幂等，草稿、未发布、下架或无权知识不得产生反馈。
 - 服务入口只读取受控配置；不配置正式 URL，不接受用户传入的目标或敏感上下文，不开发工单系统。
-- 完成条件：专项、相关知识详情/搜索回归、迁移检查、静态检查和差异检查通过；真实浏览器不可用时必须标记未验证。
+- 功能提交 `e16125c4329a366a88f872cd90e4de5058373dd5`：新增反馈记录迁移、已解决/未解决幂等写入、服务端阅读权限校验、CSRF 保护详情页操作和受控服务入口。
+- 专项与相关回归 `61` 项通过；全量隔离测试 `801` 项通过、`23` 项跳过；Ruff、Django check、`makemigrations --check --dry-run`、compileall 与 Git 差异检查均通过。
+- 没有调用真实 ITSM、钉钉或外部凭据；没有启动 Docker、写入现有演示/生产数据库或触碰 Task 13 证据。
+- 真实桌面/手机浏览器验收：`NOT VERIFIED`。本轮没有已授权的隔离浏览器部署环境，自动化 Django HTTP 验收不等同于浏览器验收。
 
 ## 3. 已替换的钉钉离线任务证据（历史保留）
 

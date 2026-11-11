@@ -669,7 +669,7 @@ tasks:
   - id: "EMPLOYEE-RESOLUTION-FEEDBACK-MVP-01"
     title: "员工故障解决反馈与 IT 服务跳转 MVP"
     priority: MUST
-    status: "AUTHORIZED / IN PROGRESS"
+    status: "DONE / AUTOMATED ACCEPTANCE PASS"
     owner: codex
     dependencies:
       - "DINGTALK-H5-SSO-MVP-01"
@@ -685,10 +685,15 @@ tasks:
       - "实施基线为 b3e00e9225c7cfab31d8ae1792fdd5e2977719a6；允许文件仅限当前授权白名单。"
       - "必须使用隔离测试数据库；不得写入现有演示或生产数据库，不得启动 Docker 或外部服务。"
     result:
-      commits: []
-      verification: []
+      commits:
+        - "e16125c4329a366a88f872cd90e4de5058373dd5"
+      verification:
+        - "专项与相关回归：61 项通过。"
+        - "全量隔离测试：801 项通过、23 项跳过。"
+        - "Ruff、Django check、迁移一致性、compileall 与 Git 差异检查通过。"
       notes:
-        - "真实浏览器验收仅在已授权的隔离浏览器环境可用时执行；否则记录 NOT VERIFIED。"
+        - "真实浏览器验收未获本轮隔离部署授权，状态为 NOT VERIFIED；不得将自动化 HTTP 验收描述为浏览器 PASS。"
+        - "未调用真实 ITSM、钉钉或外部凭据；未启动 Docker，未写入现有演示或生产数据库。"
 
   - id: "14"
     title: "开发反馈、下架和复审"
