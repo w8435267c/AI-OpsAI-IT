@@ -23,8 +23,16 @@ if not ALLOWED_HOSTS:
     raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS 必须至少包含一个主机名")
 
 # 模拟登录在生产环境强制关闭：此处硬编码，不读取任何环境变量，
-# 即使设置 DJANGO_DEV_LOGIN_ENABLED 也无法开启。正式认证由钉钉免登实现。
+# 即使设置 DJANGO_DEV_LOGIN_ENABLED 也无法开启；正式认证仅可使用受控的员工密码登录
+# 或未来单独接入并验证的钉钉身份提供者。
 DEV_LOGIN_ENABLED = False
+
+# 正式员工密码登录仅在 HTTPS 会话中使用；开发与测试设置不继承这些强制值。
+SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = "Lax"
 
 DATABASES = {
     "default": {

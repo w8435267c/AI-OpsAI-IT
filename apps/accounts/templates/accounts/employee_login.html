@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}员工登录{% endblock %}
+
+{% block content %}
+  <section aria-labelledby="employee-login-heading">
+    <h1 id="employee-login-heading">员工登录</h1>
+    <p>请使用由管理员创建或启用的个人账号登录。</p>
+    <form method="post" action="{% url 'employee-login' %}">
+      {% csrf_token %}
+      {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+      {{ form.non_field_errors }}
+      <p>
+        <label for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
+        {{ form.username }}
+        {{ form.username.errors }}
+      </p>
+      <p>
+        <label for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
+        {{ form.password }}
+        {{ form.password.errors }}
+      </p>
+      <button type="submit">登录</button>
+    </form>
+  </section>
+{% endblock %}

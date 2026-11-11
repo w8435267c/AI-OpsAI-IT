@@ -66,6 +66,13 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
+# 正式员工密码登录的安全默认值。账号由管理员在 Django Admin 中创建或启用，
+# 不提供公开注册；失败计数只保存经哈希的来源/用户名组合，绝不记录密码。
+LOGIN_URL = "employee-login"
+LOGIN_REDIRECT_URL = "knowledge:home"
+LOCAL_LOGIN_MAX_FAILURES = 5
+LOCAL_LOGIN_THROTTLE_SECONDS = 300
+
 LANGUAGE_CODE = "zh-hans"
 TIME_ZONE = os.getenv("DJANGO_TIME_ZONE", "Asia/Shanghai")
 USE_I18N = True

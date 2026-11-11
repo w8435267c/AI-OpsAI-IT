@@ -1,8 +1,9 @@
 """账号与组织表单。"""
 
 from django import forms
+from django.contrib.auth.forms import AuthenticationForm
 
-from .models import Department
+from .models import AccountStatus, Department
 from .roles import DEV_IDENTITIES
 
 
@@ -36,3 +37,23 @@ class DevLoginForm(forms.Form):
         label="选择本地开发身份",
         choices=tuple((identity.username, identity.display_name) for identity in DEV_IDENTITIES),
     )
+
+
+class EmployeeAuthenticationForm(AuthenticationForm):
+    """正式员工密码登录表单，复用 Django 校验并附加账户生命周期门禁。"""
+
+    username = forms.CharField(
+        label="用户名",
+        max_length=150,
+        widget=forms.TextInput(attrs={"autofocus": True}),
+    )
+    password = forms.CharField(label="密码", strip=False, widget=forms.PasswordInput)
+
+    def confirm_login_allowed(self, user):
+        super().confirm_login_allowed(user)
+        if user.account_status != AccountStatus.ACTIVE:
+            raise forms.ValidationError(
+                self.error_messages["invalid_login"],
+                code="invalid_login",
+                params={"username": self.username_field.verbose_name},
+            )
