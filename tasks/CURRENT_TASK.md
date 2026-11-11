@@ -8,7 +8,7 @@
 | --- | --- |
 | 任务编号 | `EMPLOYEE-RESOLUTION-FEEDBACK-E2E-01` |
 | 任务名称 | 员工反馈业务闭环隔离 E2E 验收 |
-| 任务状态 | `AUTHORIZED / IN PROGRESS` |
+| 任务状态 | `DONE / PASS` |
 | 任务性质 | `ISOLATED E2E VERIFICATION ONLY` |
 | 登记基线 | `cc6215c114b469bb06afe2d91bbaa78e42f43981` |
 | 目标分支 | `fusion/wagtail-poc` |
@@ -22,6 +22,23 @@
  - 使用合成员工、已发布文章、草稿和无权文章验证已解决、未解决、幂等、权限、CSRF、持久化、搜索和受控跳转；不调用真实钉钉或 ITSM。
  - 所有部署、PostgreSQL、桌面 1280×720、手机 390×844 和证据完整性阶段必须逐阶段 PASS；FAIL、BLOCKED 或 UNKNOWN 立即停止，不修复业务代码。
  - 允许在外部证据目录保存截图和运行日志；仓库报告必须记录命令、结果、资源、哈希和已知限制。
+
+## 2026-11-11 阻塞记录
+
+- 阶段：隔离镜像构建（阶段 01：隔离部署）。
+- 结果：`BLOCKED / NOT DONE`。Docker 构建 `opsai-feedback-e2e-01-web:323eea2` 时，`pip install --no-cache-dir .` 多次访问 PyPI 超时，无法获取构建隔离所需的 `setuptools>=77`。
+- 影响：未创建本轮容器、数据卷或数据库；未执行迁移、合成数据、PostgreSQL 验证或浏览器验收，故不得声明 E2E PASS。
+- 证据：`D:\Temp\OpsAI-Feedback-E2E-01\build.stdout.log`、`D:\Temp\OpsAI-Feedback-E2E-01\build.stderr.log`，以及 `.ai/reports/employee-feedback-e2e-01.md`。
+- 恢复门槛：负责人确认可用且受控的 Python 构建依赖源或预构建镜像后，以新的明确执行授权重新进行隔离部署；不得以本次阻塞记录自动重试。
+
+## 2026-11-11 人工浏览器补验与收口
+
+- 验收方式：`MANUAL BROWSER E2E`（项目负责人使用 Chrome 人工操作；不是自动化浏览器测试）。
+- 证据：`D:\Temp\OpsAI-Feedback-E2E-01\evidence\manual\01_feedback_article_page.png` 与 `02_service_redirect_health_live.png`；两张 PNG 的 SHA-256 已与同目录 `SHA256SUMS.txt` 逐项核对一致。
+- 结果：人工操作显示已发布知识 `KB-000001` 的“仍未解决？提交 IT 服务申请”入口，实际导航至受控隔离目标 `http://127.0.0.1:18014/health/live`，页面显示 `{"status": "ok", "service": "opsai-it"}`。
+- 既有证据复核：PostgreSQL 专项测试 10/10 PASS；隔离数据库只读核对确认 `resolved`、`unresolved` 各一条，均关联 `dev_employee` 与当前已发布版本，重复反馈保持幂等。
+- 历史保留：此前浏览器自动化客户端的 `ERR_BLOCKED_BY_CLIENT` 仅为自动化工具限制，仍保留在验收报告中；本次人工补验满足最终浏览器跳转证据要求。
+- 边界：仅验证本地受控 `/health/live` 跳转；真实 ITSM、真实钉钉及生产环境均未验收、未调用。
 
 ## 3. 已替换的员工反馈开发任务证据（历史保留）
 

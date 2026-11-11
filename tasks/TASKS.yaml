@@ -698,7 +698,7 @@ tasks:
   - id: "EMPLOYEE-RESOLUTION-FEEDBACK-E2E-01"
     title: "员工反馈业务闭环隔离 E2E 验收"
     priority: MUST
-    status: "AUTHORIZED / IN PROGRESS"
+    status: "DONE / PASS"
     owner: codex
     dependencies:
       - "EMPLOYEE-RESOLUTION-FEEDBACK-MVP-01"
