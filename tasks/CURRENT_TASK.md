@@ -1,29 +1,28 @@
 # OpsAI Current Task
 
-> 本文件登记唯一当前业务开发任务。本轮实现隔离测试可验证的正式员工用户名/密码登录；不接入真实钉钉、生产凭据或外部系统。
+> 本文件登记唯一当前业务开发任务。本轮仅建立未来内网试点的生产部署配置基线；不部署、不访问生产数据、不接入真实钉钉或外部系统。
 
 ## 1. 当前任务
 
 | 项目 | 当前值 |
 | --- | --- |
-| 任务编号 | `PILOT-LOCAL-LOGIN-MVP-01` |
-| 任务名称 | 内部试点正式员工用户名密码登录 MVP |
-| 任务状态 | `DONE / PASS` |
-| 任务性质 | `LOCAL DEVELOPMENT AND ISOLATED VERIFICATION ONLY` |
-| 登记基线 | `2fde8fd150de55f2ee0a03b84923a87269ed4f5f` |
+| 任务编号 | `PILOT-PRODUCTION-DEPLOYMENT-BASELINE-01` |
+| 任务名称 | 内网试点生产部署基线建设 |
+| 任务状态 | `AUTHORIZED / BLOCKED / GUNICORN DEPENDENCY NOT IN SCOPE` |
+| 任务性质 | `LOCAL CONFIGURATION AND ISOLATED VERIFICATION ONLY` |
+| 登记基线 | `cce0afdf702be4417cc96e6111e2d7f13f2bbedf` |
 | 目标分支 | `fusion/wagtail-poc` |
-| 前置依赖 | `EMPLOYEE-RESOLUTION-FEEDBACK-E2E-01` 已 `DONE / PASS`，收口提交 `2fde8fd150de55f2ee0a03b84923a87269ed4f5f`。 |
-| 当前授权 | 仅允许任务登记、正式账号登录实现、离线测试、隔离验收、任务收口和本地提交；不使用真实员工密码、真实钉钉、ITSM、生产或演示数据。 |
+| 前置依赖 | `PILOT-LOCAL-LOGIN-MVP-01` 已 `DONE / PASS`，收口提交 `cce0afdf702be4417cc96e6111e2d7f13f2bbedf`。 |
+| 当前授权 | 仅允许任务登记、部署配置开发、离线/隔离验证、验收报告和本地提交；不得真实部署、操作现有容器/数据卷、生产数据、真实钉钉、Push 或 Merge。 |
 
 ## 2. 本轮实施范围与验收
 
-- 仓库内允许修改仅为 `tasks/CURRENT_TASK.md`、`tasks/TASKS.yaml`、`apps/accounts/forms.py`、`apps/accounts/views.py`、`apps/accounts/urls.py`、`apps/accounts/templates/accounts/employee_login.html`、`apps/accounts/tests/test_employee_login.py`、`config/urls.py`、`config/settings/base.py`、`config/settings/production.py`、`templates/base.html`；需要扩展文件范围时必须停止。
- - 复用 Django 密码哈希、认证和会话机制；管理员负责创建或启用账号，不提供公开注册、共享账号或自动权限提升。
- - 覆盖正确/错误密码、禁用/离职/非激活账号、退出、会话轮换、CSRF、开放重定向、登录滥用、知识受众权限、管理后台隔离和钉钉离线身份映射回归。
- - `/dev/login/` 必须继续仅在 `DEBUG=True` 与显式开关同时开启时可用；生产必须硬关闭。不得修改钉钉身份提供者协议或接入真实钉钉 API。
- - 若浏览器隔离验收未获执行授权，必须记录为未验证，不得将 HTTP/自动化测试描述为浏览器 PASS。
+- 仓库内允许修改仅为 `tasks/CURRENT_TASK.md`、`tasks/TASKS.yaml`、`deploy/Dockerfile.production`、`deploy/compose.pilot.yaml`、`deploy/Caddyfile`、`deploy/pilot.env.example`、`config/settings/production.py`、`tests/test_production_deployment_baseline.py`、`docs/06-Process/PILOT-PRODUCTION-DEPLOYMENT-BASELINE-01-SOP.md` 与 `.ai/reports/pilot-production-deployment-baseline-01.md`；需要扩展文件范围时必须停止。
+- 必须使用 Gunicorn/WSGI、Caddy、内部 PostgreSQL 网络、独立持久卷、`collectstatic` 与受控环境变量；不得使用 `runserver`、源码 bind mount、公开媒体或宿主机数据库端口。
+- 生产设置必须失败关闭、`DEBUG=False`、严格 `ALLOWED_HOSTS`、关闭 `/dev/login/`、保留现有认证与知识受众权限，并仅信任受控反向代理。
+- 当前阻塞：`pyproject.toml` 未声明且 `.venv` 未安装 Gunicorn。该文件不在本轮白名单；未获补充授权前不得开发、安装依赖、构建镜像或运行配置验收。
 
-## 2.1 2026-11-11 离线实施、E2E 与收口记录
+## 前一任务历史记录：2026-11-11 员工登录离线实施、E2E 与收口
 
 - 已完成：新增正式员工用户名/密码登录与仅限 POST 的退出入口；复用 Django 密码哈希、认证及会话轮换，不提供公开注册、账号自动创建或权限提升。
 - 安全边界：禁用、离职及非激活账号拒绝登录；`next` 仅接受当前站点安全路径；登录失败按经 SHA-256 处理的来源地址/用户名组合限流；生产设置继续硬关闭 `/dev/login/` 并启用 Secure、HttpOnly、SameSite 会话与 CSRF Cookie。

@@ -767,6 +767,32 @@ tasks:
         - "本任务仅限本地无凭据开发与隔离测试；不创建生产账号、不使用真实员工密码、不调用真实钉钉或 ITSM。"
         - "完成范围仅为本地隔离试点登录；未调用真实钉钉或 ITSM，未使用真实员工凭据，未验证生产部署。"
 
+  - id: "PILOT-PRODUCTION-DEPLOYMENT-BASELINE-01"
+    title: "内网试点生产部署基线建设"
+    priority: MUST
+    status: "AUTHORIZED / BLOCKED / GUNICORN DEPENDENCY NOT IN SCOPE"
+    owner: codex
+    dependencies:
+      - "PILOT-LOCAL-LOGIN-MVP-01"
+    objective: >
+      建立未来内网试点可复核的生产部署配置基线：Gunicorn/WSGI、Caddy HTTPS 反向代理、受控静态文件、
+      私有媒体、内部 PostgreSQL 网络、环境变量失败关闭与部署安全验证；本任务不执行真实部署。
+    acceptance:
+      - "生产镜像不使用 runserver、没有源码 bind mount，且以 production settings 运行。"
+      - "缺少关键配置失败关闭；DEBUG、开发模拟登录、数据库宿主机端口与私有媒体公开访问均被禁止。"
+      - "Caddy、HTTPS、代理信任、CSRF、静态文件、Cookie 与 PostgreSQL 隔离具有可验证的配置合同。"
+      - "相关登录、搜索与知识访问回归不退化；PASS 仅代表离线生产配置基线，不代表真实内网部署。"
+    verification:
+      - "允许文件仅限 tasks/CURRENT_TASK.md、tasks/TASKS.yaml、deploy/Dockerfile.production、deploy/compose.pilot.yaml、deploy/Caddyfile、deploy/pilot.env.example、config/settings/production.py、tests/test_production_deployment_baseline.py、docs/06-Process/PILOT-PRODUCTION-DEPLOYMENT-BASELINE-01-SOP.md 与 .ai/reports/pilot-production-deployment-baseline-01.md。"
+      - "禁止真实部署、操作现有 Docker 容器或数据卷、执行迁移、访问真实数据库、真实钉钉、Push 或 Merge。"
+      - "若需要变更依赖声明，必须先取得针对 pyproject.toml 的补充授权。"
+    result:
+      commits: []
+      verification:
+        - "预检：pyproject.toml 未声明 Gunicorn，.venv 未安装 Gunicorn；生产镜像无法在当前白名单内实现，任务安全停止。"
+      notes:
+        - "需负责人补充允许修改 pyproject.toml，并明确允许更新隔离构建依赖后，方可继续。"
+
   - id: "15"
     title: "开发私有附件和病毒扫描"
     priority: MUST
