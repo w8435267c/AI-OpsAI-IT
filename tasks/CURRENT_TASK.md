@@ -8,7 +8,7 @@
 | --- | --- |
 | 任务编号 | `PILOT-BACKUP-RESTORE-01` |
 | 任务名称 | PostgreSQL 备份与独立恢复演练 |
-| 任务状态 | `AUTHORIZED / IN PROGRESS` |
+| 任务状态 | `DONE / PASS（仅限本地隔离 PostgreSQL 备份恢复演练）` |
 | 任务性质 | `LOCAL ISOLATED BACKUP AND RESTORE DRILL ONLY` |
 | 登记基线 | `d5c1e80f248f492a02428d26a2ac8dcfa74884f1` |
 | 目标分支 | `fusion/wagtail-poc` |
@@ -23,6 +23,7 @@
 - 必须使用合成员工、已发布知识、版本、审核记录、受众规则和员工反馈验证恢复后的业务一致性；仅 `pg_restore` 返回 0 不足以判定 PASS。
 - 私有媒体与附件范围必须明确：数据库备份不自动覆盖 Volume 中的媒体或外部对象；试点未启用附件时亦须如实记录。
 - 真实服务器、生产数据库、真实员工密码、真实钉钉、Push 与 Merge 均未获授权。
+- 功能提交：`00ab2915d88bd94e516a4caf753b18ff5c3b24d3`。实际演练完成 custom-format 备份、SHA-256 清单、全新 Volume 恢复、业务关联比对以及篡改/已有目标库拒绝；本文件和任务池的完成状态由独立收口提交保存。
 
 ## 前一任务历史记录：2026-11-11 员工登录离线实施、E2E 与收口
 

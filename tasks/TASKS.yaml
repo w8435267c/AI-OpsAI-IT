@@ -803,7 +803,7 @@ tasks:
   - id: "PILOT-BACKUP-RESTORE-01"
     title: "PostgreSQL 备份与独立恢复演练"
     priority: MUST
-    status: "AUTHORIZED / IN PROGRESS"
+    status: "DONE / PASS"
     owner: codex
     dependencies:
       - "PILOT-PRODUCTION-DEPLOYMENT-BASELINE-01"
@@ -820,8 +820,12 @@ tasks:
       - "只能使用合成数据、全新隔离 PostgreSQL 17 资源和仓库外备份目录；不得读取真实密码、访问生产数据库、Push 或 Merge。"
       - "必须实际执行备份、哈希校验、全新数据库恢复、关键数据比较、失败保护测试、Django check、Ruff、相关回归、敏感信息与 Git 差异检查。"
     result:
-      commits: []
-      verification: []
+      commits:
+        - "00ab2915d88bd94e516a4caf753b18ff5c3b24d3"
+      verification:
+        - "2026-11-12：PostgreSQL 17.11 custom-format 备份成功，文件 159,844 bytes，SHA-256 为 84B41EE5705070F6D26865CD75EA0E7B860ACE2176F7585B5ABE9CAF1FDEB93E，备份耗时 0.492 秒。"
+        - "2026-11-12：恢复到全新隔离容器、Volume 和数据库 opsai_backup_restore_verify，耗时 0.793 秒；源/恢复库均验证 3 名合成员工、1 篇文章、1 个版本、1 条审核、1 条受众和 1 条反馈及其关键关联。"
+        - "2026-11-12：篡改备份被 SHA-256 检查拒绝且未创建目标库；已有目标数据库被拒绝覆盖且数据计数未变。相关回归 79 passed、3 subtests passed，Django check、迁移检查、Ruff、compileall 和 Git 差异检查通过。"
       notes:
         - "本任务 PASS 只证明本地隔离恢复演练；不构成真实服务器备份、生产恢复、媒体完整备份或灾难恢复承诺。"
 
