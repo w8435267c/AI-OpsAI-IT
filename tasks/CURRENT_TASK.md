@@ -8,7 +8,7 @@
 | --- | --- |
 | 任务编号 | `PILOT-PRODUCTION-DEPLOYMENT-BASELINE-01` |
 | 任务名称 | 内网试点生产部署基线建设 |
-| 任务状态 | `AUTHORIZED / BLOCKED / GUNICORN DEPENDENCY NOT IN SCOPE` |
+| 任务状态 | `DONE / PASS（仅限本地隔离生产部署配置基线）` |
 | 任务性质 | `LOCAL CONFIGURATION AND ISOLATED VERIFICATION ONLY` |
 | 登记基线 | `cce0afdf702be4417cc96e6111e2d7f13f2bbedf` |
 | 目标分支 | `fusion/wagtail-poc` |
@@ -20,7 +20,11 @@
 - 仓库内允许修改仅为 `tasks/CURRENT_TASK.md`、`tasks/TASKS.yaml`、`deploy/Dockerfile.production`、`deploy/compose.pilot.yaml`、`deploy/Caddyfile`、`deploy/pilot.env.example`、`config/settings/production.py`、`tests/test_production_deployment_baseline.py`、`docs/06-Process/PILOT-PRODUCTION-DEPLOYMENT-BASELINE-01-SOP.md` 与 `.ai/reports/pilot-production-deployment-baseline-01.md`；需要扩展文件范围时必须停止。
 - 必须使用 Gunicorn/WSGI、Caddy、内部 PostgreSQL 网络、独立持久卷、`collectstatic` 与受控环境变量；不得使用 `runserver`、源码 bind mount、公开媒体或宿主机数据库端口。
 - 生产设置必须失败关闭、`DEBUG=False`、严格 `ALLOWED_HOSTS`、关闭 `/dev/login/`、保留现有认证与知识受众权限，并仅信任受控反向代理。
-- 当前阻塞：`pyproject.toml` 未声明且 `.venv` 未安装 Gunicorn。该文件不在本轮白名单；未获补充授权前不得开发、安装依赖、构建镜像或运行配置验收。
+- 补充授权：`pyproject.toml` 已纳入本任务，Gunicorn 仅作为 Linux 生产镜像运行时依赖声明；不得安装到 Windows `.venv` 充当生产验证。
+- 已解除的构建阻塞：原始构建因 Docker 内 PyPI `setuptools>=77` 读取超时失败；改用经 SHA-256 核验的仓库外 wheelhouse、`--network none` 和既有 Linux 应用基础镜像后，Gunicorn 生产镜像构建成功。
+- 历史阻塞已保留：此前拉取 `caddy:2.10.2-alpine` 时 Docker Desktop HTTPS 代理不可达，退出码为 1；2026-11-12 已使用核验后的本地官方镜像完成 Caddy、HTTPS、反向代理、静态文件和私有媒体隔离验收。
+- 最终验收：TLS 1.3、HTTP→HTTPS、`/health/live`、`/health/ready`、静态文件、私有媒体拒绝、生产 `/dev/login/` 禁用、端口隔离、失败关闭与相关回归均已通过。结果仅适用于合成域名、临时证书和隔离数据库，不代表真实内网部署完成。
+- 功能提交：`3b504ab85c48b8b1ceb617f4b9fe9f10f63d8efc`；本文件及任务池的完成状态将由独立收口提交保存。
 
 ## 前一任务历史记录：2026-11-11 员工登录离线实施、E2E 与收口
 
