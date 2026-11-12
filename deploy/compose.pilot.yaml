@@ -1,0 +1,124 @@
+# 内网试点生产配置模板：不映射数据库或 Gunicorn 端口，不挂载应用源码。
+name: opsai-pilot
+
+x-django-environment: &django-environment
+  DJANGO_SETTINGS_MODULE: config.settings.production
+  DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?DJANGO_SECRET_KEY is required}
+  DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:?DJANGO_ALLOWED_HOSTS is required}
+  DJANGO_CSRF_TRUSTED_ORIGINS: ${DJANGO_CSRF_TRUSTED_ORIGINS:?DJANGO_CSRF_TRUSTED_ORIGINS is required}
+  POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+  POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+  POSTGRES_HOST: db
+  POSTGRES_PORT: "5432"
+  DJANGO_TIME_ZONE: ${DJANGO_TIME_ZONE:-Asia/Shanghai}
+  DJANGO_LOG_LEVEL: ${DJANGO_LOG_LEVEL:-INFO}
+
+services:
+  db:
+    image: postgres:17.11-alpine3.24
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      TZ: UTC
+    volumes:
+      - pilot_postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+  media-init:
+    image: ${PILOT_WEB_IMAGE:?PILOT_WEB_IMAGE is required}
+    user: "0:0"
+    command: ["sh", "-c", "chown -R 10001:10001 /app/private_media"]
+    volumes:
+      - pilot_private_media:/app/private_media
+    network_mode: none
+    restart: "no"
+
+  static-init:
+    image: ${PILOT_WEB_IMAGE:?PILOT_WEB_IMAGE is required}
+    environment: *django-environment
+    user: "0:0"
+    command: ["python", "manage.py", "collectstatic", "--noinput"]
+    volumes:
+      - pilot_staticfiles:/app/staticfiles
+    networks:
+      - backend
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  web:
+    image: ${PILOT_WEB_IMAGE:?PILOT_WEB_IMAGE is required}
+    environment: *django-environment
+    expose:
+      - "8000"
+    volumes:
+      - pilot_private_media:/app/private_media
+    networks:
+      - backend
+    depends_on:
+      db:
+        condition: service_healthy
+      media-init:
+        condition: service_completed_successfully
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    init: true
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+  caddy:
+    image: caddy:2.10.2-alpine
+    environment:
+      PILOT_HTTPS_DOMAIN: ${PILOT_HTTPS_DOMAIN:?PILOT_HTTPS_DOMAIN is required}
+      PILOT_HTTPS_PORT: ${PILOT_HTTPS_PORT:-443}
+    ports:
+      - "127.0.0.1:${PILOT_HTTP_PORT:-8080}:80"
+      - "127.0.0.1:${PILOT_HTTPS_PORT:-8443}:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${PILOT_TLS_CERTS_DIR:?PILOT_TLS_CERTS_DIR is required}:/etc/caddy/tls:ro
+      - pilot_staticfiles:/srv/static:ro
+      - pilot_caddy_data:/data
+      - pilot_caddy_config:/config
+    networks:
+      - backend
+      - frontend
+    depends_on:
+      web:
+        condition: service_started
+      static-init:
+        condition: service_completed_successfully
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    init: true
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  pilot_postgres_data:
+  pilot_private_media:
+  pilot_staticfiles:
+  pilot_caddy_data:
+  pilot_caddy_config:
+
+networks:
+  backend:
+    internal: true
+  frontend:

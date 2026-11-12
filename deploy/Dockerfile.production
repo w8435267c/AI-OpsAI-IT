@@ -1,0 +1,28 @@
+# 仅用于 Linux 内网试点镜像；本镜像不运行 Django runserver。
+# wheelhouse 是构建时由受控流程传入的额外只读上下文，不能把 wheel 写入仓库或镜像上下文。
+FROM opsai-it-web:latest
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+USER root
+COPY --from=wheelhouse / /tmp/wheelhouse/
+RUN pip install --no-index --find-links=/tmp/wheelhouse --no-deps \
+        setuptools==80.9.0 gunicorn==27.0.0 \
+    && python -c "import gunicorn, setuptools; assert setuptools.__version__ == '80.9.0'" \
+    && pip check \
+    && rm -rf /tmp/wheelhouse /app \
+    && mkdir -p /app/private_media /app/staticfiles \
+    && chown -R appuser:appuser /app
+
+WORKDIR /app
+COPY --chown=appuser:appuser . .
+RUN mkdir -p /app/private_media /app/staticfiles \
+    && chown -R appuser:appuser /app/private_media /app/staticfiles
+
+USER appuser
+
+EXPOSE 8000
+
+CMD ["gunicorn", "config.wsgi:application", "--bind=0.0.0.0:8000", "--workers=3", "--timeout=60", "--graceful-timeout=30", "--access-logfile=-", "--error-logfile=-", "--worker-tmp-dir=/dev/shm"]
