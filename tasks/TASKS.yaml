@@ -800,6 +800,31 @@ tasks:
         - "后续仅可在全新隔离镜像中安装 Gunicorn；不得用 Windows `.venv` 作为生产运行验证。"
         - "Caddy 镜像获取阻塞已于 2026-11-12 解除并完成新的隔离验证；未来真实内网部署仍需按 SOP 提供经批准的真实证书、域名与受控环境文件。"
 
+  - id: "PILOT-BACKUP-RESTORE-01"
+    title: "PostgreSQL 备份与独立恢复演练"
+    priority: MUST
+    status: "AUTHORIZED / IN PROGRESS"
+    owner: codex
+    dependencies:
+      - "PILOT-PRODUCTION-DEPLOYMENT-BASELINE-01"
+    objective: >
+      建立可重复执行的 PostgreSQL 一致性逻辑备份、SHA-256 完整性校验和全新隔离数据库恢复演练，
+      并使用合成员工、已发布知识、版本、审核、受众和反馈数据证明恢复后的业务关联完整。
+    acceptance:
+      - "备份文件位于仓库外受控目录，包含格式、大小、SHA-256、版本、时间与退出码证据，且不含凭据。"
+      - "仅使用新的隔离容器、网络和 Volume 恢复；源数据库、历史容器和历史 Volume 均不被覆盖或删除。"
+      - "恢复后员工、已发布知识、版本、审核、受众规则与反馈记录的数量及关键关联均与备份源一致。"
+      - "明确数据库备份不自动覆盖私有媒体或外部附件，并给出保留、RPO/RTO 与后续媒体备份建议。"
+    verification:
+      - "允许修改任务元数据、deploy/backup/ 下的新脚本、相关测试、备份恢复 SOP 与本任务报告；不得修改现有 Compose、生产设置或业务逻辑。"
+      - "只能使用合成数据、全新隔离 PostgreSQL 17 资源和仓库外备份目录；不得读取真实密码、访问生产数据库、Push 或 Merge。"
+      - "必须实际执行备份、哈希校验、全新数据库恢复、关键数据比较、失败保护测试、Django check、Ruff、相关回归、敏感信息与 Git 差异检查。"
+    result:
+      commits: []
+      verification: []
+      notes:
+        - "本任务 PASS 只证明本地隔离恢复演练；不构成真实服务器备份、生产恢复、媒体完整备份或灾难恢复承诺。"
+
   - id: "15"
     title: "开发私有附件和病毒扫描"
     priority: MUST

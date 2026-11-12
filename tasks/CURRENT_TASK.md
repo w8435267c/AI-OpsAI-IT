@@ -1,30 +1,28 @@
 # OpsAI Current Task
 
-> 本文件登记唯一当前业务开发任务。本轮仅建立未来内网试点的生产部署配置基线；不部署、不访问生产数据、不接入真实钉钉或外部系统。
+> 本文件登记唯一当前业务开发任务。本轮仅在全新、隔离的 PostgreSQL 数据库与 Docker Volume 中完成备份和恢复演练；不访问生产数据、不覆盖任何历史卷、不接入真实钉钉或外部系统。
 
 ## 1. 当前任务
 
 | 项目 | 当前值 |
 | --- | --- |
-| 任务编号 | `PILOT-PRODUCTION-DEPLOYMENT-BASELINE-01` |
-| 任务名称 | 内网试点生产部署基线建设 |
-| 任务状态 | `DONE / PASS（仅限本地隔离生产部署配置基线）` |
-| 任务性质 | `LOCAL CONFIGURATION AND ISOLATED VERIFICATION ONLY` |
-| 登记基线 | `cce0afdf702be4417cc96e6111e2d7f13f2bbedf` |
+| 任务编号 | `PILOT-BACKUP-RESTORE-01` |
+| 任务名称 | PostgreSQL 备份与独立恢复演练 |
+| 任务状态 | `AUTHORIZED / IN PROGRESS` |
+| 任务性质 | `LOCAL ISOLATED BACKUP AND RESTORE DRILL ONLY` |
+| 登记基线 | `d5c1e80f248f492a02428d26a2ac8dcfa74884f1` |
 | 目标分支 | `fusion/wagtail-poc` |
-| 前置依赖 | `PILOT-LOCAL-LOGIN-MVP-01` 已 `DONE / PASS`，收口提交 `cce0afdf702be4417cc96e6111e2d7f13f2bbedf`。 |
-| 当前授权 | 仅允许任务登记、部署配置开发、离线/隔离验证、验收报告和本地提交；不得真实部署、操作现有容器/数据卷、生产数据、真实钉钉、Push 或 Merge。 |
+| 前置依赖 | `PILOT-PRODUCTION-DEPLOYMENT-BASELINE-01` 已 `DONE / PASS`，收口提交 `d5c1e80f248f492a02428d26a2ac8dcfa74884f1`。 |
+| 当前授权 | 仅允许任务登记、备份/恢复脚本与 SOP、全新隔离 PostgreSQL 演练、验收报告和本地提交；不得访问生产数据、覆盖源数据库、操作历史容器或 Volume、Push 或 Merge。 |
 
 ## 2. 本轮实施范围与验收
 
-- 仓库内允许修改仅为 `tasks/CURRENT_TASK.md`、`tasks/TASKS.yaml`、`deploy/Dockerfile.production`、`deploy/compose.pilot.yaml`、`deploy/Caddyfile`、`deploy/pilot.env.example`、`config/settings/production.py`、`tests/test_production_deployment_baseline.py`、`docs/06-Process/PILOT-PRODUCTION-DEPLOYMENT-BASELINE-01-SOP.md` 与 `.ai/reports/pilot-production-deployment-baseline-01.md`；需要扩展文件范围时必须停止。
-- 必须使用 Gunicorn/WSGI、Caddy、内部 PostgreSQL 网络、独立持久卷、`collectstatic` 与受控环境变量；不得使用 `runserver`、源码 bind mount、公开媒体或宿主机数据库端口。
-- 生产设置必须失败关闭、`DEBUG=False`、严格 `ALLOWED_HOSTS`、关闭 `/dev/login/`、保留现有认证与知识受众权限，并仅信任受控反向代理。
-- 补充授权：`pyproject.toml` 已纳入本任务，Gunicorn 仅作为 Linux 生产镜像运行时依赖声明；不得安装到 Windows `.venv` 充当生产验证。
-- 已解除的构建阻塞：原始构建因 Docker 内 PyPI `setuptools>=77` 读取超时失败；改用经 SHA-256 核验的仓库外 wheelhouse、`--network none` 和既有 Linux 应用基础镜像后，Gunicorn 生产镜像构建成功。
-- 历史阻塞已保留：此前拉取 `caddy:2.10.2-alpine` 时 Docker Desktop HTTPS 代理不可达，退出码为 1；2026-11-12 已使用核验后的本地官方镜像完成 Caddy、HTTPS、反向代理、静态文件和私有媒体隔离验收。
-- 最终验收：TLS 1.3、HTTP→HTTPS、`/health/live`、`/health/ready`、静态文件、私有媒体拒绝、生产 `/dev/login/` 禁用、端口隔离、失败关闭与相关回归均已通过。结果仅适用于合成域名、临时证书和隔离数据库，不代表真实内网部署完成。
-- 功能提交：`3b504ab85c48b8b1ceb617f4b9fe9f10f63d8efc`；本文件及任务池的完成状态将由独立收口提交保存。
+- 仓库内允许修改仅为任务元数据、`deploy/backup/` 下的备份/恢复/校验脚本、对应自动化测试、备份恢复 SOP 与本任务验收报告；需要修改现有 Compose、生产设置或其他文件时必须停止。
+- 备份必须为 PostgreSQL 一致性逻辑备份，输出文件位于仓库外受控目录；必须生成 SHA-256、工具版本、开始/完成时间、退出码及文件大小记录，且不得记录密码。
+- 恢复必须使用全新命名的 PostgreSQL 容器、网络和 Volume，目标数据库必须在恢复前不存在；不得删除、重建、覆盖或连接任何历史 Docker 资源。
+- 必须使用合成员工、已发布知识、版本、审核记录、受众规则和员工反馈验证恢复后的业务一致性；仅 `pg_restore` 返回 0 不足以判定 PASS。
+- 私有媒体与附件范围必须明确：数据库备份不自动覆盖 Volume 中的媒体或外部对象；试点未启用附件时亦须如实记录。
+- 真实服务器、生产数据库、真实员工密码、真实钉钉、Push 与 Merge 均未获授权。
 
 ## 前一任务历史记录：2026-11-11 员工登录离线实施、E2E 与收口
 
