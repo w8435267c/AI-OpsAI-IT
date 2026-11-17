@@ -44,6 +44,23 @@ class ManageWorkingArticleReadError(KnowledgeServiceError):
     """管理侧 working DRAFT 不可读取时的稳定安全异常。"""
 
 
+def can_access_manage_article_list(*, actor) -> bool:
+    """判断是否可进入管理列表，复用列表 Reader 的身份与权限合同。"""
+
+    try:
+        _resolve_writer_actor(
+            actor=actor,
+            user_query=User.objects,
+            required_permissions=_MANAGE_ARTICLE_LIST_REQUIRED_PERMISSIONS,
+            error_type=ManageArticleListReadError,
+            error_code=MANAGE_ARTICLE_LIST_PERMISSION_DENIED,
+            public_message="没有查看知识管理列表的权限。",
+        )
+    except ManageArticleListReadError:
+        return False
+    return True
+
+
 @dataclass(frozen=True, slots=True)
 class ManageArticleCreateOptions:
     """创建表单可用选项；QuerySet 均已按 actor 权限收窄。"""

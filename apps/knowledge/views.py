@@ -9,10 +9,12 @@ from django.http import HttpRequest, HttpResponse, HttpResponseNotFound
 from django.shortcuts import redirect, render
 
 from apps.knowledge.http import employee_get_page, employee_post_request
+from apps.knowledge.manage_readers import can_access_manage_article_list
 from apps.knowledge.models import Article, Category
 from apps.knowledge.readers import employee_visible_articles, get_employee_article_detail
 from apps.knowledge.services import EmployeeFeedbackError, submit_employee_feedback
 from apps.service_desk.services import get_configured_service_request_url
+from apps.workflow.readers import can_access_review_queue
 
 HOME_RECENT_LIMIT = 12
 CATEGORY_PAGE_SIZE = 20
@@ -73,6 +75,8 @@ def employee_home(request: HttpRequest) -> HttpResponse:
         {
             "categories": categories,
             "recent_articles": recent_articles,
+            "can_access_knowledge_management": can_access_manage_article_list(actor=request.user),
+            "can_access_review_queue": can_access_review_queue(actor=request.user),
         },
     )
 

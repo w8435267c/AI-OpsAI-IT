@@ -1,9 +1,12 @@
 """Task 10B 正式员工首页的权限、数据、路由与模板契约测试。"""
 
 from datetime import timedelta
+from io import StringIO
 from unittest.mock import patch
 
+from django.contrib.auth.models import Group
 from django.contrib.staticfiles import finders
+from django.core.management import call_command
 from django.db import connection
 from django.test import Client, TestCase
 from django.test.utils import CaptureQueriesContext
@@ -12,6 +15,7 @@ from django.utils import timezone
 from django.utils.html import escape
 
 from apps.accounts.models import AccountStatus, Department
+from apps.accounts.roles import ROLE_EDITOR, ROLE_REVIEWER, SYSTEM_ROLE_BY_CODE
 from apps.accounts.views import dev_login, dev_logout
 from apps.core.views import live, ready
 from apps.knowledge import views as knowledge_views
@@ -336,7 +340,7 @@ class EmployeeHomeQueryTests(TestCase):
         large_count = self.request_query_count()
 
         self.assertEqual(small_count, large_count)
-        self.assertEqual(large_count, 4)
+        self.assertEqual(large_count, 8)
 
     def request_query_count(self):
         with CaptureQueriesContext(connection) as queries:
@@ -376,3 +380,84 @@ class EmployeeHomeTemplateAndRouteTests(TestCase):
         self.assertIs(resolve("/health/ready").func, ready)
         self.assertIs(resolve("/dev/login/").func, dev_login)
         self.assertIs(resolve("/dev/logout/").func, dev_logout)
+
+
+class EmployeeHomeRoleNavigationTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        call_command("sync_system_roles", verbosity=0, stdout=StringIO())
+        editor_group = Group.objects.get(name=SYSTEM_ROLE_BY_CODE[ROLE_EDITOR].name)
+        reviewer_group = Group.objects.get(name=SYSTEM_ROLE_BY_CODE[ROLE_REVIEWER].name)
+
+        cls.editor = _mk_user()
+        cls.editor.groups.add(editor_group)
+        cls.reviewer = _mk_user()
+        cls.reviewer.groups.add(reviewer_group)
+        cls.dual_role_user = _mk_user()
+        cls.dual_role_user.groups.add(editor_group, reviewer_group)
+        cls.employee = _mk_user()
+        cls.inactive_editor = _mk_user()
+        cls.inactive_editor.groups.add(editor_group)
+        type(cls.inactive_editor).objects.filter(pk=cls.inactive_editor.pk).update(is_active=False)
+
+        cls.home_url = reverse("knowledge:home")
+        cls.manage_url = reverse("knowledge_manage:list")
+        cls.review_url = reverse("workflow:queue")
+
+    def response_for(self, user):
+        client = Client()
+        client.force_login(user)
+        return client, client.get(self.home_url)
+
+    def test_editor_sees_only_knowledge_management_and_backend_matches(self):
+        client, response = self.response_for(self.editor)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["can_access_knowledge_management"])
+        self.assertFalse(response.context["can_access_review_queue"])
+        self.assertContains(response, self.manage_url)
+        self.assertNotContains(response, self.review_url)
+        self.assertEqual(client.get(self.manage_url).status_code, 200)
+        self.assertEqual(client.get(self.review_url).status_code, 403)
+
+    def test_reviewer_sees_only_review_queue_and_backend_matches(self):
+        client, response = self.response_for(self.reviewer)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context["can_access_knowledge_management"])
+        self.assertTrue(response.context["can_access_review_queue"])
+        self.assertNotContains(response, self.manage_url)
+        self.assertContains(response, self.review_url)
+        self.assertEqual(client.get(self.manage_url).status_code, 403)
+        self.assertEqual(client.get(self.review_url).status_code, 200)
+
+    def test_dual_role_user_sees_both_navigation_entries(self):
+        client, response = self.response_for(self.dual_role_user)
+
+        self.assertTrue(response.context["can_access_knowledge_management"])
+        self.assertTrue(response.context["can_access_review_queue"])
+        self.assertContains(response, self.manage_url)
+        self.assertContains(response, self.review_url)
+        self.assertEqual(client.get(self.manage_url).status_code, 200)
+        self.assertEqual(client.get(self.review_url).status_code, 200)
+
+    def test_employee_unauthenticated_and_inactive_accounts_do_not_receive_entries(self):
+        client, response = self.response_for(self.employee)
+        self.assertFalse(response.context["can_access_knowledge_management"])
+        self.assertFalse(response.context["can_access_review_queue"])
+        self.assertNotContains(response, self.manage_url)
+        self.assertNotContains(response, self.review_url)
+        self.assertEqual(client.get(self.manage_url).status_code, 403)
+        self.assertEqual(client.get(self.review_url).status_code, 403)
+
+        client.logout()
+        unauthenticated = client.get(self.home_url)
+        self.assertEqual(unauthenticated.status_code, 401)
+        self.assertNotIn(self.manage_url, unauthenticated.content.decode())
+        self.assertNotIn(self.review_url, unauthenticated.content.decode())
+
+        inactive_client, inactive_response = self.response_for(self.inactive_editor)
+        self.assertEqual(inactive_response.status_code, 401)
+        self.assertNotIn(self.manage_url, inactive_response.content.decode())
+        self.assertNotIn(self.review_url, inactive_response.content.decode())
+        self.assertEqual(inactive_client.get(self.manage_url).status_code, 401)

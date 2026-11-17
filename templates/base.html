@@ -15,6 +15,12 @@
       <nav aria-label="主要导航">
         <span class="nav-current" aria-current="page">首页</span>
         {% if request.user.is_authenticated %}
+          {% if can_access_knowledge_management %}
+            <a href="{% url 'knowledge_manage:list' %}">知识管理</a>
+          {% endif %}
+          {% if can_access_review_queue %}
+            <a href="{% url 'workflow:queue' %}">待审核知识</a>
+          {% endif %}
           <form method="post" action="{% url 'employee-logout' %}">
             {% csrf_token %}
             <button type="submit">退出登录</button>

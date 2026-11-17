@@ -209,6 +209,16 @@ def _resolve_reader_reviewer(actor) -> User:
     )
 
 
+def can_access_review_queue(*, actor) -> bool:
+    """判断是否可进入审核列表，复用审核 Reader 的身份与权限合同。"""
+
+    try:
+        _resolve_reader_reviewer(actor)
+    except WorkflowReaderError:
+        return False
+    return True
+
+
 def _resolve_manage_reader(actor) -> tuple[User, bool]:
     if (
         not isinstance(actor, User)
