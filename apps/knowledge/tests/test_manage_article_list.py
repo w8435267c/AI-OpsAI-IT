@@ -119,6 +119,43 @@ class ManageArticleListBase(TestCase):
             latest_working_version=draft_only
         )
 
+        cls.pending_first_article = cls.make_article(
+            "KB-280009",
+            space=cls.space,
+            category=cls.category,
+            owner=cls.article_owner,
+            title="UNUSED-PENDING-FIRST-COMPAT",
+        )
+        cls.pending_first = cls.make_version(
+            cls.pending_first_article,
+            1,
+            VersionStatus.IN_REVIEW,
+            "PENDING-FIRST-TITLE",
+        )
+
+        cls.published_pending_article = cls.make_article(
+            "KB-280010",
+            space=cls.space,
+            category=cls.category,
+            owner=cls.article_owner,
+            title="UNUSED-PUBLISHED-PENDING-COMPAT",
+        )
+        published_pending_v1 = cls.make_version(
+            cls.published_pending_article,
+            1,
+            VersionStatus.PUBLISHED,
+            "PUBLISHED-FIRST-TITLE",
+        )
+        cls.pending_second = cls.make_version(
+            cls.published_pending_article,
+            2,
+            VersionStatus.IN_REVIEW,
+            "PENDING-SECOND-TITLE",
+        )
+        Article.objects.filter(pk=cls.published_pending_article.pk).update(
+            current_published_version=published_pending_v1
+        )
+
         cls.denied_article = cls.make_article(
             "KB-280005",
             space=cls.other_space,
@@ -250,6 +287,8 @@ class ManageArticleListReaderTests(ManageArticleListBase):
                 "KB-280002",
                 "KB-280003",
                 "KB-280004",
+                "KB-280009",
+                "KB-280010",
                 "KB-280007",
                 "KB-280008",
             },
@@ -403,6 +442,27 @@ class ManageArticleListHttpAndPermissionTests(ManageArticleListBase):
 
 
 class ManageArticleListContentTests(ManageArticleListBase):
+    def test_pending_review_version_supplies_management_title_and_summary(self):
+        from apps.knowledge.manage_readers import get_manage_article_list
+
+        rows = {
+            article.kb_no: article for article in get_manage_article_list(actor=self.article_owner)
+        }
+
+        self.assertEqual(rows["KB-280009"].manage_title, "PENDING-FIRST-TITLE")
+        self.assertEqual(rows["KB-280009"].pending_review_version_no, 1)
+        self.assertEqual(rows["KB-280010"].manage_title, "PENDING-SECOND-TITLE")
+        self.assertEqual(rows["KB-280010"].pending_review_version_no, 2)
+
+        self.login(self.article_owner)
+        response = self.client.get("/manage/knowledge/")
+
+        self.assertContains(response, "PENDING-FIRST-TITLE")
+        self.assertContains(response, "PENDING-SECOND-TITLE")
+        self.assertRegex(response.content.decode(), r"v1\s+·\s+待审核")
+        self.assertRegex(response.content.decode(), r"v2\s+·\s+待审核")
+        self.assertRegex(response.content.decode(), r"v1\s+·\s+已发布")
+
     def test_title_authority_and_version_summaries(self):
         self.login(self.article_owner)
 
@@ -426,7 +486,7 @@ class ManageArticleListContentTests(ManageArticleListBase):
 
         self.assertNotContains(response, self.denied_article.kb_no)
         self.assertNotContains(response, "DENIED-SECRET-TITLE")
-        self.assertEqual(response.context["pagination"]["count"], 6)
+        self.assertEqual(response.context["pagination"]["count"], 8)
 
     def test_admin_can_see_articles_from_all_active_spaces(self):
         self.login(self.admin)
@@ -448,6 +508,18 @@ class ManageArticleListContentTests(ManageArticleListBase):
             self.draft_only_article,
             employee_visible_articles(self.article_owner),
         )
+
+    def test_employee_reader_keeps_published_version_when_v2_is_pending(self):
+        from apps.knowledge.readers import get_employee_article_detail
+
+        detail = get_employee_article_detail(
+            self.employee,
+            self.published_pending_article.kb_no,
+        )
+
+        self.assertIsNotNone(detail)
+        self.assertEqual(detail.title, "PUBLISHED-FIRST-TITLE")
+        self.assertNotEqual(detail.title, "PENDING-SECOND-TITLE")
 
     def test_template_autoescapes_management_title(self):
         ArticleVersion.objects.filter(

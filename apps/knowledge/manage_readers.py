@@ -6,12 +6,12 @@ from copy import deepcopy
 from dataclasses import dataclass
 from uuid import UUID
 
-from django.db.models import Q, QuerySet, Value
+from django.db.models import OuterRef, Q, QuerySet, Subquery, Value
 from django.db.models.functions import Coalesce
 
 from apps.accounts.models import AccountStatus, User
 
-from .models import Article, Category, KnowledgeSpace, VersionStatus
+from .models import Article, ArticleVersion, Category, KnowledgeSpace, VersionStatus
 from .services import (
     _REQUIRED_PERMISSIONS,
     KnowledgeServiceError,
@@ -144,6 +144,11 @@ def get_manage_article_list(*, actor) -> QuerySet[Article]:
     if not is_admin:
         articles = articles.filter(Q(owner=current_actor) | Q(space__owner=current_actor))
 
+    pending_review_versions = ArticleVersion.objects.filter(
+        article_id=OuterRef("pk"),
+        status=VersionStatus.IN_REVIEW,
+    ).order_by("-version_no", "-pk")
+
     return (
         articles.select_related(
             "space",
@@ -153,11 +158,13 @@ def get_manage_article_list(*, actor) -> QuerySet[Article]:
             "current_published_version",
         )
         .annotate(
+            pending_review_version_no=Subquery(pending_review_versions.values("version_no")[:1]),
             manage_title=Coalesce(
                 "latest_working_version__title",
+                Subquery(pending_review_versions.values("title")[:1]),
                 "current_published_version__title",
                 Value("（无可用标题）"),
-            )
+            ),
         )
         .order_by("-updated_at", "pk")
     )

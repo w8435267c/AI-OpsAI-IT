@@ -51,6 +51,16 @@
                 </dd>
               </div>
               <div>
+                <dt>当前待审版本</dt>
+                <dd>
+                  {% if article.pending_review_version_no %}
+                    v{{ article.pending_review_version_no }} · 待审核
+                  {% else %}
+                    —
+                  {% endif %}
+                </dd>
+              </div>
+              <div>
                 <dt>正式发布状态</dt>
                 <dd>
                   {% if article.current_published_version %}
