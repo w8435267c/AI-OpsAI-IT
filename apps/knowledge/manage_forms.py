@@ -53,6 +53,17 @@ class StrictPositiveIntegerField(forms.Field):
         return value
 
 
+class SpaceScopedCategorySelect(forms.Select):
+    """为创建页分类选项提供所属知识空间，供页面按当前空间筛选。"""
+
+    def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
+        option = super().create_option(name, value, label, selected, index, subindex, attrs)
+        category = getattr(value, "instance", None)
+        if category is not None:
+            option["attrs"]["data-space-id"] = str(category.space_id)
+        return option
+
+
 class ArticleAutosaveIdentityForm(forms.Form):
     """autosave 请求中的草稿身份与 CAS token。"""
 
@@ -70,6 +81,7 @@ class ArticleCreateForm(forms.Form):
     category = forms.ModelChoiceField(
         label="分类",
         queryset=Category.objects.none(),
+        widget=SpaceScopedCategorySelect,
     )
     article_type = forms.ChoiceField(
         label="文章类型",
@@ -211,6 +223,8 @@ class ArticleDraftForm(forms.Form):
 class ArticleRestoreForm(ArticleDraftForm):
     """历史恢复确认页提交的当前草稿完整快照。"""
 
+    # 恢复服务不接收拟变更分类；恢复页不能因继承草稿表单而暴露或要求该字段。
+    category = None
     draft_id = forms.UUIDField(widget=forms.HiddenInput())
     expected_lock_version = forms.IntegerField(
         min_value=1,

@@ -237,6 +237,7 @@ class ManageArticleRestoreTests(TestCase):
             self.assertContains(response, str(value))
         self.assertContains(response, f'action="{self.url}"')
         for forbidden in (
+            "category",
             "version_no",
             "status",
             "latest_working_version",

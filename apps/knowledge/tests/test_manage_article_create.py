@@ -165,6 +165,13 @@ class ArticleCreateFormTests(ManageArticleCreateBase):
         self.assertIn(self.other_category, admin_form.fields["category"].queryset)
         self.assertNotIn(self.inactive_category, admin_form.fields["category"].queryset)
 
+    def test_category_options_identify_their_space_for_client_side_filtering(self):
+        form = ArticleCreateForm(actor=self.admin)
+        rendered = form["category"].as_widget()
+
+        self.assertIn(f'data-space-id="{self.editor_space.pk}"', rendered)
+        self.assertIn(f'data-space-id="{self.other_space.pk}"', rendered)
+
     def test_model_choices_are_reused(self):
         form = ArticleCreateForm(actor=self.admin)
 

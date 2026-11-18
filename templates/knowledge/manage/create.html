@@ -1,4 +1,5 @@
 {% extends "knowledge/manage/base.html" %}
+{% load static %}
 
 {% block title %}新建知识 | OpsAI IT 故障问答知识库{% endblock %}
 
@@ -19,4 +20,5 @@
       <button type="submit">创建知识</button>
     </form>
   </section>
+  <script src="{% static 'js/knowledge_create.js' %}" defer></script>
 {% endblock %}

@@ -1013,6 +1013,33 @@ tasks:
       verification: []
       notes: []
 
+  - id: "PILOT-FULL-CHAIN-HEALTH-01"
+    title: "OpsAI 全链路体检与缺陷修复"
+    priority: MUST
+    status: "DONE / PARTIAL（独立 SQLite 浏览器主链通过；PostgreSQL 专项未执行）"
+    owner: codex
+    dependencies: []
+    objective: >
+      仅在独立测试环境以合成数据覆盖统一登录、角色入口、知识创建分类、审核发布、员工检索阅读和异常处理，
+      对确认缺陷实施最小修复、补充测试并完成回归；不得操作 18443 演示环境。
+    acceptance:
+      - "建立并记录修改前独立测试基线，区分既有失败、环境问题和本轮回归。"
+      - "每个确认缺陷均有复现测试、最小修复和相关回归证据；不修改业务规则以规避测试。"
+      - "独立环境真实浏览器覆盖编辑员建草稿/中文分类/送审、审核员发布和普通员工分类/关键词读取；未实测项如实记录。"
+    verification:
+      - "运行专项和相关回归、Django check、迁移一致性检查、Ruff 与 diff 检查。"
+    result:
+      commits: []
+      verification:
+        - "2026-11-18：任务启动前工作区已有 apps/knowledge/models.py、tasks/CURRENT_TASK.md、tasks/TASKS.yaml 未提交差异；HEAD 为 e8a54d5f91b7672b9b0495a115b4eeac219a1796，暂存区为空。"
+        - "2026-11-18：基线 pytest apps tests 为 893 passed、28 failed、23 skipped；修复后为 902 passed、23 skipped。全量 pytest 收集中的 16 个 Wagtail 实验失败、全仓 Ruff format 的既有 test_employee_feedback.py 格式差异均未修改。"
+        - "2026-11-18：专项恢复、编辑页测试 45 passed；新建知识测试 18 passed；Django check、迁移一致性、Ruff check、变更 Python 文件 Ruff format、node --check 和 git diff --check 通过。"
+        - "2026-11-18：独立 SQLite 数据库和 127.0.0.1:18018 真实浏览器完成编辑员中文分类建草稿/送审、审核员批准发布、普通员工分类页/详情页/关键词搜索读取；未连接或修改 18443。"
+        - "2026-11-18：按相同 pytest apps tests 配置复核清单：基线 924 条、当前 925 条，跳过均为 23 条；唯一新增本轮分类空间筛选回归，所有基线测试节点均仍被收集。基线 893 passed、28 failed 的 921 是含 20 条 subtest 失败事件的摘要计数，不是非跳过用例数。"
+      notes:
+        - "严格隔离测试数据；不连接、修改、重启或重新部署 18443 演示环境。"
+        - "PostgreSQL 专项和 Wagtail 隔离实验不属于本轮已实际完成验证，不能视为通过。"
+
   - id: "20"
     title: "V1.1A 验收与试点发布"
     priority: MUST
