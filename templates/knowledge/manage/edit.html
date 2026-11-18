@@ -28,7 +28,7 @@
         <dd>{{ detail.space_name }}</dd>
       </div>
       <div>
-        <dt>分类</dt>
+        <dt>当前发布分类</dt>
         <dd>{{ detail.category_name }}</dd>
       </div>
       <div>
@@ -75,6 +75,11 @@
         <div class="draft-editor-field">
           {{ form.body_text.label_tag }}
           {{ form.body_text }}
+        </div>
+        <div class="draft-editor-field">
+          {{ form.category.label_tag }}
+          {{ form.category }}
+          <p class="muted">{{ form.category.help_text }}</p>
         </div>
         <div class="draft-editor-field">
           {{ form.change_summary.label_tag }}

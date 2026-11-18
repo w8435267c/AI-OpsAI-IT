@@ -48,7 +48,7 @@ class ArticleDraftFormTests(SimpleTestCase):
         data.update(overrides)
         return data
 
-    def test_field_whitelist_is_exactly_the_five_working_content_fields(self):
+    def test_field_whitelist_includes_the_proposed_category_field(self):
         form = ArticleDraftForm()
 
         self.assertEqual(
@@ -59,11 +59,11 @@ class ArticleDraftFormTests(SimpleTestCase):
                 "applicable_scope",
                 "body_text",
                 "change_summary",
+                "category",
             ],
         )
         forbidden = {
             "space",
-            "category",
             "owner",
             "article_type",
             "audience_policy",
@@ -209,6 +209,7 @@ class KnowledgeEditorJavaScriptContractTests(SimpleTestCase):
             "applicable_scope",
             "body_text",
             "change_summary",
+            "category",
         ):
             with self.subTest(field=field):
                 self.assertIn(field, self.source)
@@ -512,7 +513,6 @@ class ManageArticleEditPageTests(TestCase):
             "lock_version",
             "owner",
             "space",
-            "category",
         ):
             with self.subTest(forbidden_name=forbidden_name):
                 self.assertNotContains(response, f'name="{forbidden_name}"')

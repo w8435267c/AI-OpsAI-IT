@@ -88,6 +88,8 @@ class ReviewTargetSnapshot:
     submitted_by_id: UUID | None
     submitted_at: datetime | None
     published_at: datetime | None
+    proposed_category_id: UUID | None
+    proposed_category_name: str | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -339,6 +341,7 @@ def _review_detail_target(*, actor: User, version_id: UUID) -> ArticleVersion:
             "article__space",
             "article__category",
             "article__current_published_version",
+            "proposed_category",
         )
         .first()
     )
@@ -412,6 +415,10 @@ def get_review_detail(*, actor, version_id) -> ReviewDetail:
             submitted_by_id=target.submitted_by_id,
             submitted_at=target.submitted_at,
             published_at=target.published_at,
+            proposed_category_id=target.proposed_category_id,
+            proposed_category_name=(
+                target.proposed_category.name if target.proposed_category_id else None
+            ),
         ),
         article=ReviewArticleSnapshot(
             article_id=article.pk,

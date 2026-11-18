@@ -54,6 +54,11 @@ class ReviewWebTests(TestCase):
             code="review-web-category",
             name="审核 Web 分类",
         )
+        cls.reclassified_category = Category.objects.create(
+            space=cls.space,
+            code="review-web-reclassified",
+            name="审核 Web 改类目标",
+        )
         cls.other_space = KnowledgeSpace.objects.create(
             code="review-web-other-space",
             name="审核 Web 其他空间",
@@ -240,6 +245,92 @@ class ReviewWebTests(TestCase):
         self.assertIsNone(article.current_published_version_id)
         self.assertEqual(ReviewRecord.objects.count(), 1)
         self.assertEqual(employee_visible_articles(self.employee).count(), 0)
+
+    def test_approval_switches_only_the_submitted_proposed_category(self):
+        article, published = self.make_article()
+        ArticleVersion.objects.filter(pk=published.pk).update(
+            status=VersionStatus.PUBLISHED,
+            published_at=timezone.now(),
+            submitted_by=self.author,
+            submitted_at=timezone.now(),
+        )
+        Article.objects.filter(pk=article.pk).update(
+            current_published_version=published, latest_working_version=None
+        )
+        published.refresh_from_db()
+        pending = ArticleVersion.objects.create(
+            article=article,
+            version_no=2,
+            status=VersionStatus.IN_REVIEW,
+            title=published.title,
+            summary=published.summary,
+            applicable_scope=published.applicable_scope,
+            body=published.body,
+            body_plaintext=published.body_plaintext,
+            change_summary="仅修改分类",
+            proposed_category=self.reclassified_category,
+            created_by=self.author,
+            submitted_by=self.author,
+            submitted_at=timezone.now(),
+        )
+        self.login(self.reviewer)
+        detail_url = reverse("workflow:detail", args=[pending.pk])
+        detail_page = self.client.get(detail_url)
+        self.assertContains(detail_page, "分类变更")
+        self.assertContains(detail_page, "审核 Web 改类目标")
+        self.client.post(
+            detail_url,
+            {
+                "action": "approve",
+                "comment": "改类通过",
+                "idempotency_key": "review-web-category-1",
+            },
+        )
+        article.refresh_from_db()
+        self.assertEqual(article.category_id, self.reclassified_category.pk)
+        self.assertEqual(article.current_published_version_id, pending.pk)
+
+    def test_rejection_keeps_current_category_and_preserves_proposed_change_in_draft(self):
+        article, published = self.make_article()
+        ArticleVersion.objects.filter(pk=published.pk).update(
+            status=VersionStatus.PUBLISHED,
+            published_at=timezone.now(),
+            submitted_by=self.author,
+            submitted_at=timezone.now(),
+        )
+        Article.objects.filter(pk=article.pk).update(
+            current_published_version=published, latest_working_version=None
+        )
+        published.refresh_from_db()
+        pending = ArticleVersion.objects.create(
+            article=article,
+            version_no=2,
+            status=VersionStatus.IN_REVIEW,
+            title=published.title,
+            summary=published.summary,
+            applicable_scope={},
+            body={},
+            body_plaintext=published.body_plaintext,
+            change_summary="仅修改分类",
+            proposed_category=self.reclassified_category,
+            created_by=self.author,
+            submitted_by=self.author,
+            submitted_at=timezone.now(),
+        )
+        self.login(self.reviewer)
+        self.client.post(
+            reverse("workflow:detail", args=[pending.pk]),
+            {
+                "action": "reject",
+                "comment": "请确认分类",
+                "idempotency_key": "review-web-category-2",
+            },
+        )
+        article.refresh_from_db()
+        self.assertEqual(article.category_id, self.category.pk)
+        self.assertEqual(
+            article.latest_working_version.proposed_category_id, self.reclassified_category.pk
+        )
 
     def test_duplicate_and_stale_review_posts_do_not_duplicate_business_results(self):
         article, version = self.make_article(status=VersionStatus.IN_REVIEW)

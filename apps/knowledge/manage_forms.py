@@ -174,6 +174,17 @@ class ArticleDraftForm(forms.Form):
         strip=False,
         widget=forms.Textarea(attrs={"rows": 3}),
     )
+    category = forms.ModelChoiceField(
+        label="拟变更分类",
+        queryset=Category.objects.none(),
+        required=False,
+        help_text="提交并获批准后才会更新员工端分类；留空或选择当前分类表示不改分类。",
+    )
+
+    def __init__(self, *args, categories=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if categories is not None:
+            self.fields["category"].queryset = categories
 
     def _clean_nonblank_text(self, field_name: str, label: str) -> str:
         value = self.cleaned_data[field_name]

@@ -86,8 +86,11 @@ class ManageWorkingArticleDetail:
     applicable_scope: object
     body_text: str
     change_summary: str
+    space_id: UUID
     space_name: str
     category_name: str
+    proposed_category_id: UUID | None
+    proposed_category_name: str | None
     owner_name: str
     restored_from_version_no: int | None
 
@@ -195,6 +198,7 @@ def get_manage_working_article_detail(*, actor, kb_no: str) -> ManageWorkingArti
             "owner",
             "latest_working_version",
             "latest_working_version__restored_from_version",
+            "latest_working_version__proposed_category",
         ).get(kb_no=kb_no, space__is_active=True)
     except Article.DoesNotExist:
         _raise_working_not_found()
@@ -222,8 +226,13 @@ def get_manage_working_article_detail(*, actor, kb_no: str) -> ManageWorkingArti
         applicable_scope=deepcopy(draft.applicable_scope),
         body_text=draft.body_plaintext,
         change_summary=draft.change_summary,
+        space_id=article.space_id,
         space_name=article.space.name,
         category_name=article.category.name,
+        proposed_category_id=draft.proposed_category_id,
+        proposed_category_name=(
+            draft.proposed_category.name if draft.proposed_category_id else None
+        ),
         owner_name=str(article.owner),
         restored_from_version_no=(
             draft.restored_from_version.version_no

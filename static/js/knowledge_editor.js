@@ -23,7 +23,8 @@
   const scope = editor.querySelector('[name="applicable_scope"]');
   const bodyText = editor.querySelector('[name="body_text"]');
   const changeSummary = editor.querySelector('[name="change_summary"]');
-  const fields = [title, summary, scope, bodyText, changeSummary];
+  const category = editor.querySelector('[name="category"]');
+  const fields = [title, summary, scope, bodyText, changeSummary, category];
   let pageVersion = Number(editor.dataset.versionNo);
   const autosaveUrl = editor.dataset.autosaveUrl;
   const saveUrl = editor.dataset.saveUrl;
@@ -124,6 +125,7 @@
       applicable_scope: parsedScope,
       body_text: bodyText.value,
       change_summary: changeSummary.value,
+      category: category.value || null,
     };
   }
 
@@ -306,6 +308,7 @@
       isPlainObject(payload.draft.applicable_scope) &&
       typeof payload.draft.body_text === "string" &&
       typeof payload.draft.change_summary === "string" &&
+      (payload.draft.proposed_category_id === null || typeof payload.draft.proposed_category_id === "string") &&
       (payload.draft.restored_from_version_no === null ||
         (Number.isInteger(payload.draft.restored_from_version_no) &&
           payload.draft.restored_from_version_no > 0))
@@ -322,6 +325,7 @@
     scope.value = JSON.stringify(payload.draft.applicable_scope, null, 2);
     bodyText.value = payload.draft.body_text;
     changeSummary.value = payload.draft.change_summary;
+    category.value = payload.draft.proposed_category_id || "";
     versionLabel.textContent = `v${payload.draft.version_no} · ${payload.draft.status_label}`;
     lockLabel.textContent = `锁版本 ${payload.draft.lock_version}`;
     if (restoredFromRow && restoredFromLabel) {

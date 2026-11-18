@@ -694,6 +694,7 @@ def _freeze_current_draft(
     body: dict,
     body_plaintext: str,
     change_summary: str,
+    proposed_category: Category | None,
 ) -> ArticleVersion:
     draft.title = title
     draft.summary = summary
@@ -701,6 +702,7 @@ def _freeze_current_draft(
     draft.body = body
     draft.body_plaintext = body_plaintext
     draft.change_summary = change_summary
+    draft.proposed_category = proposed_category
     draft.lock_version += 1
     draft.status = VersionStatus.SAVED
     draft.submitted_by = None
@@ -715,6 +717,7 @@ def _freeze_current_draft(
             "body",
             "body_plaintext",
             "change_summary",
+            "proposed_category",
             "lock_version",
             "status",
             "submitted_by",
@@ -824,6 +827,7 @@ def _autosave_draft(
     applicable_scope,
     body_text,
     change_summary,
+    proposed_category=None,
 ) -> ArticleVersion:
     _current_actor, current_article, _is_admin = _resolve_article_version_write_context(
         actor=actor,
@@ -837,6 +841,18 @@ def _autosave_draft(
         applicable_scope=applicable_scope,
         body_text=body_text,
         change_summary=change_summary,
+    )
+    if proposed_category is not None and (
+        not isinstance(proposed_category, Category)
+        or proposed_category.pk is None
+        or proposed_category.space_id != current_article.space_id
+        or not proposed_category.is_active
+    ):
+        _raise_version_write_invalid("拟变更分类必须是当前知识空间内的有效分类。")
+    proposed_category_id = (
+        proposed_category.pk
+        if proposed_category is not None and proposed_category.pk != current_article.category_id
+        else None
     )
     updated_at = timezone.now()
 
@@ -853,6 +869,7 @@ def _autosave_draft(
         body=body,
         body_plaintext=body_plaintext,
         change_summary=change_summary,
+        proposed_category_id=proposed_category_id,
         lock_version=F("lock_version") + 1,
         updated_at=updated_at,
     )
@@ -883,6 +900,7 @@ def _autosave_draft(
         draft.body == body,
         draft.body_plaintext == body_plaintext,
         draft.change_summary == change_summary,
+        draft.proposed_category_id == proposed_category_id,
     )
     if not all(expected_values):
         raise ArticleVersionWriteError(
@@ -903,6 +921,7 @@ def autosave_draft(
     applicable_scope,
     body_text,
     change_summary,
+    proposed_category=None,
 ) -> ArticleVersion:
     """使用乐观锁原地更新当前 DRAFT；不创建版本或写入 Article。"""
     try:
@@ -916,6 +935,7 @@ def autosave_draft(
             applicable_scope=applicable_scope,
             body_text=body_text,
             change_summary=change_summary,
+            proposed_category=proposed_category,
         )
     except ArticleVersionWriteError:
         raise
@@ -942,6 +962,7 @@ def _manual_save_draft(
     applicable_scope,
     body_text,
     change_summary,
+    proposed_category=None,
 ) -> tuple[ArticleVersion, ArticleVersion]:
     current_actor, current_article, is_admin = _resolve_article_version_write_context(
         actor=actor,
@@ -970,6 +991,13 @@ def _manual_save_draft(
             draft_id=normalized_draft_id,
             expected_lock_version=expected_lock_version,
         )
+        if proposed_category is not None and (
+            not isinstance(proposed_category, Category)
+            or proposed_category.pk is None
+            or proposed_category.space_id != locked_article.space_id
+            or not proposed_category.is_active
+        ):
+            _raise_version_write_invalid("拟变更分类必须是当前知识空间内的有效分类。")
         _freeze_current_draft(
             draft=saved_version,
             title=title,
@@ -978,6 +1006,11 @@ def _manual_save_draft(
             body=body,
             body_plaintext=body_plaintext,
             change_summary=change_summary,
+            proposed_category=(
+                None
+                if proposed_category is None or proposed_category.pk == locked_article.category_id
+                else proposed_category
+            ),
         )
 
         new_draft = ArticleVersion(
@@ -991,6 +1024,7 @@ def _manual_save_draft(
             body=deepcopy(saved_version.body),
             body_plaintext=saved_version.body_plaintext,
             change_summary=f"基于已保存版本 v{saved_version.version_no} 继续编辑",
+            proposed_category=saved_version.proposed_category,
             restored_from_version=None,
             created_by=current_actor,
             submitted_by=None,
@@ -1018,6 +1052,7 @@ def manual_save_draft(
     applicable_scope,
     body_text,
     change_summary,
+    proposed_category=None,
 ) -> tuple[ArticleVersion, ArticleVersion]:
     """冻结当前 DRAFT 为 SAVED，并在同一事务创建下一工作 DRAFT。"""
     try:
@@ -1031,6 +1066,7 @@ def manual_save_draft(
             applicable_scope=applicable_scope,
             body_text=body_text,
             change_summary=change_summary,
+            proposed_category=proposed_category,
         )
     except ArticleVersionWriteError:
         raise
@@ -1114,6 +1150,7 @@ def _restore_article_version(
             body=current_body,
             body_plaintext=current_body_plaintext,
             change_summary=current_change_summary,
+            proposed_category=current_draft.proposed_category,
         )
         new_draft = ArticleVersion(
             article=locked_article,
@@ -1126,6 +1163,7 @@ def _restore_article_version(
             body=deepcopy(source_version.body),
             body_plaintext=source_version.body_plaintext,
             change_summary=f"从版本 v{source_version.version_no} 恢复",
+            proposed_category=source_version.proposed_category,
             restored_from_version=source_version,
             created_by=current_actor,
             submitted_by=None,

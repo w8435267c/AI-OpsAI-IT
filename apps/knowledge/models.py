@@ -580,6 +580,17 @@ class ArticleVersion(models.Model):
         related_name="versions",
         db_comment="该版本所属的文章主记录。",
     )
+    proposed_category = models.ForeignKey(
+        Category,
+        verbose_name=_("拟变更分类"),
+        on_delete=models.PROTECT,
+        related_name="proposed_article_versions",
+        null=True,
+        blank=True,
+        db_comment=(
+            "待审核的分类变更；空值表示沿用文章当前分类，批准发布后才同步 Article.category。"
+        ),
+    )
     version_no = models.PositiveIntegerField(
         _("版本号"),
         db_comment="文章内从 1 开始递增的整数版本号。",
@@ -750,6 +761,13 @@ class ArticleVersion(models.Model):
     def clean(self) -> None:
         super().clean()
         errors: dict[str, str] = {}
+
+        if (
+            self.proposed_category_id
+            and self.article_id
+            and self.proposed_category.space_id != self.article.space_id
+        ):
+            errors["proposed_category"] = _("拟变更分类必须属于文章知识空间。")
 
         requires_submitted_info = self.status not in (
             VersionStatus.DRAFT,

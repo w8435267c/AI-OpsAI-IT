@@ -26,7 +26,7 @@ from apps.knowledge.manage_readers import (
     get_manage_article_list,
     get_manage_working_article_detail,
 )
-from apps.knowledge.models import Article
+from apps.knowledge.models import Article, Category
 from apps.knowledge.services import (
     ARTICLE_CREATE_INVALID_INPUT,
     ARTICLE_CREATE_PERMISSION_DENIED,
@@ -74,6 +74,7 @@ _DRAFT_WRITE_FIELDS = frozenset(
         "change_summary",
     }
 )
+_DRAFT_WRITE_OPTIONAL_FIELDS = frozenset({"category"})
 _DRAFT_WRITE_CONFLICT_CODES = {
     DRAFT_CONFLICT,
     DRAFT_NOT_CURRENT,
@@ -120,7 +121,7 @@ def _parse_draft_write_json(
             message="请求正文必须是 JSON 对象。",
             status=400,
         )
-    if unknown_fields := payload.keys() - _DRAFT_WRITE_FIELDS:
+    if unknown_fields := payload.keys() - _DRAFT_WRITE_FIELDS - _DRAFT_WRITE_OPTIONAL_FIELDS:
         return None, _draft_write_error(
             code="UNKNOWN_FIELDS",
             message=f"请求包含不支持的字段：{', '.join(sorted(unknown_fields))}。",
@@ -209,11 +210,26 @@ def _prepare_draft_write(
             ),
         )
 
+    try:
+        article = Article.objects.select_related("space").get(kb_no=kb_no)
+    except Article.DoesNotExist:
+        return (
+            None,
+            None,
+            None,
+            _draft_write_error(
+                code=DRAFT_NOT_FOUND_OR_INACCESSIBLE, message="草稿不存在或不可访问。", status=404
+            ),
+        )
     content_data = {
         **payload,
         "applicable_scope": json.dumps(payload["applicable_scope"], ensure_ascii=False),
+        "category": payload.get("category"),
     }
-    content_form = ArticleDraftForm(data=content_data)
+    content_form = ArticleDraftForm(
+        data=content_data,
+        categories=Category.objects.filter(space=article.space, is_active=True),
+    )
     if not content_form.is_valid():
         return (
             None,
@@ -226,19 +242,6 @@ def _prepare_draft_write(
             ),
         )
 
-    try:
-        article = Article.objects.get(kb_no=kb_no)
-    except Article.DoesNotExist:
-        return (
-            None,
-            None,
-            None,
-            _draft_write_error(
-                code=DRAFT_NOT_FOUND_OR_INACCESSIBLE,
-                message="草稿不存在或不可访问。",
-                status=404,
-            ),
-        )
     return article, identity_form.cleaned_data, content_form.cleaned_data, None
 
 
@@ -581,6 +584,7 @@ def manage_article_autosave(request: HttpRequest, kb_no: str) -> HttpResponse:
             applicable_scope=content["applicable_scope"],
             body_text=content["body_text"],
             change_summary=content["change_summary"],
+            proposed_category=content["category"],
         )
     except ArticleVersionWriteError as error:
         return _map_draft_write_service_error(
@@ -626,6 +630,7 @@ def manage_article_manual_save(request: HttpRequest, kb_no: str) -> HttpResponse
             applicable_scope=content["applicable_scope"],
             body_text=content["body_text"],
             change_summary=content["change_summary"],
+            proposed_category=content["category"],
         )
     except ArticleVersionWriteError as error:
         return _map_draft_write_service_error(
@@ -701,13 +706,15 @@ def manage_article_edit(request: HttpRequest, kb_no: str) -> HttpResponse:
         return HttpResponse(error.public_message, status=403)
 
     form = ArticleDraftForm(
+        categories=Category.objects.filter(space_id=detail.space_id, is_active=True),
         initial={
             "title": detail.title,
             "summary": detail.summary,
             "applicable_scope": detail.applicable_scope,
             "body_text": detail.body_text,
             "change_summary": detail.change_summary,
-        }
+            "category": detail.proposed_category_id,
+        },
     )
     return render(
         request,

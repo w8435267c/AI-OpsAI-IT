@@ -828,6 +828,33 @@ tasks:
         - "2026-11-12：篡改备份被 SHA-256 检查拒绝且未创建目标库；已有目标数据库被拒绝覆盖且数据计数未变。相关回归 79 passed、3 subtests passed，Django check、迁移检查、Ruff、compileall 和 Git 差异检查通过。"
       notes:
         - "本任务 PASS 只证明本地隔离恢复演练；不构成真实服务器备份、生产恢复、媒体完整备份或灾难恢复承诺。"
+  - id: "PILOT-KNOWLEDGE-CATEGORY-REVIEW-01"
+    title: "OpsAI 已发布知识分类变更走审核"
+    priority: MUST
+    status: "DONE / PASS"
+    owner: codex
+    dependencies:
+      - "PILOT-DEMO-KNOWLEDGE-CATEGORY-01"
+    objective: >
+      为已发布文章提供受控的拟分类草稿、送审、审核显示和批准发布切换能力；分类只在批准发布事务中生效。
+    acceptance:
+      - "编辑员可选择同空间有效分类；草稿和待审阶段员工仍按 Article 当前分类浏览，审核详情显示原分类到拟变更分类。"
+      - "批准发布重新核验拟分类有效并原子切换；驳回、失败、自审、越权、跨空间或停用分类均不改变当前分类。"
+      - "不改变编号、历史版本、历史反馈、知识空间、受众或无分类变更的既有流程；仅独立测试库验证，不操作 8001、18443 或既有演示数据。"
+    verification:
+      - "覆盖分类变更审批、驳回后重提、员工分类和搜索读取、反馈版本关联、权限与无分类变更回归；运行 Django check、迁移一致性、Ruff 与 git diff --check。"
+    result:
+      commits: []
+      verification:
+        - "2026-11-18：实现 ArticleVersion.proposed_category；编辑草稿仅保存拟分类，审核详情展示原分类到拟变更分类，批准发布事务重新校验目标分类仍启用且属于文章空间后才切换 Article.category；驳回后继草稿保留拟分类，批准后继草稿清空拟分类。"
+        - "2026-11-18：草稿保存、审核 Web、批准发布、驳回、员工搜索读取专项 101 passed、202 subtests passed；Django check、Ruff lint、git diff --check 通过。"
+        - "2026-11-18：新建 opsai-category-review-01 独立 PostgreSQL 17.11 库，先应用至 knowledge.0007，通过既有 Service 构造已发布合成文章、分类 A/B 和关联 v1 的反馈，再应用 knowledge.0008；迁移后 Article 分类/active 状态不变，旧 v1/v2 proposed_category 均为 NULL，反馈仍关联 v1。"
+        - "2026-11-18：在 http://127.0.0.1:18017/ 完成真实浏览器三角色验收：编辑员提交 A→B，审核员看见 A→B，员工在待审和驳回后仍从 A 查看；重提批准后员工仅在 B 查看，原正文关键词可搜索且详情可读。最终编号、正文、空间、all_employees 可见范围及历史反馈 v1 关联不变。"
+      notes:
+        - "2026-11-18：开发前确认分类权威存储为 Article.category；员工分类浏览、详情和搜索的分类投影均读取 Article，而正文取 current_published_version。采用 ArticleVersion 可空拟分类字段并在批准事务更新 Article 的最小方案。"
+        - "PILOT-DEMO-KNOWLEDGE-CATEGORY-01 继续 BLOCKED；本任务通过不代表 18443 演示文章已归类。"
+        - "迁移 knowledge.0008 已在新的 18017 隔离 PostgreSQL 库实测；未在 8001、18016、18443 或其他既有环境执行。隔离 Web 使用 Django runserver 仅为服务开发静态文件；未部署、未修改现有环境。"
+
 
   - id: "PILOT-HOME-ROLE-NAV-01"
     title: "OpsAI 首页按权限显示知识管理与审核入口"

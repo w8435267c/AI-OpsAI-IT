@@ -35,6 +35,12 @@
         <h2 id="review-body-title">正文</h2>
         <p>{{ detail.target.body_plaintext|linebreaksbr }}</p>
       </section>
+      {% if detail.target.proposed_category_id %}
+        <section aria-labelledby="category-change-title">
+          <h2 id="category-change-title">分类变更</h2>
+          <p>原分类：{{ detail.article.category_name }} → 拟变更分类：{{ detail.target.proposed_category_name }}</p>
+        </section>
+      {% endif %}
       <section aria-labelledby="review-action-title">
         <h2 id="review-action-title">审核操作</h2>
         <form method="post">

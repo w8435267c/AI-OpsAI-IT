@@ -27,6 +27,7 @@ from apps.audit.models import AuditEvent, AuditEventType
 from apps.knowledge.models import (
     Article,
     ArticleVersion,
+    Category,
     ReviewDecision,
     ReviewerSpaceScope,
     ReviewRecord,
@@ -965,6 +966,7 @@ def _create_successor_draft(*, article: Article, target: ArticleVersion) -> Arti
         body=deepcopy(target.body),
         body_plaintext=target.body_plaintext,
         change_summary=f"基于被驳回版本 v{target.version_no} 继续编辑",
+        proposed_category=target.proposed_category,
         restored_from_version=None,
         created_by=target.submitted_by or target.created_by,
         submitted_by=None,
@@ -1381,6 +1383,7 @@ def _create_approved_successor_draft(
         body=deepcopy(target.body),
         body_plaintext=target.body_plaintext,
         change_summary=f"基于已发布版本 v{target.version_no} 继续编辑",
+        proposed_category=None,
         restored_from_version=None,
         created_by=target.submitted_by or target.created_by,
         submitted_by=None,
@@ -1399,6 +1402,19 @@ def _switch_published_article(
     successor: ArticleVersion,
     actor: User,
 ) -> None:
+    proposed_category = target.proposed_category
+    if proposed_category is not None:
+        try:
+            proposed_category = Category.objects.select_for_update().get(pk=proposed_category.pk)
+        except Category.DoesNotExist as exc:
+            raise ApprovePublishArticleVersionError(
+                PUBLISH_STATE_INCONSISTENT, "拟变更分类已不可用，无法发布。"
+            ) from exc
+        if not proposed_category.is_active or proposed_category.space_id != article.space_id:
+            raise ApprovePublishArticleVersionError(
+                PUBLISH_STATE_INCONSISTENT, "拟变更分类已不可用，无法发布。"
+            )
+        article.category = proposed_category
     article.current_published_version = target
     article.latest_working_version = successor
     article.title = target.title
@@ -1407,6 +1423,7 @@ def _switch_published_article(
     article.save(
         update_fields=(
             "current_published_version",
+            "category",
             "latest_working_version",
             "title",
             "updated_by",
