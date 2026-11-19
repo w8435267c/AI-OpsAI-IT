@@ -1,8 +1,46 @@
 # OpsAI Current Task
 
-> 本文件登记唯一当前任务。本轮只在 `D:\Desktop\OpsAI\AI-OpsAI-IT-kb-article-media` 独立工作树和新建的隔离合成环境中实施正文 PNG/JPEG 插图与 `.docx` 私有附件；不得操作原工作区、18443/8001 演示环境、真实数据库、既有数据卷、钉钉或 Autopilot/R9。
+> 本文件登记唯一当前任务。本轮仅在 `D:\Desktop\OpsAI\AI-OpsAI-IT-kb-docx-import` 独立工作树和专属隔离验收环境中实施单篇 `.docx` 导入知识草稿；不得操作原工作区、媒体功能工作树、既有演示环境、历史数据卷、真实业务文档、钉钉或 Autopilot/R9。
 
 ## 1. 当前任务
+
+| 项目 | 当前值 |
+| --- | --- |
+| 任务编号 | `KB-DOCX-IMPORT-DRAFT-01` |
+| 任务名称 | 单篇 Word 导入知识草稿 |
+| 任务状态 | `DONE / LOCAL ISOLATED ACCEPTANCE PASS` |
+| 工作树 | `D:\Desktop\OpsAI\AI-OpsAI-IT-kb-docx-import` |
+| 分支 | `feature/kb-docx-import-draft-01` |
+| 起始 HEAD | `63c3205849a7ce82a49735b3a1170bc65f266c59` |
+| 上游媒体能力 | 复用已验收的版本媒体关联、私有存储、实际格式校验、ClamAV 扫描、发布门禁、受众鉴权下载及审计；不修改其已验收工作树。 |
+| 原工作区依赖 | 无。原工作区 20 项未提交改动只读核验，保持原样。 |
+
+### 1.1 精确修改范围
+
+- `apps/knowledge/`：仅限单篇 `.docx` 解析、导入事务服务、创建页面入口、必要的管理路由/视图、既有草稿与版本媒体复用接线及测试。
+- `templates/knowledge/manage/create.html`、必要的项目自有 JS/CSS：导入入口、可理解的失败和不支持内容提示；不新增编辑器。
+- `pyproject.toml`：仅在现有依赖不能安全解析 `.docx` 时新增固定用途依赖；新增前后记录实际用途。
+- `deploy/`：仅在现有隔离媒体验收配置确实无法复用时，新增本任务专用且隔离的配置；不得修改正式 Compose、Caddy 或既有数据卷。
+- `tasks/CURRENT_TASK.md`、`tasks/TASKS.yaml`：任务登记和真实验收结果。
+
+### 1.2 验收与安全边界
+
+- 每次导入只创建一篇新的未发布草稿；不得覆盖既有文章、自动提交审核或自动发布。分类、受众和其他必填项继续走现有创建表单、权限与服务校验。
+- 仅支持 `.docx` 的标题、段落、有序/无序列表和内嵌 PNG/JPEG；按原始正文顺序保存，图片绑定导入草稿版本。原始 Word 不作为文章附件。
+- 表格、浮动图及不能可靠转换的内容必须明确提示；核心解析失败、扫描失败/不可用、越权或重复提交均失败关闭，不留可见半成品草稿、未引用媒体或临时文件。
+- 原始 `.docx` 与提取图片均走已有格式校验、私有区和扫描；限制上传大小、解包总量、条目数和图片数，拒绝宏、嵌入对象和外部资源。不得执行文档内容，也不得把原始 XML/HTML 直接插入正文。
+- 隔离验收须覆盖合成 Word 的导入、编辑保存重开、现有审核发布、授权阅读/看图、无权图片直链拒绝，及桌面与 `390×844` 浏览器视口。全部通过后才可本地提交；不 Push、不 Merge、不部署。
+
+### 1.3 实际收口证据（2026-11-19）
+
+- 未新增依赖或迁移；`.docx` 使用标准库受限解包与 XML 白名单读取。原始文档仅在私有临时区完成格式校验与真实 ClamAV 扫描后删除，提取图片同样扫描后才作为当前草稿版本媒体保存；原始 Word 不附加到文章。
+- 自动化新增 `apps/knowledge/tests/test_docx_import.py`：合成标题/步骤/PNG 导入、草稿版本关联、列表、表格/外部资源拒绝、扫描失败无残留、权限与重复提交；专项及媒体/创建回归 `34 passed, 25 subtests passed`。正式应用范围 `902 passed, 23 skipped, 723 subtests passed`；23 项为 SQLite 测试设置下仅 PostgreSQL 的既有并发专项。
+- `DJANGO_SETTINGS_MODULE=config.settings.test python manage.py check`、`makemigrations --check --dry-run`、任务范围 Ruff lint/format 与 `git diff --check` 通过。仓库根目录裸 pytest 仍会因未安装的 Wagtail 隔离 PoC 收集失败，根目录全量 Ruff format 仍命中一处既有未修改格式差异，均未表述为通过。
+- 复用未重建的 `opsai-kb-media-acceptance` 隔离 PostgreSQL/ClamAV（15433、3311 均仅 127.0.0.1）；真实 ClamAV 对合成 PNG 返回 `clean`。浏览器以合成 Word 导入 `KB-000003`，编辑保存重开为 v2，走现有审核发布；员工端顺序为第一步、第二步（编辑后）、图片、第三步。390×844 下 `scrollWidth=375`、`clientWidth=375`，无横向溢出；退出登录后同一图片直链返回“需要有效员工身份”。
+
+## 2. 已替换的前一当前任务登记（历史保留）
+
+## 1. 前一任务
 
 | 项目 | 当前值 |
 | --- | --- |

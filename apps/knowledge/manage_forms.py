@@ -158,6 +158,24 @@ class ArticleCreateForm(forms.Form):
         return cleaned_data
 
 
+class ArticleDocxImportForm(ArticleCreateForm):
+    """Existing create permissions/options plus the one permitted import source."""
+
+    docx_file = forms.FileField(label="Word 文档（.docx）")
+    import_token = forms.UUIDField(widget=forms.HiddenInput())
+
+    def __init__(self, *, actor, **kwargs):
+        super().__init__(actor=actor, **kwargs)
+        for field_name in ("title", "summary", "body_text", "change_summary"):
+            self.fields.pop(field_name)
+
+    def clean_docx_file(self):
+        upload = self.cleaned_data["docx_file"]
+        if not upload.name.lower().endswith(".docx"):
+            raise forms.ValidationError("仅支持 .docx Word 文档。")
+        return upload
+
+
 class ArticleDraftForm(forms.Form):
     """working DRAFT 可编辑内容的严格白名单。"""
 

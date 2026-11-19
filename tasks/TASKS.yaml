@@ -18,6 +18,30 @@ evidence_boundary:
   - "最近一次远端实时证据：GitHub fusion/wagtail-poc 为 5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e，本地 DATA-01 基线相对其纯领先 11 个提交；Gitee 实时状态因 SSL 连接失败为 UNKNOWN。"
 
 tasks:
+  - id: "KB-DOCX-IMPORT-DRAFT-01"
+    title: "单篇 Word 导入知识草稿"
+    priority: MUST
+    status: DONE
+    owner: codex
+    dependencies:
+      - "KB-ARTICLE-MEDIA-MVP-01"
+    objective: >
+      在既有创建知识页面增加单篇 .docx 导入入口，安全提取标题、段落、列表和内嵌 PNG/JPEG，
+      原子创建新的未发布草稿及其版本媒体关联，复用既有扫描、私有存储、审核发布和受众鉴权。
+    acceptance:
+      - "导入仅创建新的未发布草稿，成功后进入既有编辑页；不得覆盖、自动送审或自动发布。"
+      - "正文和图片顺序可编辑、保存重开保持；原始 Word 不附到文章。"
+      - "不支持内容明确报告；扫描、权限、格式、解析、重复提交及清理路径失败关闭且不留半成品。"
+      - "隔离 PostgreSQL、真实 ClamAV、桌面和 390×844 浏览器验收全部完成后才能标记 DONE。"
+    verification:
+      - "覆盖合成 Word 成功导入、坏文件/超限/越权/扫描失败/重复提交/失败清理及媒体功能回归。"
+      - "运行正式应用回归、Django check、迁移一致性、Ruff、JS 语法和 git diff --check。"
+      - "浏览器验证导入、编辑保存重开、审核发布、授权阅读和无权图片直链拒绝。"
+    notes:
+      - "工作树：D:\\Desktop\\OpsAI\\AI-OpsAI-IT-kb-docx-import；分支：feature/kb-docx-import-draft-01；起始 HEAD：63c3205849a7ce82a49735b3a1170bc65f266c59。"
+      - "原工作区和 feature/kb-article-media-mvp-01 均只读核验，不复制未提交改动。"
+      - "2026-11-19：隔离 PostgreSQL + 实际 ClamAV、桌面与 390×844 浏览器链路及正式应用回归完成；仅本地提交，不推送、不合并。"
+
   - id: "KB-ARTICLE-MEDIA-MVP-01"
     title: "知识正文插图与 Word 私有附件 MVP"
     priority: MUST

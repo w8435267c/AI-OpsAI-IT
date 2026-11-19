@@ -1,15 +1,18 @@
 """正式知识管理区视图。"""
 
 import json
+from uuid import uuid4
 
 from django.core.paginator import Paginator
 from django.http import HttpRequest, HttpResponse, HttpResponseNotFound, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
 
+from apps.knowledge.docx_import import DocxImportError, import_docx_draft
 from apps.knowledge.manage_forms import (
     ArticleAutosaveIdentityForm,
     ArticleCreateForm,
+    ArticleDocxImportForm,
     ArticleDraftForm,
     ArticleRestoreForm,
 )
@@ -511,13 +514,18 @@ def manage_article_restore(
 def _render_article_create(
     request: HttpRequest,
     form: ArticleCreateForm,
+    import_form: ArticleDocxImportForm | None = None,
     *,
     status: int = 200,
 ) -> HttpResponse:
     return render(
         request,
         "knowledge/manage/create.html",
-        {"form": form},
+        {
+            "form": form,
+            "import_form": import_form
+            or ArticleDocxImportForm(actor=request.user, initial={"import_token": uuid4()}),
+        },
         status=status,
     )
 
@@ -563,6 +571,53 @@ def manage_article_create(request: HttpRequest) -> HttpResponse:
         form.add_error(None, "系统暂时无法创建知识，请稍后重试或联系管理员。")
         return _render_article_create(request, form, status=503)
 
+    response = HttpResponse(status=303)
+    response["Location"] = reverse("knowledge_manage:edit", args=[article.kb_no])
+    return response
+
+
+@manage_post_page
+def manage_article_docx_import(request: HttpRequest) -> HttpResponse:
+    """Import one scanned .docx into a brand-new draft, never an existing article."""
+
+    try:
+        import_form = ArticleDocxImportForm(
+            actor=request.user, data=request.POST, files=request.FILES
+        )
+        create_form = ArticleCreateForm(actor=request.user)
+    except ManageArticleCreateOptionsReadError as error:
+        return HttpResponse(error.public_message, status=403)
+    if not import_form.is_valid():
+        return _render_article_create(request, create_form, import_form, status=400)
+
+    token = str(import_form.cleaned_data["import_token"])
+    completed = request.session.get("docx_import_completed", {})
+    if token in completed:
+        response = HttpResponse(status=303)
+        response["Location"] = reverse("knowledge_manage:edit", args=[completed[token]])
+        return response
+    try:
+        article, parsed = import_docx_draft(
+            actor=request.user,
+            upload=import_form.cleaned_data["docx_file"],
+            form_data=import_form.cleaned_data,
+        )
+    except ArticleCreationError as error:
+        if error.code == ARTICLE_CREATE_PERMISSION_DENIED:
+            return HttpResponse("没有创建知识的权限。", status=403)
+        import_form.add_error(None, error.public_message)
+        return _render_article_create(request, create_form, import_form, status=400)
+    except DocxImportError as error:
+        import_form.add_error(None, error.public_message)
+        return _render_article_create(request, create_form, import_form, status=400)
+
+    completed[token] = article.kb_no
+    request.session["docx_import_completed"] = completed
+    if parsed.warnings:
+        warnings = request.session.get("docx_import_warnings", {})
+        warnings[article.kb_no] = list(parsed.warnings)
+        request.session["docx_import_warnings"] = warnings
+    request.session.modified = True
     response = HttpResponse(status=303)
     response["Location"] = reverse("knowledge_manage:edit", args=[article.kb_no])
     return response
@@ -723,6 +778,7 @@ def manage_article_edit(request: HttpRequest, kb_no: str) -> HttpResponse:
             "category": detail.proposed_category_id,
         },
     )
+    import_warnings = request.session.get("docx_import_warnings", {}).get(kb_no, [])
     return render(
         request,
         "knowledge/manage/edit.html",
@@ -730,6 +786,7 @@ def manage_article_edit(request: HttpRequest, kb_no: str) -> HttpResponse:
             "detail": detail,
             "form": form,
             "media_links": get_draft_media(actor=request.user, kb_no=kb_no),
+            "import_warnings": import_warnings,
         },
     )
 

@@ -20,5 +20,14 @@
       <button type="submit">创建知识</button>
     </form>
   </section>
+  <section class="content-section" aria-labelledby="docx-import-title">
+    <h2 id="docx-import-title">从 Word 导入</h2>
+    <p>仅支持单篇 .docx：标题、段落、列表和 PNG/JPEG 内嵌图片。表格、浮动图片和其他不能可靠转换的内容会提示，不会静默导入。</p>
+    <form method="post" action="{% url 'knowledge_manage:docx_import' %}" enctype="multipart/form-data">
+      {% csrf_token %}
+      {{ import_form.as_p }}
+      <button type="submit">导入为新草稿</button>
+    </form>
+  </section>
   <script src="{% static 'js/knowledge_create.js' %}" defer></script>
 {% endblock %}

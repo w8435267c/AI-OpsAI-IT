@@ -14,6 +14,17 @@
       <p class="article-summary"><strong>当前为草稿</strong>；以下内容来自当前工作版本。</p>
     </header>
 
+    {% if import_warnings %}
+      <section class="article-section" aria-labelledby="docx-import-warning-title">
+        <h2 id="docx-import-warning-title">Word 导入提示</h2>
+        <ul>
+          {% for warning in import_warnings %}
+            <li>{{ warning }}</li>
+          {% endfor %}
+        </ul>
+      </section>
+    {% endif %}
+
     <dl class="article-metadata">
       <div>
         <dt>当前工作版本</dt>

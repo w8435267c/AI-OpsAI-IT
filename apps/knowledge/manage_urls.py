@@ -5,6 +5,7 @@ from django.urls import path
 from apps.knowledge.manage_views import (
     manage_article_autosave,
     manage_article_create,
+    manage_article_docx_import,
     manage_article_edit,
     manage_article_history,
     manage_article_history_detail,
@@ -21,6 +22,7 @@ app_name = "knowledge_manage"
 urlpatterns = [
     path("", manage_article_list, name="list"),
     path("new/", manage_article_create, name="create"),
+    path("new/import-docx/", manage_article_docx_import, name="docx_import"),
     path("<str:kb_no>/autosave/", manage_article_autosave, name="autosave"),
     path("<str:kb_no>/save/", manage_article_manual_save, name="save"),
     path("<str:kb_no>/media/upload/", manage_article_media_upload, name="media_upload"),
