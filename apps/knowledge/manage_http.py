@@ -83,6 +83,14 @@ def manage_get_post_page(
     return _manage_page(view, allowed_methods=("GET", "POST"))
 
 
+def manage_post_page(
+    view: Callable[..., HttpResponse],
+) -> Callable[..., HttpResponse]:
+    """限制为有效业务账号的表单 POST 请求，保留 CSRF 防护。"""
+
+    return _manage_page(view, allowed_methods=("POST",))
+
+
 def manage_post_json_page(
     view: Callable[..., HttpResponse],
 ) -> Callable[..., HttpResponse]:

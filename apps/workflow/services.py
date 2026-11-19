@@ -61,6 +61,7 @@ REVIEW_REJECTED = "REVIEW_REJECTED"
 APPROVE_PUBLISH_FORBIDDEN = "APPROVE_PUBLISH_FORBIDDEN"
 PUBLISH_STATE_INCONSISTENT = "PUBLISH_STATE_INCONSISTENT"
 REVIEW_APPROVED_PUBLISHED = "REVIEW_APPROVED_PUBLISHED"
+PUBLISH_MEDIA_NOT_READY = "PUBLISH_MEDIA_NOT_READY"
 
 _KB_NO_PATTERN = re.compile(r"^KB-[0-9]{6}$")
 _EDITOR_ROLE_NAME = SYSTEM_ROLE_BY_CODE[ROLE_EDITOR].name
@@ -975,6 +976,9 @@ def _create_successor_draft(*, article: Article, target: ArticleVersion) -> Arti
     )
     successor.full_clean(validate_unique=False, validate_constraints=False)
     successor.save(force_insert=True)
+    from apps.knowledge.media_services import copy_active_media_links
+
+    copy_active_media_links(source=target, destination=successor)
     return successor
 
 
@@ -1392,6 +1396,9 @@ def _create_approved_successor_draft(
     )
     successor.full_clean(validate_unique=False, validate_constraints=False)
     successor.save(force_insert=True)
+    from apps.knowledge.media_services import copy_active_media_links
+
+    copy_active_media_links(source=target, destination=successor)
     return successor
 
 
@@ -1553,6 +1560,18 @@ def _approve_publish_in_transaction(
             error_type=ApprovePublishArticleVersionError,
         )
         _validate_no_content_review(target=target)
+        from apps.knowledge.media_services import (
+            KnowledgeMediaError,
+            ensure_version_media_publishable,
+        )
+
+        try:
+            ensure_version_media_publishable(version=target)
+        except KnowledgeMediaError as exc:
+            raise ApprovePublishArticleVersionError(
+                PUBLISH_MEDIA_NOT_READY,
+                "存在未通过扫描的媒体，不能发布。",
+            ) from exc
         previous = _lock_previous_published(article=article)
         review = _create_approval_review(
             target=target,

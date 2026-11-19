@@ -10,7 +10,7 @@ from uuid import UUID
 from django.db.models import QuerySet
 
 from apps.accounts.models import User
-from apps.knowledge.models import Article
+from apps.knowledge.models import Article, ArticleVersionMedia, MediaKind, MediaScanStatus
 from apps.knowledge.selectors import visible_articles
 
 
@@ -29,6 +29,23 @@ class EmployeeArticleDetail:
     space_code: str
     space_name: str
     published_at: datetime
+    media: tuple[EmployeeArticleMedia, ...]
+    body_paragraphs: tuple[EmployeeBodyParagraph, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class EmployeeArticleMedia:
+    link_id: UUID
+    kind: str
+    original_name: str
+    caption: str
+    body_position: int | None
+
+
+@dataclass(frozen=True, slots=True)
+class EmployeeBodyParagraph:
+    text: str
+    images: tuple[EmployeeArticleMedia, ...]
 
 
 def employee_visible_articles(
@@ -65,6 +82,40 @@ def get_employee_article_detail(
         return None
 
     version = article.current_published_version
+    links = list(
+        ArticleVersionMedia.objects.filter(
+            article_version=version,
+            is_active=True,
+            asset__scan_status=MediaScanStatus.CLEAN,
+        )
+        .select_related("asset")
+        .order_by("display_order", "pk")
+    )
+    media = tuple(
+        EmployeeArticleMedia(
+            link_id=link.pk,
+            kind=link.asset.kind,
+            original_name=link.asset.original_name,
+            caption=link.caption,
+            body_position=link.body_position,
+        )
+        for link in links
+    )
+    images_by_position: dict[int, list[EmployeeArticleMedia]] = {}
+    for item in media:
+        if item.kind == MediaKind.IMAGE:
+            images_by_position.setdefault(item.body_position or 0, []).append(item)
+    paragraphs = version.body_plaintext.splitlines() or [version.body_plaintext]
+    body_paragraphs = tuple(
+        EmployeeBodyParagraph(text=text, images=tuple(images_by_position.get(index + 1, [])))
+        for index, text in enumerate(paragraphs)
+    )
+    leading_images = images_by_position.get(0, [])
+    if leading_images:
+        body_paragraphs = (
+            EmployeeBodyParagraph(text="", images=tuple(leading_images)),
+            *body_paragraphs,
+        )
     return EmployeeArticleDetail(
         kb_no=article.kb_no,
         title=version.title,
@@ -77,4 +128,6 @@ def get_employee_article_detail(
         space_code=article.space.code,
         space_name=article.space.name,
         published_at=version.published_at,
+        media=media,
+        body_paragraphs=body_paragraphs,
     )

@@ -1032,6 +1032,9 @@ def _manual_save_draft(
             published_at=None,
         )
         _insert_new_draft(new_draft=new_draft)
+        from apps.knowledge.media_services import copy_active_media_links
+
+        copy_active_media_links(source=saved_version, destination=new_draft)
         _switch_latest_working_version(
             locked_article=locked_article,
             new_draft=new_draft,
@@ -1171,6 +1174,9 @@ def _restore_article_version(
             published_at=None,
         )
         _insert_new_draft(new_draft=new_draft)
+        from apps.knowledge.media_services import copy_active_media_links
+
+        copy_active_media_links(source=source_version, destination=new_draft)
         _switch_latest_working_version(
             locked_article=locked_article,
             new_draft=new_draft,

@@ -85,6 +85,18 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "private_media"
 
+# 私有知识媒体：实际格式由服务端解析，所有文件均需通过独立 ClamAV 扫描后
+# 才能发布或读取。生产默认不配置扫描器，业务路径必须失败关闭。
+KNOWLEDGE_MEDIA_MAX_IMAGE_BYTES = int(os.getenv("KNOWLEDGE_MEDIA_MAX_IMAGE_BYTES", "5242880"))
+KNOWLEDGE_MEDIA_MAX_DOCUMENT_BYTES = int(
+    os.getenv("KNOWLEDGE_MEDIA_MAX_DOCUMENT_BYTES", "10485760")
+)
+KNOWLEDGE_MEDIA_CLAMD_HOST = os.getenv("KNOWLEDGE_MEDIA_CLAMD_HOST", "")
+KNOWLEDGE_MEDIA_CLAMD_PORT = int(os.getenv("KNOWLEDGE_MEDIA_CLAMD_PORT", "3310"))
+KNOWLEDGE_MEDIA_CLAMD_TIMEOUT_SECONDS = int(
+    os.getenv("KNOWLEDGE_MEDIA_CLAMD_TIMEOUT_SECONDS", "15")
+)
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "accounts.User"
 

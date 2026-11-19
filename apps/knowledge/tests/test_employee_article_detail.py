@@ -358,4 +358,5 @@ class EmployeeArticleDetailRouteAndQueryTests(EmployeeArticleDetailBase):
             response = self.client.get(url)
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(queries.captured_queries), 3)
+        # 详情页还需读取当前发布版本的媒体关联；空媒体文章保持常数查询。
+        self.assertEqual(len(queries.captured_queries), 4)

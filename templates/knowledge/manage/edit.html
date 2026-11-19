@@ -51,6 +51,7 @@
       data-autosave-url="{% url 'knowledge_manage:autosave' detail.kb_no %}"
       data-save-url="{% url 'knowledge_manage:save' detail.kb_no %}"
       data-preview-url="{% url 'knowledge_manage:preview' detail.kb_no %}"
+      data-media-upload-url="{% url 'knowledge_manage:media_upload' detail.kb_no %}"
       aria-labelledby="draft-editor-title"
     >
       <h2 id="draft-editor-title">工作版本内容</h2>
@@ -76,6 +77,33 @@
           {{ form.body_text.label_tag }}
           {{ form.body_text }}
         </div>
+        <section class="draft-editor-field media-editor" aria-labelledby="media-editor-title">
+          <h3 id="media-editor-title">正文插图与 Word 附件</h3>
+          <p class="muted">图片仅支持 PNG、JPEG（最大 5 MB），可插入指定正文段落后；Word 仅支持 .docx（最大 10 MB），作为下载附件。文件上传后必须扫描通过才能发布。</p>
+          <form id="media-upload-form" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="draft_id" value="{{ detail.draft_id }}">
+            <label for="media-file">选择文件</label>
+            <input id="media-file" name="file" type="file" accept=".png,.jpg,.jpeg,.docx" required>
+            <label for="media-body-position">图片插入到正文第几段后</label>
+            <input id="media-body-position" name="body_position" type="number" min="0" value="0">
+            <label for="media-caption">图片说明（Word 附件留空）</label>
+            <input id="media-caption" name="caption" maxlength="500">
+            <button type="submit">上传并扫描</button>
+          </form>
+          <p id="media-upload-status" class="muted" aria-live="polite"></p>
+          <ul id="draft-media-list" class="media-list">
+            {% for link in media_links %}
+              <li data-media-id="{{ link.pk }}">
+                <span>{{ link.asset.original_name }}</span>
+                <span>（{{ link.asset.get_scan_status_display }}{% if link.caption %}：{{ link.caption }}{% endif %}）</span>
+                <button type="button" class="remove-media-button" data-remove-url="{% url 'knowledge_manage:media_remove' detail.kb_no link.pk %}">移除</button>
+              </li>
+            {% empty %}
+              <li class="muted" data-empty-media>尚未添加媒体。</li>
+            {% endfor %}
+          </ul>
+        </section>
         <div class="draft-editor-field">
           {{ form.category.label_tag }}
           {{ form.category }}

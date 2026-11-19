@@ -1,0 +1,36 @@
+name: opsai-kb-media-acceptance
+
+services:
+  db:
+    image: postgres:17.11-alpine
+    environment:
+      POSTGRES_DB: opsai_media_acceptance
+      POSTGRES_USER: opsai_media
+      POSTGRES_PASSWORD: opsai-media-isolated-test-only
+    ports:
+      - "127.0.0.1:15433:5432"
+    volumes:
+      - media_acceptance_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U opsai_media -d opsai_media_acceptance"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  clamd:
+    image: clamav/clamav:1.4.3
+    ports:
+      - "127.0.0.1:3311:3310"
+    volumes:
+      - media_acceptance_clamdb:/var/lib/clamav
+    healthcheck:
+      test: ["CMD-SHELL", "clamdscan --version"]
+      interval: 15s
+      timeout: 10s
+      retries: 30
+
+volumes:
+  media_acceptance_postgres:
+    name: opsai-kb-media-acceptance-postgres
+  media_acceptance_clamdb:
+    name: opsai-kb-media-acceptance-clamdb

@@ -52,11 +52,37 @@
     <section class="article-section" aria-labelledby="body-title">
       <h2 id="body-title">正文</h2>
       {% if detail.body_text %}
-        <div class="article-body">{{ detail.body_text }}</div>
+        <div class="article-body">
+          <!-- {{ detail.body_text }} -->
+          {% for paragraph in detail.body_paragraphs %}
+            {% if paragraph.text %}<p>{{ paragraph.text }}</p>{% endif %}
+            {% for media in paragraph.images %}
+              <figure class="article-image">
+                <a href="{% url 'knowledge:media_content' detail.kb_no media.link_id %}" target="_blank" rel="noopener">
+                  <img src="{% url 'knowledge:media_content' detail.kb_no media.link_id %}" alt="{{ media.caption|default:'知识步骤截图' }}">
+                </a>
+                {% if media.caption %}<figcaption>{{ media.caption }}</figcaption>{% endif %}
+              </figure>
+            {% endfor %}
+          {% endfor %}
+        </div>
       {% else %}
         <p class="empty-state">暂无正文内容。</p>
       {% endif %}
     </section>
+
+    {% if detail.media %}
+      <section class="article-section" aria-labelledby="attachments-title">
+        <h2 id="attachments-title">附件</h2>
+        <ul class="attachment-list">
+          {% for media in detail.media %}
+            {% if media.kind == "document" %}
+              <li><a href="{% url 'knowledge:media_content' detail.kb_no media.link_id %}">{{ media.original_name }}</a></li>
+            {% endif %}
+          {% endfor %}
+        </ul>
+      </section>
+    {% endif %}
 
     <section class="article-section" aria-labelledby="feedback-title">
       <h2 id="feedback-title">问题解决了吗？</h2>

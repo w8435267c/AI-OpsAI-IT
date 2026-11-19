@@ -100,6 +100,18 @@ class FeedbackOutcome(models.TextChoices):
     UNRESOLVED = "unresolved", _("未解决")
 
 
+class MediaKind(models.TextChoices):
+    IMAGE = "image", _("正文插图")
+    DOCUMENT = "document", _("Word 附件")
+
+
+class MediaScanStatus(models.TextChoices):
+    PENDING = "pending", _("等待扫描")
+    CLEAN = "clean", _("扫描通过")
+    INFECTED = "infected", _("扫描未通过")
+    FAILED = "failed", _("扫描失败")
+
+
 class KnowledgeSpace(models.Model):
     """知识空间：定义知识的管理边界与默认受众策略。"""
 
@@ -798,6 +810,97 @@ class ArticleVersion(models.Model):
         return f"{self.article.kb_no} v{self.version_no}"
 
 
+class MediaAsset(models.Model):
+    """私有文件资产；文件内容不可变，历史版本解除引用后本轮仍保留。"""
+
+    id = models.UUIDField(_("媒体 ID"), primary_key=True, default=uuid.uuid4, editable=False)
+    kind = models.CharField(_("媒体类型"), max_length=20, choices=MediaKind.choices)
+    original_name = models.CharField(_("原始文件名"), max_length=255)
+    storage_name = models.CharField(
+        _("私有存储名"),
+        max_length=255,
+        unique=True,
+        editable=False,
+        db_comment="仅服务端私有存储定位使用，绝不渲染到页面或下载 URL。",
+    )
+    content_type = models.CharField(_("已验证内容类型"), max_length=100)
+    size_bytes = models.PositiveBigIntegerField(_("文件大小（字节）"))
+    sha256 = models.CharField(_("SHA-256"), max_length=64, editable=False)
+    scan_status = models.CharField(
+        _("扫描状态"),
+        max_length=20,
+        choices=MediaScanStatus.choices,
+        default=MediaScanStatus.PENDING,
+        db_index=True,
+    )
+    scan_message = models.CharField(
+        _("扫描结果摘要"),
+        max_length=200,
+        blank=True,
+        default="",
+        db_comment="仅保存受控状态摘要，不保存扫描器连接、路径或内部异常。",
+    )
+    scanned_at = models.DateTimeField(_("扫描完成时间"), null=True, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="uploaded_media_assets"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "kb_media_asset"
+        db_table_comment = "私有媒体资产；扫描未通过或不可用时不得发布、下载或静态暴露。"
+        ordering = ("created_at",)
+        indexes = [
+            models.Index(fields=("scan_status", "created_at"), name="kb_media_scan_time_idx")
+        ]
+
+
+class ArticleVersionMedia(models.Model):
+    """具体版本对不可变媒体资产的引用，保证草稿变更不影响已发布版本。"""
+
+    id = models.UUIDField(_("版本媒体 ID"), primary_key=True, default=uuid.uuid4, editable=False)
+    article_version = models.ForeignKey(
+        ArticleVersion, on_delete=models.PROTECT, related_name="media_links"
+    )
+    asset = models.ForeignKey(MediaAsset, on_delete=models.PROTECT, related_name="version_links")
+    display_order = models.PositiveIntegerField(default=0)
+    body_position = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        db_comment="图片插入在正文第 N 段后；Word 附件为空。",
+    )
+    caption = models.CharField(max_length=500, blank=True, default="")
+    is_active = models.BooleanField(
+        default=True,
+        db_comment="草稿移除时仅停用关联；不删除历史关联或私有文件。",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "kb_article_version_media"
+        db_table_comment = "版本媒体关联；解除草稿引用不删除资产，历史清理由受控保留策略另行执行。"
+        ordering = ("display_order", "created_at", "pk")
+        constraints = [
+            models.UniqueConstraint(
+                fields=("article_version", "asset"), name="kb_ver_media_asset_uniq"
+            ),
+        ]
+        indexes = [
+            models.Index(fields=("article_version", "display_order"), name="kb_ver_media_order_idx")
+        ]
+
+    def clean(self) -> None:
+        super().clean()
+        errors: dict[str, str] = {}
+        if self.asset_id:
+            if self.asset.kind == MediaKind.IMAGE and self.body_position is None:
+                errors["body_position"] = _("正文插图必须指定插入位置。")
+            if self.asset.kind == MediaKind.DOCUMENT and self.body_position is not None:
+                errors["body_position"] = _("Word 附件不能作为正文插图插入。")
+        if errors:
+            raise ValidationError(errors)
+
+
 def _audience_policy_error(audience_type, effect, audience_policy) -> str | None:
     """返回 allow 规则与文章受众策略不一致时的中文错误；一致返回 None。
 
@@ -1167,16 +1270,25 @@ class FeedbackRecord(models.Model):
     """员工对当前已发布知识版本提交的可追溯解决反馈。"""
 
     id = models.UUIDField(
-        _("反馈记录 ID"), primary_key=True, default=uuid.uuid4, editable=False,
+        _("反馈记录 ID"),
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
         db_comment="员工知识反馈的内部主键，不在员工端 URL 中暴露。",
     )
     article = models.ForeignKey(
-        Article, verbose_name=_("知识文章"), on_delete=models.PROTECT,
-        related_name="feedback_records", db_comment="反馈对应的稳定知识文章身份。",
+        Article,
+        verbose_name=_("知识文章"),
+        on_delete=models.PROTECT,
+        related_name="feedback_records",
+        db_comment="反馈对应的稳定知识文章身份。",
     )
     article_version = models.ForeignKey(
-        ArticleVersion, verbose_name=_("已发布版本"), on_delete=models.PROTECT,
-        related_name="feedback_records", db_comment="提交反馈时员工实际阅读的已发布版本快照。",
+        ArticleVersion,
+        verbose_name=_("已发布版本"),
+        on_delete=models.PROTECT,
+        related_name="feedback_records",
+        db_comment="提交反馈时员工实际阅读的已发布版本快照。",
     )
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -1186,11 +1298,15 @@ class FeedbackRecord(models.Model):
         db_comment="已通过服务端身份和文章受众校验的反馈员工。",
     )
     outcome = models.CharField(
-        _("解决结果"), max_length=20, choices=FeedbackOutcome.choices,
+        _("解决结果"),
+        max_length=20,
+        choices=FeedbackOutcome.choices,
         db_comment="员工选择的已解决或未解决结果。",
     )
     created_at = models.DateTimeField(
-        _("反馈时间"), auto_now_add=True, db_comment="反馈首次持久化时间。",
+        _("反馈时间"),
+        auto_now_add=True,
+        db_comment="反馈首次持久化时间。",
     )
 
     class Meta:

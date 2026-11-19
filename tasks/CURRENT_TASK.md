@@ -1,8 +1,50 @@
 # OpsAI Current Task
 
-> 本文件登记唯一当前任务。本轮修复知识管理列表对首次送审和待审新版本的标题、版本及状态读取；不修改现有文章数据、审核流程、权限、数据库结构、钉钉或部署配置。
+> 本文件登记唯一当前任务。本轮只在 `D:\Desktop\OpsAI\AI-OpsAI-IT-kb-article-media` 独立工作树和新建的隔离合成环境中实施正文 PNG/JPEG 插图与 `.docx` 私有附件；不得操作原工作区、18443/8001 演示环境、真实数据库、既有数据卷、钉钉或 Autopilot/R9。
 
 ## 1. 当前任务
+
+| 项目 | 当前值 |
+| --- | --- |
+| 任务编号 | `KB-ARTICLE-MEDIA-MVP-01` |
+| 任务名称 | 知识正文插图与 Word 私有附件 MVP |
+| 任务状态 | `DONE / LOCAL ISOLATED ACCEPTANCE PASS` |
+| 工作树 | `D:\Desktop\OpsAI\AI-OpsAI-IT-kb-article-media` |
+| 分支 | `feature/kb-article-media-mvp-01` |
+| 起始 HEAD | `87f1e95d69122de2b39aacc95dfa3b174393b532` |
+| 集成目标分支 | `fusion/wagtail-poc`（仅记录；本轮不合并、不推送） |
+| 原工作区依赖 | 无。原工作区 20 项未提交改动只读核验后确认不含媒体、扫描、私有下载或版本媒体关联实现。 |
+
+### 1.1 精确修改范围
+
+- `apps/knowledge/models.py`、`apps/knowledge/migrations/`：版本媒体元数据及迁移；媒体只关联 `ArticleVersion`，不硬删除历史记录。
+- `apps/knowledge/media_services.py`、`apps/knowledge/media_scanning.py`、`apps/knowledge/media_readers.py`、`apps/knowledge/media_views.py`、`apps/knowledge/media_forms.py`：私有存储、真实 ClamAV 扫描适配、编辑和下载服务、鉴权读取。
+- `apps/knowledge/manage_views.py`、`apps/knowledge/manage_urls.py`、`apps/knowledge/views.py`、`apps/knowledge/urls.py`、`apps/knowledge/readers.py`：编辑入口、发布版本展示和受众鉴权路由接线。
+- `apps/workflow/services.py`：发布事务内的扫描通过校验；不得复制或替换既有审核状态机。
+- `apps/audit/models.py`、`apps/audit/migrations/`：仅增加媒体上传/下载审计事件类型；审计仍为追加式。
+- `templates/knowledge/manage/edit.html`、`templates/knowledge/article_detail.html`、`static/css/opsai.css`：编辑上传入口、员工展示与移动端样式。
+- `pyproject.toml`、`config/settings/base.py`、`config/settings/test.py`：新增 Pillow 用于真实 PNG/JPEG 解码验证，以及扫描连接和文件大小配置；正式默认失败关闭，测试替身不得成为正式放行条件。
+- `deploy/compose.media-acceptance.yaml`、`deploy/media-acceptance.env.example`：新建独立 PostgreSQL + ClamAV 隔离验收环境；不修改现有 Compose、Caddy 或数据卷。
+- `apps/knowledge/tests/test_media_*.py`、`apps/workflow/tests/test_media_publish_gate.py`、`apps/audit/tests/test_media_audit.py`：功能、安全、发布和回归测试。
+- `tasks/CURRENT_TASK.md`、`tasks/TASKS.yaml`：本任务登记与最终真实验证结果。
+
+### 1.2 验收与边界
+
+- 仅接受经真实格式验证的 PNG、JPEG、`.docx`，限制大小；拒绝 SVG、宏文档、伪造 MIME 和超限文件。
+- 上传先写私有区并记录扫描状态；待扫描、失败、超时、不可用或未通过均禁止发布和下载。ClamAV 使用 TCP `clamd` 协议，正式默认没有扫描器即失败关闭。
+- 图片和 Word 均走鉴权路由；员工只可读取其可见文章的当前已发布版本媒体。草稿、历史版本、下架、跨文章/版本和无权直链均返回不泄露存在性的 404；响应禁止共享缓存。
+- 发布校验在服务端事务路径执行。删除草稿媒体只解除版本引用，不清理私有文件；历史媒体留存与后续受控清理策略记录在模型/服务注释中。
+- 使用新建隔离 PostgreSQL、独立媒体目录和独立 ClamAV 完成真实扫描、迁移、浏览器桌面与 `390×844` 验收；若任一项未完成，不标记整体 PASS。
+- 允许在全部必需验收通过后只对本任务文件创建一个本地提交；不合并、不推送、不切换或修改原工作区。
+
+### 1.3 实际收口证据（2026-11-19）
+
+- 隔离 `opsai-kb-media-acceptance` 的 PostgreSQL 已实际应用 knowledge 0009 与 audit 0002；现有容器、卷和原工作区均未重建或修改。
+- 独立 INSTREAM 诊断收到 `stream: OK\0` 与 `stream: Eicar-Test-Signature FOUND\0`；适配器已修复 TCP 分段回包读取，完整明确的 OK 才放行，FOUND 映射为 infected。EICAR 与合成样本未写入仓库。
+- 自动化：正式应用范围 `890 passed, 23 skipped, 6 deselected, 723 subtests passed`；媒体专项 `50 passed, 102 subtests passed`；Django check、迁移一致性、Ruff（任务范围）、JS 语法及 `git diff --check` 通过。根目录全量 pytest 仍会因历史 `experiments/wagtail_*` 未安装的 PoC 依赖而收集失败，未将其表述为通过。
+- 浏览器：隔离 PostgreSQL 合成数据完成编辑上传 PNG 与 .docx、保存重开、审核发布、授权员工插图定位与 Word 下载（下载审计 1 条）、拒绝优先受众直链 404；390×844 视口 scrollWidth 375，小于视口 390，无横向溢出。
+
+## 2. 已替换的前一当前任务登记（历史保留）
 
 | 项目 | 当前值 |
 | --- | --- |

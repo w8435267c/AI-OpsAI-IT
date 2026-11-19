@@ -547,8 +547,8 @@ class ManageArticleEditPageTests(TestCase):
         editor_fragment = page.content.split(b'id="knowledge-editor"', 1)[1].split(
             b"</section>", 1
         )[0]
-        self.assertNotIn(b"<form", editor_fragment)
-        self.assertNotIn(b'type="submit"', editor_fragment)
+        self.assertIn(b'id="media-upload-form"', editor_fragment)
+        self.assertIn(b'type="submit"', editor_fragment)
         self.assertContains(
             page,
             f'data-autosave-url="{autosave_url}"',
@@ -572,7 +572,7 @@ class ManageArticleEditPageTests(TestCase):
         submission_url = reverse("workflow:submission", args=[self.article.kb_no])
         self.assertContains(page, f'href="{submission_url}"')
         self.assertContains(page, "提交审核")
-        self.assertNotIn("发布".encode(), editor_fragment)
+        self.assertIn("扫描通过才能发布".encode(), editor_fragment)
         self.assertNotContains(page, "当前阶段尚未接入保存功能")
 
     def test_all_editable_values_are_loaded_from_same_working_draft(self):

@@ -5,11 +5,12 @@ import json
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import F
-from django.http import HttpRequest, HttpResponse, HttpResponseNotFound
+from django.http import FileResponse, HttpRequest, HttpResponse, HttpResponseNotFound
 from django.shortcuts import redirect, render
 
 from apps.knowledge.http import employee_get_page, employee_post_request
 from apps.knowledge.manage_readers import can_access_manage_article_list
+from apps.knowledge.media_services import get_employee_media_link
 from apps.knowledge.models import Article, Category
 from apps.knowledge.readers import employee_visible_articles, get_employee_article_detail
 from apps.knowledge.services import EmployeeFeedbackError, submit_employee_feedback
@@ -150,6 +151,34 @@ def employee_article_detail(request: HttpRequest, kb_no: str) -> HttpResponse:
             "service_request_available": get_configured_service_request_url() is not None,
         },
     )
+
+
+@employee_get_page
+def employee_article_media(request: HttpRequest, kb_no: str, media_id) -> HttpResponse:
+    """仅向有权员工输出当前发布版本、扫描通过的私有媒体。"""
+
+    resolved = get_employee_media_link(actor=request.user, kb_no=kb_no, media_id=media_id)
+    if resolved is None:
+        return HttpResponseNotFound("未找到可查看的媒体。")
+    link, path = resolved
+    if link.asset.kind == "document":
+        from apps.audit.models import AuditEvent, AuditEventType
+
+        AuditEvent.objects.create(
+            event_type=AuditEventType.MEDIA_DOWNLOADED,
+            actor=request.user,
+            article=link.article_version.article,
+            article_version=link.article_version,
+            metadata={"media_id": str(link.pk), "kind": link.asset.kind},
+        )
+        response = FileResponse(
+            path.open("rb"), as_attachment=True, filename=link.asset.original_name
+        )
+    else:
+        response = FileResponse(path.open("rb"), content_type=link.asset.content_type)
+        response["X-Content-Type-Options"] = "nosniff"
+    response["Cache-Control"] = "private, no-store, max-age=0"
+    return response
 
 
 @employee_post_request

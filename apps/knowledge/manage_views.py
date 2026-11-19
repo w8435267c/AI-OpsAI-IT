@@ -17,6 +17,7 @@ from apps.knowledge.manage_http import (
     manage_get_page,
     manage_get_post_page,
     manage_post_json_page,
+    manage_post_page,
 )
 from apps.knowledge.manage_readers import (
     MANAGE_WORKING_ARTICLE_NOT_FOUND_OR_INACCESSIBLE,
@@ -25,6 +26,12 @@ from apps.knowledge.manage_readers import (
     ManageWorkingArticleReadError,
     get_manage_article_list,
     get_manage_working_article_detail,
+)
+from apps.knowledge.media_services import (
+    KnowledgeMediaError,
+    get_draft_media,
+    remove_draft_media,
+    upload_draft_media,
 )
 from apps.knowledge.models import Article, Category
 from apps.knowledge.services import (
@@ -719,5 +726,62 @@ def manage_article_edit(request: HttpRequest, kb_no: str) -> HttpResponse:
     return render(
         request,
         "knowledge/manage/edit.html",
-        {"detail": detail, "form": form},
+        {
+            "detail": detail,
+            "form": form,
+            "media_links": get_draft_media(actor=request.user, kb_no=kb_no),
+        },
     )
+
+
+@manage_post_page
+def manage_article_media_upload(request: HttpRequest, kb_no: str) -> HttpResponse:
+    """独立上传媒体，JSON 返回使编辑中的正文不因失败或成功而丢失。"""
+
+    try:
+        link = upload_draft_media(
+            actor=request.user,
+            kb_no=kb_no,
+            draft_id=request.POST.get("draft_id"),
+            upload=request.FILES.get("file"),
+            caption=request.POST.get("caption", ""),
+            body_position=request.POST.get("body_position"),
+        )
+    except KnowledgeMediaError as error:
+        return JsonResponse(
+            {"ok": False, "error": {"code": error.code, "message": error.public_message}},
+            status=400 if error.code == "MEDIA_INVALID_INPUT" else 409,
+        )
+    return JsonResponse(
+        {
+            "ok": True,
+            "media": {
+                "id": str(link.pk),
+                "kind": link.asset.kind,
+                "name": link.asset.original_name,
+                "caption": link.caption,
+                "body_position": link.body_position,
+                "scan_status": link.asset.scan_status,
+                "scan_message": link.asset.scan_message,
+            },
+        }
+    )
+
+
+@manage_post_page
+def manage_article_media_remove(request: HttpRequest, kb_no: str, media_id) -> HttpResponse:
+    """仅停用当前草稿媒体关联，保留历史关联和私有资产。"""
+
+    try:
+        remove_draft_media(
+            actor=request.user,
+            kb_no=kb_no,
+            draft_id=request.POST.get("draft_id"),
+            media_id=media_id,
+        )
+    except KnowledgeMediaError as error:
+        return JsonResponse(
+            {"ok": False, "error": {"code": error.code, "message": error.public_message}},
+            status=404 if error.code == "MEDIA_NOT_FOUND_OR_INACCESSIBLE" else 409,
+        )
+    return JsonResponse({"ok": True})

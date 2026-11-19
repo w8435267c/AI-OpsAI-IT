@@ -18,6 +18,30 @@ evidence_boundary:
   - "最近一次远端实时证据：GitHub fusion/wagtail-poc 为 5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e，本地 DATA-01 基线相对其纯领先 11 个提交；Gitee 实时状态因 SSL 连接失败为 UNKNOWN。"
 
 tasks:
+  - id: "KB-ARTICLE-MEDIA-MVP-01"
+    title: "知识正文插图与 Word 私有附件 MVP"
+    priority: MUST
+    status: DONE
+    owner: codex
+    dependencies: []
+    objective: >
+      在 ArticleVersion 上实现 PNG/JPEG 正文插图和 .docx 私有附件，复用既有审核发布与拒绝优先受众规则，
+      通过真实 ClamAV 扫描、服务端发布门禁和鉴权下载保证未通过扫描或无权媒体不可访问。
+    acceptance:
+      - "媒体只关联具体版本；草稿变更不影响已发布版本，员工仅可读取当前可见发布版本媒体。"
+      - "PNG、JPEG、.docx 同时通过大小、扩展名和实际格式验证；SVG、宏文档、伪造 MIME 及超限文件拒绝。"
+      - "扫描待处理、失败、超时、不可用或未通过时，发布和下载均失败关闭。"
+      - "媒体走鉴权路由且禁止共享缓存；无权、草稿、历史版本、跨版本和下架直链不泄露资源。"
+      - "隔离 PostgreSQL 迁移、真实 ClamAV、桌面与 390×844 浏览器验收全部完成后才可标记 PASS。"
+    verification:
+      - "运行媒体、工作流、员工读取和既有创建/编辑/审核/发布回归，及 Django check、迁移一致性、Ruff、git diff --check。"
+      - "在新建隔离 PostgreSQL + ClamAV 环境使用合成 PNG/JPEG/.docx 和 EICAR 错误分支完成真实扫描验证。"
+      - "浏览器完成编辑员上传、审核发布、授权员工看图/下载、无权员工直链拒绝及移动视口检查。"
+    notes:
+      - "工作树：D:\\Desktop\\OpsAI\\AI-OpsAI-IT-kb-article-media；分支：feature/kb-article-media-mvp-01；起始 HEAD：87f1e95d69122de2b39aacc95dfa3b174393b532。"
+      - "原工作区未提交改动未被复制、修改、暂存或提交；最终集成前必须重新核验同名文件冲突。"
+      - "2026-11-19：隔离 PostgreSQL + ClamAV、真实 INSTREAM EICAR FOUND、正式应用回归和桌面/390x844 浏览器验收完成；仅本地提交，不推送、不合并。"
+
   - id: "8"
     title: "内容受众权限选择器与联合后台边界"
     priority: MUST

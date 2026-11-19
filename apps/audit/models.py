@@ -13,6 +13,8 @@ class AuditEventType(models.TextChoices):
     REVIEW_SUBMITTED = "review_submitted", _("提交审核")
     REVIEW_REJECTED = "review_rejected", _("审核驳回")
     REVIEW_APPROVED_PUBLISHED = "review_approved_published", _("审核通过并发布")
+    MEDIA_UPLOADED = "media_uploaded", _("上传知识媒体")
+    MEDIA_DOWNLOADED = "media_downloaded", _("下载知识附件")
 
 
 class AuditEvent(models.Model):

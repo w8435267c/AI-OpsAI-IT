@@ -29,6 +29,10 @@
   const autosaveUrl = editor.dataset.autosaveUrl;
   const saveUrl = editor.dataset.saveUrl;
   const previewUrl = editor.dataset.previewUrl;
+  const mediaUploadUrl = editor.dataset.mediaUploadUrl;
+  const mediaForm = editor.querySelector("#media-upload-form");
+  const mediaStatus = editor.querySelector("#media-upload-status");
+  const mediaList = editor.querySelector("#draft-media-list");
 
   if (
     !status ||
@@ -326,6 +330,12 @@
     bodyText.value = payload.draft.body_text;
     changeSummary.value = payload.draft.change_summary;
     category.value = payload.draft.proposed_category_id || "";
+    if (mediaForm) {
+      const mediaDraftId = mediaForm.querySelector('[name="draft_id"]');
+      if (mediaDraftId) {
+        mediaDraftId.value = payload.draft.id;
+      }
+    }
     versionLabel.textContent = `v${payload.draft.version_no} · ${payload.draft.status_label}`;
     lockLabel.textContent = `锁版本 ${payload.draft.lock_version}`;
     if (restoredFromRow && restoredFromLabel) {
@@ -476,6 +486,94 @@
     dirty = true;
     setStatus("有未保存修改", "dirty");
     scheduleAutosave();
+  }
+
+  function addMediaListItem(media) {
+    if (!mediaList) {
+      return;
+    }
+    mediaList.querySelector("[data-empty-media]")?.remove();
+    const item = document.createElement("li");
+    item.dataset.mediaId = media.id;
+    const name = document.createElement("span");
+    name.textContent = media.name;
+    const description = document.createElement("span");
+    description.textContent = `（${media.scan_message}${media.caption ? `：${media.caption}` : ""}）`;
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "remove-media-button";
+    remove.dataset.removeUrl = `${editor.dataset.mediaUploadUrl.replace("/upload/", `/${media.id}/remove/`)}`;
+    remove.textContent = "移除";
+    item.append(name, description, remove);
+    mediaList.append(item);
+  }
+
+  if (mediaForm && mediaStatus && mediaList && mediaUploadUrl) {
+    mediaForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (blocked) {
+        return;
+      }
+      mediaStatus.textContent = "正在上传并扫描…";
+      const submitter = mediaForm.querySelector('button[type="submit"]');
+      if (submitter) submitter.disabled = true;
+      try {
+        const response = await fetch(mediaUploadUrl, {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "X-CSRFToken": csrfToken.value },
+          body: new FormData(mediaForm),
+        });
+        const payload = await response.json();
+        if (!response.ok || payload.ok !== true) {
+          mediaStatus.textContent = safeErrorMessage(payload, "媒体上传失败，请检查文件后重试。");
+          return;
+        }
+        addMediaListItem(payload.media);
+        mediaStatus.textContent = payload.media.scan_message;
+        mediaForm.reset();
+        const mediaDraftId = mediaForm.querySelector('[name="draft_id"]');
+        if (mediaDraftId) mediaDraftId.value = draftId.value;
+      } catch (error) {
+        mediaStatus.textContent = "媒体上传结果未知，请刷新页面确认。";
+      } finally {
+        if (submitter) submitter.disabled = false;
+      }
+    });
+
+    mediaList.addEventListener("click", async (event) => {
+      const button = event.target.closest(".remove-media-button");
+      if (!button || blocked || !button.dataset.removeUrl) return;
+      button.disabled = true;
+      const formData = new FormData();
+      formData.set("draft_id", draftId.value);
+      try {
+        const response = await fetch(button.dataset.removeUrl, {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "X-CSRFToken": csrfToken.value },
+          body: formData,
+        });
+        const payload = await response.json();
+        if (!response.ok || payload.ok !== true) {
+          mediaStatus.textContent = safeErrorMessage(payload, "媒体移除失败，请刷新页面确认。");
+          button.disabled = false;
+          return;
+        }
+        button.closest("li")?.remove();
+        if (!mediaList.children.length) {
+          const empty = document.createElement("li");
+          empty.className = "muted";
+          empty.dataset.emptyMedia = "";
+          empty.textContent = "尚未添加媒体。";
+          mediaList.append(empty);
+        }
+        mediaStatus.textContent = "媒体已从当前草稿移除；历史文件仍按保留策略保存。";
+      } catch (error) {
+        mediaStatus.textContent = "媒体移除结果未知，请刷新页面确认。";
+        button.disabled = false;
+      }
+    });
   }
 
   fields.forEach((field) => {
