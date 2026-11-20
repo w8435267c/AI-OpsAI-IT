@@ -18,6 +18,26 @@ evidence_boundary:
   - "最近一次远端实时证据：GitHub fusion/wagtail-poc 为 5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e，本地 DATA-01 基线相对其纯领先 11 个提交；Gitee 实时状态因 SSL 连接失败为 UNKNOWN。"
 
 tasks:
+  - id: "PILOT-DB-MEDIA-RESTORE-01"
+    title: "数据库与私有媒体联合恢复演练"
+    priority: MUST
+    status: DONE
+    owner: codex
+    dependencies:
+      - "KB-MEDIA-DOCX-INTEGRATION-REHEARSAL-01"
+    objective: >
+      仅针对候选提交 e0bb027da8bba49784bccb4f314ba7b912480352，在独立源/目标 PostgreSQL
+      与私有媒体卷中演练成对备份、完整性校验、恢复、浏览器受众鉴权和失败保护；不修改候选业务代码。
+    acceptance:
+      - "源环境使用合成 Word 导入、步骤内图片和 .docx 附件，经真实扫描及审核发布形成恢复对象。"
+      - "数据库和媒体使用同一外部备份批次号；目标为空且不挂载或读取源媒体卷，恢复前后关系、扫描状态、受众和文件 SHA-256 一致。"
+      - "浏览器验证授权阅读/看图/下载/下载审计，及已登录无权账号对同一图片和附件直链均被拒绝。"
+      - "独立备份副本的媒体缺失、哈希不一致和跨批次混用均显式失败；不覆盖源数据或将不完整目标判为成功。"
+    notes:
+      - "工作树：D:\\Desktop\\OpsAI\\AI-OpsAI-IT-kb-integration；分支：integration/kb-media-docx-rehearsal-01；候选 HEAD：e0bb027da8bba49784bccb4f314ba7b912480352。"
+      - "仅允许新建任务专用容器、网络、数据库卷、私有媒体卷及仓库外备份/证据；不使用既有演练、演示、试点或历史数据卷。"
+      - "2026-11-20：有效批次 PILOT-DB-MEDIA-RESTORE-01-20261120T100000Z 已恢复到新的目标数据库与媒体卷；浏览器授权/拒绝直链、下载审计、媒体哈希及缺失/篡改/跨批次失败保护全部通过。证据位于仓库外 D:\\Temp\\OpsAI-PILOT-DB-MEDIA-RESTORE-01-20261120\\evidence。"
+
   - id: "KB-MEDIA-DOCX-INTEGRATION-REHEARSAL-01"
     title: "图片、Word 导入与主线改动联合演练"
     priority: MUST
