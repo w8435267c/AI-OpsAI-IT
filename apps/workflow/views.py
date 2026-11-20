@@ -2,6 +2,7 @@
 
 from uuid import uuid4
 
+from django.contrib import messages
 from django.http import HttpRequest, HttpResponse, HttpResponseNotFound
 from django.shortcuts import render
 from django.urls import reverse
@@ -147,6 +148,12 @@ def review_detail(request: HttpRequest, version_id) -> HttpResponse:
             RejectArticleVersionError,
         ) as error:
             return _service_error_response(error)
+        messages.success(
+            request,
+            "已批准并发布，员工现在可以搜索和阅读这篇正式知识。"
+            if action == "approve"
+            else "已驳回并通知编辑员修改后重新提交审核。",
+        )
         response = HttpResponse(status=303)
         response["Location"] = reverse("workflow:queue")
         return response
@@ -158,7 +165,12 @@ def review_detail(request: HttpRequest, version_id) -> HttpResponse:
     return render(
         request,
         "workflow/review_detail.html",
-        {"detail": detail, "idempotency_key": str(uuid4()), "submission": None},
+        {
+            "detail": detail,
+            "idempotency_key": str(uuid4()),
+            "submission": None,
+            "can_take_action": detail.target.status == "in_review",
+        },
     )
 
 
@@ -181,6 +193,7 @@ def submit_for_review(request: HttpRequest, kb_no: str) -> HttpResponse:
             )
         except SubmitArticleForReviewError as error:
             return _service_error_response(error)
+        messages.success(request, "已提交审核，当前状态为“待审核”。请等待审核员处理。")
         response = HttpResponse(status=303)
         response["Location"] = reverse("knowledge_manage:list")
         return response

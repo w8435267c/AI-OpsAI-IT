@@ -220,9 +220,28 @@ class EmployeeSearchResultTests(EmployeeSearchPageBase):
 
         response = self.client.get(self.url, {"q": SEARCH_TERM})
 
-        self.assertIn(f'href="{detail_url}"', response.content.decode())
+        self.assertIn(
+            f'href="{detail_url}?{urlencode({"q": SEARCH_TERM})}"',
+            response.content.decode(),
+        )
         detail_response = self.assert_private(self.client.get(detail_url), 200)
         self.assertContains(detail_response, SEARCH_TERM)
+
+    def test_zero_results_offer_home_and_detail_can_return_to_same_search_query(self):
+        article, _ = self.publish_visible(title=SEARCH_TERM)
+        empty = self.client.get(self.url, {"q": "无结果关键词"})
+        self.assertContains(empty, "返回首页浏览知识分类")
+
+        detail_url = reverse("knowledge:article_detail", args=[article.kb_no])
+        detail = self.client.get(detail_url, {"q": SEARCH_TERM})
+        query_string = urlencode({"q": SEARCH_TERM})
+        self.assertContains(detail, f'href="{self.url}?{query_string}"', html=False)
+        feedback_url = reverse("knowledge:article_feedback", args=[article.kb_no])
+        self.assertContains(
+            detail,
+            f'action="{feedback_url}?{query_string}"',
+            html=False,
+        )
 
 
 class EmployeeSearchPaginationTests(EmployeeSearchPageBase):

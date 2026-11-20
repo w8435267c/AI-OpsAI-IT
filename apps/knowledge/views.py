@@ -1,12 +1,14 @@
 """正式员工知识页面视图。"""
 
 import json
+from urllib.parse import urlencode
 
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import F
 from django.http import FileResponse, HttpRequest, HttpResponse, HttpResponseNotFound
 from django.shortcuts import redirect, render
+from django.urls import reverse
 
 from apps.knowledge.http import employee_get_page, employee_post_request
 from apps.knowledge.manage_readers import can_access_manage_article_list
@@ -149,6 +151,16 @@ def employee_article_detail(request: HttpRequest, kb_no: str) -> HttpResponse:
             "detail": detail,
             "applicable_scope_text": _applicable_scope_text(detail.applicable_scope),
             "service_request_available": get_configured_service_request_url() is not None,
+            "return_to_search_url": (
+                f"{reverse('search:results')}?{urlencode({'q': request.GET.get('q', '').strip()})}"
+                if request.GET.get("q", "").strip()
+                else ""
+            ),
+            "feedback_query_string": (
+                urlencode({"q": request.GET.get("q", "").strip()})
+                if request.GET.get("q", "").strip()
+                else ""
+            ),
         },
     )
 
@@ -196,4 +208,8 @@ def employee_article_feedback(request: HttpRequest, kb_no: str) -> HttpResponse:
         return HttpResponse(exc.public_message, status=400)
 
     messages.success(request, "已记录本次反馈。" if created else "已收到相同反馈。")
-    return redirect("knowledge:article_detail", kb_no=kb_no)
+    detail_url = reverse("knowledge:article_detail", args=[kb_no])
+    query = request.GET.get("q", "").strip()
+    if query:
+        detail_url = f"{detail_url}?{urlencode({'q': query})}"
+    return redirect(detail_url)

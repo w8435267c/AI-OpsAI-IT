@@ -1,8 +1,37 @@
 # OpsAI Current Task
 
-> 本文件登记唯一当前任务。本轮仅在 `D:\Desktop\OpsAI\AI-OpsAI-IT-kb-docx-import` 独立工作树和专属隔离验收环境中实施单篇 `.docx` 导入知识草稿；不得操作原工作区、媒体功能工作树、既有演示环境、历史数据卷、真实业务文档、钉钉或 Autopilot/R9。
+> 本文件登记唯一当前任务。本轮仅在 `D:\Desktop\OpsAI\AI-OpsAI-IT-kb-integration` 独立工作树进行图片、Word 导入与主线未提交改动的隔离联合演练；不得修改原工作区、媒体/导入功能工作树、既有演示环境、历史数据卷、真实业务文档、钉钉或 Autopilot/R9。
 
 ## 1. 当前任务
+
+| 项目 | 当前值 |
+| --- | --- |
+| 任务编号 | `KB-MEDIA-DOCX-INTEGRATION-REHEARSAL-01` |
+| 任务名称 | 图片、Word 导入与主线改动联合演练 |
+| 任务状态 | `DONE / ISOLATED INTEGRATION REHEARSAL PASS` |
+| 工作树 | `D:\Desktop\OpsAI\AI-OpsAI-IT-kb-integration` |
+| 分支 | `integration/kb-media-docx-rehearsal-01` |
+| 集成起点 | `327b9061181ca9322652dbd78718cec63f8c2991` |
+| 原工作区基线 | `fusion/wagtail-poc` / `87f1e95d69122de2b39aacc95dfa3b174393b532` |
+| 输入变更 | 原工作区相对基线的 20 项已核对、未暂存改动；仅复制到本工作树，不修改源工作树。 |
+
+### 1.1 精确范围与验收
+
+- 合入并解析原工作区已核对的知识编辑、审核发布、路由、搜索/反馈、模板、JS 与任务登记改动；不把源文件整份覆盖到本工作树。
+- 保留媒体和 Word 导入的版本关联、私有存储、扫描门禁和鉴权；验证自动保存后立即送审、搜索返回条件、反馈回跳及媒体直链拒绝。
+- 使用新的隔离 PostgreSQL、私有媒体目录与合成文档实际核验 `knowledge.0009`、`audit.0002`，不写入既有演示、试点或历史验收资源。
+- 只形成演练结果并保留本工作树供审阅；不创建主线提交、不合并、不推送、不部署。
+
+### 1.2 实际演练证据（2026-11-19）
+
+- 原工作区 20 项改动仅以仓库外 UTF-8 临时补丁读取，逐段合入本工作树；媒体提交 `63c3205` 已由导入提交 `327b906` 包含，未重复 cherry-pick。
+- 新建 `opsai-kb-integration-rehearsal-01` PostgreSQL/ClamAV/Web 环境，仅绑定 `127.0.0.1:15434`、`127.0.0.1:3312`、`127.0.0.1:18019`；实际应用 `audit.0002`、`knowledge.0009`，真实 ClamAV 对合成 PNG 和 `.docx` 均返回 clean。
+- 浏览器完成 Word 导入、正文改写、PNG 插图、`.docx` 附件、立即送审、独立审核发布、员工看图下载与下载审计；待审页和发布版本均为编辑后的第二步文本。已登录但被显式拒绝的账号访问同一图片和附件直链均显示“不存在”。
+- 反馈后返回搜索保留 `q=网络排障`；390×844 视口 `scrollWidth=375`、`clientWidth=375`，未横向溢出。以无效 JSON 触发自动保存失败后仍停留编辑页，未跳转送审。
+- 自动化：专项联合回归 `72 passed, 36 subtests`；全正式应用回归分段完成 `923 passed, 23 skipped, 723 subtests`。Django check、迁移一致性、Ruff、JS 语法和 `git diff --check` 均通过。
+- 本轮不创建主线提交；集成工作树、独立容器、卷、私有媒体目录和合成样本均保留供审阅。
+
+## 2. 已替换的前一当前任务登记（历史保留）
 
 | 项目 | 当前值 |
 | --- | --- |
@@ -114,6 +143,45 @@
 - 2026-11-17：首页导航使用知识管理列表 Reader 与审核列表 Reader 的既有身份、角色和权限解析；编辑员只见“知识管理”，审核员只见“待审核知识”，双权限账号同时可见，普通员工不显示任一入口。
 - 2026-11-17：专项测试同时核验入口链接与目标页面响应：编辑员可进入 `/manage/knowledge/`、审核员可进入 `/manage/reviews/`，普通员工直访两个地址仍为 `403`；未登录与停用账号首页仍为 `401`，不渲染管理入口。
 - 2026-11-17：已在临时隔离浏览器环境 `http://127.0.0.1:18016/` 完成真实页面验收。该环境使用当前工作区只读挂载和独立 Docker 网络、PostgreSQL 测试库及 `dev_employee`、`dev_editor`、`dev_reviewer` 合成身份；容器内首页模板和 `static/css/opsai.css` 与工作区 SHA-256 一致。编辑员首页仅显示“知识管理”并实际进入 `/manage/knowledge/`；审核员仅显示“待审核知识”并实际进入 `/manage/reviews/`；普通员工不显示两个入口，浏览器直访两个地址均由 Web 访问日志核实为 `403`。390×844 窄视口截图确认退出登录换行后完整可见、未被遮挡；已恢复默认视口。未访问、修改或连接 8001、18443 及其数据库。
+
+### 上一任务 `PILOT-LEADERSHIP-DEMO-KNOWLEDGE-01` 历史记录（`DONE / PASS`，仅保留）
+
+- 2026-11-17：在已核验的 `opsai-pilot-baseline-validation-01` 隔离数据库中，按既有创建、提交、独立审核发布服务新增并发布 `KB-000003` 至 `KB-000012` 共 10 篇脱敏中文知识；`KB-000001` 与 `KB-000002` 保持未修改。
+- 2026-11-17：现有启用知识空间与 `Printer Support` 分类被复用，未新增或修改分类、角色、账号权限、业务代码、钉钉配置或其他环境。
+- 2026-11-17：`pilot_employee_01` 实测“打印不出来”“无法上网”“共享盘打不开”“Excel 文件被占用”“钉钉会议没声音”“远程桌面连不上”“ERP 网页打不开”均可搜索并打开对应详情；一篇待审核文章在批准前已实测对员工搜索与详情均不可见。最终待审核文章数为 0。
+
+### 上一任务 `PILOT-PC-KNOWLEDGE-FEEDBACK-01` 历史记录（`DONE / PASS`，仅保留，不扩大原单篇验收范围）
+
+- 2026-11-15：已确认 `127.0.0.1:18443` 的 Caddy、Web 和数据库均属于运行中的 `opsai-pilot-baseline-validation-01`，且 `pilot_employee_01` 不存在。
+- 2026-11-15：在 Web 容器内通过数据库只读事务查询，现有“普通员工”系统角色数量为 `0`。该角色是创建账号的必要既有配置；本轮未创建账号、未新增角色、未修改其他数据。
+- 2026-11-15：项目负责人明确批准唯一例外：仅初始化缺失的“普通员工”系统角色，并创建 `pilot_employee_01`；仍禁止初始化其他角色、管理员、开发身份或演示数据。
+- 2026-11-15：已只读核对项目既有定义：`ROLE_EMPLOYEE` 名称为“普通员工”、权限集合为空；`sync_system_roles` 会同步四个角色，`create_dev_users` 会同步角色并创建四个开发身份，均不符合本轮范围。
+- 2026-11-15：在 `web` 容器的单一数据库事务内，仅创建“普通员工”角色（零权限）及 `pilot_employee_01`。随后以数据库只读事务复核：账号启用、`account_status=active`、`is_staff=False`、`is_superuser=False`、直接权限数为零、仅加入该角色；初始密码不可用，等待项目负责人交互式设置密码。
+- 2026-11-15：项目负责人明确授权本轮仅在上述隔离项目完成知识发布到人工反馈前置验收；不得提权 `pilot_employee_01`、不得修改代码、钉钉配置或其他环境。
+- 2026-11-15：已在该隔离数据库按现有定义仅初始化“知识编辑员”（9 项既有权限）与“知识审核员”（10 项既有权限），分别创建 `pilot_editor_01`、`pilot_reviewer_01`；两者均启用、非 staff、非 superuser、无直接权限且仅绑定各自角色。未修改 `pilot_employee_01`。
+- 2026-11-15：已创建本任务最小员工知识空间、打印机分类及 `pilot_reviewer_01` 的启用审核范围；通过 `create_article`、`submit_article_for_review`、`approve_and_publish_article_version` 服务完成《打印机显示脱机怎么办》（`KB-000001`）的创建、提交、独立审核与发布，未直接修改发布状态。
+- 2026-11-15：发布前已验证 `pilot_employee_01` 对该文章不可见、不可搜索；发布后数据库只读核验已发布版本、审核通过记录、员工可见、搜索和详情读取均为真。当前该员工对该文章的反馈记录数为 `0`，等待项目负责人在电脑版钉钉实际选择反馈按钮。
+- 2026-11-15：项目负责人已在电脑版钉钉完成 `KB-000001` 反馈。随后仅在对应隔离 Web 容器内以数据库只读事务核验：该文章当前版本为已发布；反馈记录共 `2` 条，均关联 `pilot_employee_01` 与该当前已发布版本。验收收口为 `DONE / PASS`。
+
+## 3. 前一任务状态：PILOT-EMPLOYEE-LOGIN-TEST-01（保留）
+
+- `pilot_employee_01` 已创建并通过最小权限核验；其交互式密码仍由项目负责人自行设置。本任务不得重置、修改或提权该账号。
+
+## 4. 前一任务归档：PILOT-CHROME-LOCAL-CA-01（保留）
+
+- 2026-11-15：仅替换 `opsai-pilot-baseline-validation-01-caddy-1`；`web` 与 `db` 容器 ID、运行状态和启动时间均保持不变，`127.0.0.1:18443` 保持绑定。原 Caddy 容器以 `opsai-pilot-baseline-validation-01-caddy-rollback-20261114` 停止保留，可用于本轮回退。
+- 2026-11-15：Caddy 使用仓库外 `D:\Temp\OpsAI-Pilot-Production-Baseline-01\chrome-local-ca-01\Caddyfile` 的 `tls internal`，根 CA 继续持久化在既有 `opsai-pilot-baseline-validation-01_pilot_caddy_data` 卷；仅导出公开 `root.crt`，未导出私钥。
+- 2026-11-15：公开根证书的 X.509 SHA-256 指纹为 `5B:5A:D4:24:03:68:EC:C5:4F:C5:23:72:DD:64:45:B8:9A:7E:AB:74:B0:97:CE:E3:8B:31:50:CF:F2:01:12:74`；使用 WSL OpenSSL curl 的 `--cacert` 完整验证 `https://pilot-baseline.test:18443/health/live` 返回 HTTP 200 与 `{"status": "ok", "service": "opsai-it"}`。
+- 未导入 Windows 证书库、未使用 `-k` 或其他 TLS 校验绕过参数；Windows Schannel curl 的吊销状态查询在未信任内部根证书时返回预期错误，未作为成功证据。
+
+## 4. 前一任务归档：PILOT-BACKUP-RESTORE-01（保留）
+
+| 项目 | 当前值 |
+| --- | --- |
+| 任务编号 | `PILOT-BACKUP-RESTORE-01` |
+| 任务状态 | `DONE / PASS（仅限本地隔离 PostgreSQL 备份恢复演练）` |
+| 登记基线 | `d5c1e80f248f492a02428d26a2ac8dcfa74884f1` |
+| 功能提交 | `00ab2915d88bd94e516a4caf753b18ff5c3b24d3` |
 
 ## 前一任务历史记录：2026-11-11 员工登录离线实施、E2E 与收口
 

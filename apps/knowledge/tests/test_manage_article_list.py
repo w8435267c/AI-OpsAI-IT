@@ -479,6 +479,18 @@ class ManageArticleListContentTests(ManageArticleListBase):
         self.assertRegex(html, r"v1\s+·\s+已发布")
         self.assertContains(response, "未发布")
 
+    def test_list_provides_editor_next_steps_for_draft_and_pending_articles(self):
+        self.login(self.article_owner)
+
+        response = self.client.get("/manage/knowledge/")
+
+        self.assertContains(
+            response,
+            f'href="/manage/knowledge/{self.working_article.kb_no}/edit/"',
+            html=False,
+        )
+        self.assertContains(response, "已提交审核，等待审核员处理")
+
     def test_editor_page_does_not_leak_unauthorized_article_or_count(self):
         self.login(self.article_owner)
 

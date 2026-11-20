@@ -46,6 +46,7 @@ def employee_search_results(request: HttpRequest) -> HttpResponse:
         {
             "query": query,
             "query_string": urlencode({"q": query}),
+            "detail_query_string": urlencode({"q": query}) if query else "",
             "articles": articles,
             "pagination": pagination,
         },

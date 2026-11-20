@@ -91,6 +91,10 @@ class ReviewTargetSnapshot:
     proposed_category_id: UUID | None
     proposed_category_name: str | None
 
+    @property
+    def status_label(self) -> str:
+        return VersionStatus(self.status).label
+
 
 @dataclass(frozen=True, slots=True)
 class ReviewArticleSnapshot:
@@ -144,6 +148,10 @@ class ReviewRecordSummary:
     comment: str
     reviewed_at: datetime
 
+    @property
+    def decision_label(self) -> str:
+        return ReviewDecision(self.decision).label
+
 
 @dataclass(frozen=True, slots=True)
 class ReviewDetail:
@@ -168,6 +176,10 @@ class ReviewedByMeItem:
     space_name: str
     submitted_by_id: UUID | None
     submitted_at: datetime | None
+
+    @property
+    def decision_label(self) -> str:
+        return ReviewDecision(self.decision).label
 
 
 @dataclass(frozen=True, slots=True)

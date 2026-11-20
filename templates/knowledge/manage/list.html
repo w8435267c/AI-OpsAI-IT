@@ -81,6 +81,11 @@
               </div>
             </dl>
             <p class="knowledge-card-actions">
+              {% if article.latest_working_version %}
+                <a href="{% url 'knowledge_manage:edit' article.kb_no %}">编辑草稿</a>
+              {% elif article.pending_review_version_no %}
+                <span>已提交审核，等待审核员处理</span>
+              {% endif %}
               <a href="{% url 'knowledge_manage:history' article.kb_no %}">版本历史</a>
             </p>
           </article>

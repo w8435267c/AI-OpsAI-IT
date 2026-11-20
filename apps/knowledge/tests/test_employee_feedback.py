@@ -12,9 +12,7 @@ class EmployeeFeedbackTests(TestCase):
         self.employee = _mk_user()
         self.client = Client(enforce_csrf_checks=True)
         self.client.force_login(self.employee)
-        self.article, self.version = _publish(
-            _mk_article(policy=AudiencePolicy.ALL_EMPLOYEES)
-        )
+        self.article, self.version = _publish(_mk_article(policy=AudiencePolicy.ALL_EMPLOYEES))
 
     def _feedback_url(self, article=None):
         article = article or self.article
@@ -37,6 +35,15 @@ class EmployeeFeedbackTests(TestCase):
         self.assertEqual(record.article_version_id, self.version.pk)
         self.assertEqual(record.user_id, self.employee.pk)
         self.assertEqual(record.outcome, FeedbackOutcome.RESOLVED)
+
+    def test_feedback_redirect_preserves_search_query(self):
+        url = f"{self._feedback_url()}?q=%E6%89%93%E5%8D%B0%E6%9C%BA"
+        response = self._csrf_post(url, {"outcome": FeedbackOutcome.RESOLVED})
+
+        detail_url = reverse("knowledge:article_detail", args=[self.article.kb_no])
+        self.assertRedirects(
+            response, f"{detail_url}?q=%E6%89%93%E5%8D%B0%E6%9C%BA", fetch_redirect_response=False
+        )
 
     def test_unresolved_feedback_is_persisted_and_duplicate_is_idempotent(self):
         first = self._csrf_post(self._feedback_url(), {"outcome": FeedbackOutcome.UNRESOLVED})

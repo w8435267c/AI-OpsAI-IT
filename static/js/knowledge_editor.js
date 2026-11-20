@@ -11,6 +11,7 @@
   const reloadLink = editor.querySelector("#autosave-reload");
   const manualSaveButton = editor.querySelector("#manual-save-button");
   const previewButton = editor.querySelector("#preview-draft-button");
+  const submitReviewLink = editor.querySelector("#submit-review-link");
   const versionLabel = document.querySelector("#working-version-label");
   const lockLabel = document.querySelector("#working-lock-label");
   const restoredFromRow = document.querySelector("#restored-from-row");
@@ -39,6 +40,7 @@
     !reloadLink ||
     !manualSaveButton ||
     !previewButton ||
+    !submitReviewLink ||
     !versionLabel ||
     !lockLabel ||
     !csrfToken ||
@@ -60,6 +62,7 @@
   let manualPending = false;
   let manualInFlight = false;
   let previewPending = false;
+  let submitPending = false;
 
   function setStatus(message, state) {
     status.textContent = message;
@@ -77,6 +80,7 @@
     blocked = true;
     manualPending = false;
     previewPending = false;
+    submitPending = false;
     clearDebounce();
     manualSaveButton.disabled = true;
     previewButton.disabled = true;
@@ -260,6 +264,8 @@
         }
       } else if (previewPending) {
         continuePreviewAfterAutosave(autosaveSucceeded);
+      } else if (submitPending) {
+        continueSubmissionAfterAutosave(autosaveSucceeded);
       } else if (scheduleNext && dirty && !blocked) {
         scheduleAutosave();
       }
@@ -282,6 +288,22 @@
     }
     previewPending = false;
     window.location.assign(previewUrl);
+  }
+
+  function continueSubmissionAfterAutosave(autosaveSucceeded) {
+    if (!submitPending || blocked) {
+      return;
+    }
+    if (!autosaveSucceeded) {
+      submitPending = false;
+      return;
+    }
+    if (dirty) {
+      attemptAutosave();
+      return;
+    }
+    submitPending = false;
+    window.location.assign(submitReviewLink.href);
   }
 
   function isPlainObject(value) {
@@ -479,6 +501,23 @@
     }
   }
 
+  function requestSubmission(event) {
+    if (!dirty && !inFlight) {
+      return;
+    }
+    event.preventDefault();
+    if (blocked || submitPending || manualPending || manualInFlight || previewPending) {
+      return;
+    }
+    submitPending = true;
+    clearDebounce();
+    if (inFlight) {
+      setStatus("正在等待当前自动保存完成…", "saving");
+      return;
+    }
+    attemptAutosave();
+  }
+
   function markDirty() {
     if (blocked) {
       return;
@@ -582,4 +621,5 @@
   });
   manualSaveButton.addEventListener("click", requestManualSave);
   previewButton.addEventListener("click", requestPreview);
+  submitReviewLink.addEventListener("click", requestSubmission);
 })();

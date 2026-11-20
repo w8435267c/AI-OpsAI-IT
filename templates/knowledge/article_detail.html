@@ -7,6 +7,9 @@
     <a class="back-link" href="{% url 'knowledge:category_detail' detail.category_id %}">
       ← 返回分类
     </a>
+    {% if return_to_search_url %}
+      <a class="back-link" href="{{ return_to_search_url }}">返回搜索结果</a>
+    {% endif %}
     <a class="back-link" href="{% url 'knowledge:home' %}">返回首页</a>
   </nav>
 
@@ -86,7 +89,7 @@
 
     <section class="article-section" aria-labelledby="feedback-title">
       <h2 id="feedback-title">问题解决了吗？</h2>
-      <form method="post" action="{% url 'knowledge:article_feedback' detail.kb_no %}">
+      <form method="post" action="{% url 'knowledge:article_feedback' detail.kb_no %}{% if feedback_query_string %}?{{ feedback_query_string }}{% endif %}">
         {% csrf_token %}
         <button type="submit" name="outcome" value="resolved">已解决</button>
         <button type="submit" name="outcome" value="unresolved">未解决</button>

@@ -23,7 +23,7 @@
         {% for item in reviewed_records %}
           <li>
             <a href="{% url 'workflow:detail' item.version_id %}">{{ item.kb_no }} · {{ item.title }}</a>
-            <span>{{ item.decision }} · {{ item.reviewed_at }}</span>
+            <span>{{ item.decision_label }} · {{ item.reviewed_at }}</span>
           </li>
         {% endfor %}
       </ul>

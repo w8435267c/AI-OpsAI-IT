@@ -66,6 +66,7 @@ from apps.knowledge.version_readers import (
     get_article_version_history,
     get_article_version_history_detail,
 )
+from apps.workflow.readers import WorkflowReaderError, get_rejection_context
 
 MANAGE_ARTICLE_PAGE_SIZE = 20
 MANAGE_ARTICLE_HISTORY_PAGE_SIZE = 20
@@ -779,6 +780,10 @@ def manage_article_edit(request: HttpRequest, kb_no: str) -> HttpResponse:
         },
     )
     import_warnings = request.session.get("docx_import_warnings", {}).get(kb_no, [])
+    try:
+        rejection_context = get_rejection_context(actor=request.user, kb_no=kb_no)
+    except WorkflowReaderError:
+        rejection_context = None
     return render(
         request,
         "knowledge/manage/edit.html",
@@ -787,6 +792,7 @@ def manage_article_edit(request: HttpRequest, kb_no: str) -> HttpResponse:
             "form": form,
             "media_links": get_draft_media(actor=request.user, kb_no=kb_no),
             "import_warnings": import_warnings,
+            "rejection_context": rejection_context,
         },
     )
 

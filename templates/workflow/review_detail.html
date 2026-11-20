@@ -27,7 +27,7 @@
       <header>
         <p>{{ detail.article.kb_no }} · {{ detail.article.space_name }}</p>
         <h1 id="review-title">待审核版本 v{{ detail.target.version_no }}</h1>
-        <p>当前审核状态：{{ detail.target.status }}</p>
+        <p>当前审核状态：{{ detail.target.status_label }}</p>
         <h2>{{ detail.target.title }}</h2>
         <p>{{ detail.target.summary }}</p>
       </header>
@@ -41,24 +41,28 @@
           <p>原分类：{{ detail.article.category_name }} → 拟变更分类：{{ detail.target.proposed_category_name }}</p>
         </section>
       {% endif %}
-      <section aria-labelledby="review-action-title">
-        <h2 id="review-action-title">审核操作</h2>
-        <form method="post">
-          {% csrf_token %}
-          <input type="hidden" name="idempotency_key" value="{{ idempotency_key }}">
-          <label for="review-comment">审核意见</label>
-          <textarea id="review-comment" name="comment" rows="4"></textarea>
-          <p>驳回时必须填写原因。</p>
-          <button type="submit" name="action" value="approve">批准并发布</button>
-          <button type="submit" name="action" value="reject">驳回</button>
-        </form>
-      </section>
+      {% if can_take_action %}
+        <section aria-labelledby="review-action-title">
+          <h2 id="review-action-title">审核操作</h2>
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="idempotency_key" value="{{ idempotency_key }}">
+            <label for="review-comment">审核意见</label>
+            <textarea id="review-comment" name="comment" rows="4"></textarea>
+            <p>驳回时必须填写原因。</p>
+            <button type="submit" name="action" value="approve">批准并发布</button>
+            <button type="submit" name="action" value="reject">驳回</button>
+          </form>
+        </section>
+      {% else %}
+        <p class="muted">该版本已完成审核，仅供查看历史记录。</p>
+      {% endif %}
       <section aria-labelledby="review-record-title">
         <h2 id="review-record-title">本人可见的审核记录</h2>
         {% if detail.review_records %}
           <ul>
             {% for record in detail.review_records %}
-              <li>{{ record.decision }} · {{ record.reviewed_at }} · {{ record.comment }}</li>
+              <li>{{ record.decision_label }} · {{ record.reviewed_at }} · {{ record.comment }}</li>
             {% endfor %}
           </ul>
         {% else %}

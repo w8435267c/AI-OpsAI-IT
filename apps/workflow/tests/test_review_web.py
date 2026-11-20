@@ -246,6 +246,11 @@ class ReviewWebTests(TestCase):
         self.assertEqual(ReviewRecord.objects.count(), 1)
         self.assertEqual(employee_visible_articles(self.employee).count(), 0)
 
+        self.login(self.author)
+        editor_page = self.client.get(reverse("knowledge_manage:edit", args=[article.kb_no]))
+        self.assertContains(editor_page, "最近一次驳回意见")
+        self.assertContains(editor_page, "请补充网络检查步骤")
+
     def test_approval_switches_only_the_submitted_proposed_category(self):
         article, published = self.make_article()
         ArticleVersion.objects.filter(pk=published.pk).update(
@@ -395,3 +400,29 @@ class ReviewWebTests(TestCase):
         self.assertContains(page, version.title)
         self.login(self.second_reviewer)
         self.assertNotContains(self.client.get(reverse("workflow:reviewed")), version.title)
+
+    def test_review_navigation_home_is_a_link_and_history_uses_chinese_read_only_status(self):
+        article, version = self.make_article(status=VersionStatus.IN_REVIEW)
+        detail_url = reverse("workflow:detail", args=[version.pk])
+        self.login(self.reviewer)
+
+        response = self.client.post(
+            detail_url,
+            {
+                "action": "approve",
+                "comment": "审核通过",
+                "idempotency_key": "review-web-home-and-history-001",
+            },
+        )
+
+        self.assertEqual(response.status_code, 303)
+        reviewed = self.client.get(reverse("workflow:reviewed"))
+        self.assertContains(reviewed, "已批准并发布，员工现在可以搜索和阅读这篇正式知识。")
+        self.assertContains(reviewed, 'href="/"', html=False)
+        self.assertContains(reviewed, "审核通过")
+        self.assertNotContains(reviewed, "approved")
+
+        history_detail = self.client.get(detail_url)
+        self.assertContains(history_detail, "当前审核状态：已发布")
+        self.assertContains(history_detail, "该版本已完成审核，仅供查看历史记录。")
+        self.assertNotContains(history_detail, "批准并发布")

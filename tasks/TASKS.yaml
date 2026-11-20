@@ -18,6 +18,27 @@ evidence_boundary:
   - "最近一次远端实时证据：GitHub fusion/wagtail-poc 为 5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e，本地 DATA-01 基线相对其纯领先 11 个提交；Gitee 实时状态因 SSL 连接失败为 UNKNOWN。"
 
 tasks:
+  - id: "KB-MEDIA-DOCX-INTEGRATION-REHEARSAL-01"
+    title: "图片、Word 导入与主线改动联合演练"
+    priority: MUST
+    status: DONE
+    owner: codex
+    dependencies:
+      - "KB-ARTICLE-MEDIA-MVP-01"
+      - "KB-DOCX-IMPORT-DRAFT-01"
+    objective: >
+      从 327b906 的媒体与 Word 导入能力起点，在独立工作树安全合入原 fusion/wagtail-poc
+      已核对的 20 项未提交改动，完成冲突处理、隔离 PostgreSQL 迁移、联合回归及浏览器演练。
+    acceptance:
+      - "原工作区的 20 项改动只读获取并仅应用到集成工作树，源工作区分支、HEAD、索引和文件内容不变。"
+      - "编辑、自动保存送审、媒体、Word 导入、审核发布、员工详情、搜索与反馈的联合行为保持。"
+      - "在新的隔离 PostgreSQL、私有媒体目录和合成数据中实际验证 knowledge.0009 与 audit.0002。"
+      - "不提交主线、不合并、不推送、不部署；验收通过仅报告隔离集成演练通过。"
+    notes:
+      - "集成工作树：D:\\Desktop\\OpsAI\\AI-OpsAI-IT-kb-integration；分支：integration/kb-media-docx-rehearsal-01。"
+      - "输入基线：327b9061181ca9322652dbd78718cec63f8c2991；原工作区基线：87f1e95d69122de2b39aacc95dfa3b174393b532。"
+      - "2026-11-19：新建隔离 PostgreSQL/ClamAV/Web、真实扫描、知识/审核迁移、联合自动化回归和桌面/390×844 浏览器链均通过；无提交、无合并、无推送。"
+
   - id: "KB-DOCX-IMPORT-DRAFT-01"
     title: "单篇 Word 导入知识草稿"
     priority: MUST
@@ -876,6 +897,217 @@ tasks:
         - "2026-11-12：篡改备份被 SHA-256 检查拒绝且未创建目标库；已有目标数据库被拒绝覆盖且数据计数未变。相关回归 79 passed、3 subtests passed，Django check、迁移检查、Ruff、compileall 和 Git 差异检查通过。"
       notes:
         - "本任务 PASS 只证明本地隔离恢复演练；不构成真实服务器备份、生产恢复、媒体完整备份或灾难恢复承诺。"
+
+  - id: "PILOT-CHROME-LOCAL-CA-01"
+    title: "OpsAI 电脑版钉钉联调本机隔离 TLS 准备"
+    priority: MUST
+    status: "DONE / PASS"
+    owner: codex
+    dependencies:
+      - "PILOT-PRODUCTION-DEPLOYMENT-BASELINE-01"
+      - "PILOT-BACKUP-RESTORE-01"
+    objective: >
+      仅在 Windows 本机的既有隔离 Caddy 项目中，为 pilot-baseline.test:18443 配置 Caddy tls internal，
+      导出公开根证书并以 curl --cacert 验证健康检查，为后续 Chrome 钉钉联调准备信任材料。
+    acceptance:
+      - "仅更新 opsai-pilot-baseline-validation-01 的 caddy 服务；127.0.0.1:18443 绑定、Caddy 数据卷、web 与 db 保持不变。"
+      - "仓库 deploy/Caddyfile、deploy/compose.pilot.yaml、生产部署基线报告、Autopilot、P02、R9 与业务数据均不修改。"
+      - "仅在 D:\\Temp\\OpsAI-Pilot-Production-Baseline-01\\ 下保存替代配置、公开 root.crt 与证据；不导出私钥。"
+      - "记录 root.crt 的 SHA-256，并以 curl --cacert 对 https://pilot-baseline.test:18443/health/live 验证 HTTP 200 和预期 JSON。"
+      - "不导入任何 Windows 证书库、不跳过 TLS 校验、不修改 hosts 或系统代理、不调用或发布钉钉应用。"
+    verification:
+      - "执行前必须核对分支 fusion/wagtail-poc、HEAD 75e16b8d45f5be3aefcabbd4db4cefdd9054abab、工作区干净及 caddy/web/db 容器身份。"
+      - "如 Caddy 启动或健康检查失败，只回退本轮 Caddy 变更并保留仓库外证据。"
+    result:
+      commits: []
+      verification:
+        - "2026-11-15：仅替换 opsai-pilot-baseline-validation-01 的 caddy 容器；web 与 db 的容器 ID、运行状态和启动时间均未变化，127.0.0.1:18443 绑定保持不变。"
+        - "2026-11-15：Caddy 使用仓库外替代 Caddyfile 的 tls internal；既有 pilot_caddy_data 卷继续持久化内部 CA。仅导出公开 root.crt，未导出私钥。"
+        - "2026-11-15：root.crt 的 X.509 SHA-256 指纹为 5B:5A:D4:24:03:68:EC:C5:4F:C5:23:72:DD:64:45:B8:9A:7E:AB:74:B0:97:CE:E3:8B:31:50:CF:F2:01:12:74；WSL OpenSSL curl 使用 --cacert 验证健康检查返回 HTTP 200 和预期 JSON。"
+        - "未导入 Windows 证书库，未使用 -k 或其他 TLS 校验绕过参数；Windows Schannel curl 未信任内部根证书时的吊销状态错误不作为验收成功证据。"
+      notes:
+        - "本任务仅为本机隔离 TLS 准备，不代表 Windows/Chrome 已信任、不代表真实内网部署或钉钉应用联调完成。"
+
+  - id: "PILOT-EMPLOYEE-LOGIN-TEST-01"
+    title: "OpsAI 电脑版钉钉联调普通员工测试账号创建"
+    priority: MUST
+    status: "WAITING_FOR_USER / INTERACTIVE PASSWORD REQUIRED"
+    owner: codex
+    dependencies:
+      - "PILOT-CHROME-LOCAL-CA-01"
+    objective: >
+      仅在 opsai-pilot-baseline-validation-01 的既有隔离数据库中创建 pilot_employee_01，
+      供项目负责人在电脑版钉钉内对 OpsAI 员工用户名/密码登录进行人工验证。
+    acceptance:
+      - "写入前确认 18443 对应隔离 Caddy、web、db 均运行且共享该项目网络；pilot_employee_01 必须不存在。"
+      - "仅可按 apps.accounts.roles.SYSTEM_ROLE_BY_CODE[ROLE_EMPLOYEE] 的既有定义初始化缺失的普通员工角色；该定义权限为空，不得自行定义权限或修改已有角色。"
+      - "不得运行会同步其他角色或创建管理员、开发身份、演示数据的通用初始化命令；创建的账号必须为启用、account_status=active、非 staff、非 superuser、无直接权限，且仅加入普通员工角色。"
+      - "密码仅由项目负责人运行交互式 changepassword 输入；密码不得出现在参数、日志、代码或聊天。"
+      - "不修改任何其他账号、业务数据、Docker、镜像、hosts、代理、钉钉后台、部署基线或其他环境。"
+    verification:
+      - "创建后只读核验用户名、启用状态、staff/superuser 标记、普通员工唯一角色及不可用初始密码状态。"
+      - "若目标容器、项目身份或同名账号不一致，停止且不写入。"
+    result:
+      commits: []
+      verification:
+        - "2026-11-15：已核对 18443 的 Caddy、web、db 均属于运行中的 opsai-pilot-baseline-validation-01，且 pilot_employee_01 不存在。"
+        - "2026-11-15：Web 容器内的数据库只读事务确认既有普通员工系统角色数量为 0；按停止条件未创建账号、未新增角色、未修改任何业务数据。"
+        - "2026-11-15：项目负责人明确批准唯一例外：仅按项目既有 ROLE_EMPLOYEE 定义初始化缺失普通员工角色并创建 pilot_employee_01；sync_system_roles 和 create_dev_users 会扩大到其他角色或身份，禁止执行。"
+        - "2026-11-15：已在单一事务中仅创建普通员工角色（零权限）及 pilot_employee_01；事后数据库只读核验账号 active、非 staff、非 superuser、直接权限为零且唯一角色为普通员工。初始密码不可用，等待项目负责人交互式设置。"
+      notes:
+        - "本任务只准备隔离测试账号，不代表钉钉登录、Chrome TLS 信任或生产账号体系已验收。"
+
+  - id: "PILOT-PC-KNOWLEDGE-FEEDBACK-01"
+    title: "OpsAI 电脑版钉钉知识发布到反馈验收准备"
+    priority: MUST
+    status: "DONE / PASS（仅限本机隔离 PC 钉钉人工反馈验收）"
+    owner: codex
+    dependencies:
+      - "PILOT-CHROME-LOCAL-CA-01"
+      - "PILOT-EMPLOYEE-LOGIN-TEST-01"
+    objective: >
+      仅在 opsai-pilot-baseline-validation-01 的隔离数据库中，使用独立编辑员和审核员身份，
+      通过既有业务服务创建、提交、审核发布一篇脱敏打印机知识，并准备普通员工在电脑版钉钉的人工反馈验收。
+    acceptance:
+      - "写入前确认 18443 对应的 caddy、web、db 均运行且属于 opsai-pilot-baseline-validation-01。"
+      - "仅按既有角色定义初始化缺失的知识编辑员、知识审核员角色，并创建 pilot_editor_01、pilot_reviewer_01；两者均非 staff、非 superuser、无直接权限且只加入对应角色。"
+      - "仅创建本任务最小空间、分类和审核范围；不得给 pilot_employee_01 提权，不得创建管理员、开发身份、演示数据或其他环境数据。"
+      - "文章必须使用 create_article、submit_article_for_review、approve_and_publish_article_version 服务完成；不得直接改数据库状态模拟发布。"
+      - "验证同一文章在发布前对 pilot_employee_01 不可见，发布后可搜索、可阅读；不得代替项目负责人提交反馈。"
+    verification:
+      - "发布前后通过只读查询核验账号权限、文章/版本状态、审核记录、员工可见性、搜索和详情读取。"
+      - "人工反馈后只读核验反馈关联 pilot_employee_01 与当前已发布版本，再按授权收口。"
+    result:
+      commits: []
+      verification:
+        - "2026-11-15：18443 对应运行中的 caddy、web、db 容器均属于 opsai-pilot-baseline-validation-01；编辑员、审核员角色、测试账号、验收空间、分类及目标文章均在写入前不存在。"
+        - "2026-11-15：仅初始化知识编辑员（9 项既有权限）和知识审核员（10 项既有权限），并创建 pilot_editor_01、pilot_reviewer_01；两账号均 active、非 staff、非 superuser、无直接权限且仅属对应角色。"
+        - "2026-11-15：使用 create_article、submit_article_for_review、approve_and_publish_article_version 服务完成 KB-000001《打印机显示脱机怎么办》的发布；发布前 pilot_employee_01 不可见/不可搜索，发布后只读核验可见、可搜索、可阅读且存在独立审核通过记录。"
+        - "2026-11-15：反馈记录数为 0；等待项目负责人在电脑版钉钉实际提交后，再只读核验关联员工和发布版本。"
+        - "2026-11-15：项目负责人完成电脑版钉钉人工反馈后，仅以数据库只读事务核验反馈记录共 2 条，均关联 pilot_employee_01 与 KB-000001 当前已发布版本；本隔离验收收口 PASS。"
+      notes:
+        - "本任务不代表钉钉免登通过；人工反馈完成前不得标记 DONE/PASS。"
+
+  - id: "PILOT-LEADERSHIP-DEMO-KNOWLEDGE-01"
+    title: "OpsAI 领导演示 10 篇知识案例准备"
+    priority: MUST
+    status: "DONE / PASS（仅限本机隔离领导演示知识）"
+    owner: codex
+    dependencies:
+      - "PILOT-PC-KNOWLEDGE-FEEDBACK-01"
+    objective: >
+      仅在 opsai-pilot-baseline-validation-01 的隔离数据库中，复用既有编辑员、审核员和普通员工身份，
+      为领导演示创建、提交、独立审核发布并员工端验收 10 篇脱敏中文故障问答知识。
+    acceptance:
+      - "写入前确认 127.0.0.1:18443 对应的 caddy、web、db 均运行且属于 opsai-pilot-baseline-validation-01；按标题查重，保留 KB-000001 与 KB-000002，不修改、不覆盖、不代审。"
+      - "优先复用既有知识空间和分类；仅在确有必要时通过现有流程新增隔离库分类，不修改已有分类、角色、权限或其他环境。"
+      - "由 pilot_editor_01 通过既有页面或业务服务创建草稿并提交审核；由独立 pilot_reviewer_01 核对正文和可见范围后批准发布；不得使用 SQL 或直接改状态模拟发布。"
+      - "每篇均为脱敏中文短文，包含故障现象、适用范围、3 至 5 个排查步骤、恢复确认和未解决时所需支持信息；不写入真实账号、密码、内网 IP、员工资料或未经验证的故障定论。"
+      - "发布内容仅限既有试点范围可见，pilot_employee_01 可读；员工端至少验证 3 个不同类别关键词可搜索并打开详情，同时验证待审核或无权内容不会出现；不替员工提交反馈。"
+    verification:
+      - "记录实际发布数量、文章编号、标题、分类和发布状态。"
+      - "记录员工端实际验证关键词、搜索和详情打开结果，以及最适合领导现场演示的 3 个搜索词。"
+    result:
+      commits: []
+      verification:
+        - "2026-11-17：已核对 18443 的 caddy、web、db 均属于 opsai-pilot-baseline-validation-01；目标标题在写入前不存在，KB-000001 与 KB-000002 保持未修改。"
+        - "2026-11-17：通过既有 create_article、submit_article_for_review、approve_and_publish_article_version 服务发布 KB-000003 至 KB-000012 共 10 篇；每篇均存在 approved 审核记录和 published 当前版本。"
+        - "2026-11-17：pilot_employee_01 实测多个关键词可搜索并打开详情；首篇后续待审文章在批准前实测不可搜索、不可读取详情，最终待审核文章数为 0。"
+      notes:
+        - "本任务仅限本机隔离演示数据，不代表生产上线、钉钉免登、真实 ITSM 或其他环境验证。"
+
+  - id: "PILOT-DEMO-KNOWLEDGE-CATEGORY-01"
+    title: "OpsAI 领导演示知识分类整理"
+    priority: MUST
+    status: "BLOCKED / EXISTING SAFE FLOW MISSING"
+    owner: codex
+    dependencies:
+      - "PILOT-LEADERSHIP-DEMO-KNOWLEDGE-01"
+    objective: >
+      仅在 opsai-pilot-baseline-validation-01 的 18443 隔离演示环境中，使用既有管理页面或业务流程整理
+      KB-000003 至 KB-000012 的分类，以便领导演示按主题浏览。
+    acceptance:
+      - "保留 Printer Support：KB-000003、KB-000004；网络与远程：KB-000005、KB-000010；办公软件与文件共享：KB-000006、KB-000007、KB-000008；企业应用：KB-000009、KB-000011、KB-000012。"
+      - "优先复用原知识空间内同名分类；缺少时仅可新增网络与远程、办公软件与文件共享、企业应用三类，不改名、不删除 Printer Support 或其他既有分类。"
+      - "操作前记录目标文章原分类、发布状态和可见范围；先移动一篇并以普通员工验证，再处理其余文章。若分类变更要求重新审核，沿用独立编辑员、审核员流程，保留历史版本及反馈关联。"
+      - "不改 KB-000001、KB-000002，不改正文、知识空间、可见范围、账号权限、钉钉或部署配置；不直接写 SQL，不新增代码、脚本或迁移，不操作 8001、18016 或其他环境，不升级 18443 Web 镜像。"
+    verification:
+      - "用普通员工身份打开三个目标分类并核对预期文章可见、详情可打开；复测打印不出来、无法上网、共享盘打不开、Excel 文件被占用、钉钉会议没声音、远程桌面连不上、ERP 网页打不开。"
+      - "核对 10 篇目标分类、KB-000001/KB-000002 未改动，且正文、知识空间、可见范围、既有反馈记录和版本关联未被修改；如未实际验证不得标记 PASS。"
+    result:
+      commits: []
+      verification:
+        - "2026-11-18：执行前已核对分支 fusion/wagtail-poc、HEAD efdf1870c28e5723e00a1c7bda8100cfe74bbd30；18443 的 caddy、web、db 均归属运行中的 opsai-pilot-baseline-validation-01。"
+        - "2026-11-18：只读核验 KB-000003～KB-000012 均为 Printer Support、active、all_employees、PC Pilot Printer Knowledge、published v1；该空间仅存在 Printer Support。KB-000001、KB-000002 未改变；现有反馈记录只关联 KB-000001、KB-000002 的当前发布版本。"
+      notes:
+        - "本任务仅限本机隔离演示数据；不代表生产环境、钉钉免登或其他环境验收。"
+        - "阻塞：既有创建服务只接受新文章分类；既有编辑管理页和草稿写入服务没有分类字段或已发布文章分类变更服务。Django Admin 直接保存会绕过版本和审核流程，且 pilot_editor_01 非 staff，不能作为替代。依授权停止；未新增分类、未移动文章、未执行发布/审核或员工分类页面/搜索回归。"
+
+  - id: "PILOT-DEMO-CATEGORY-ADMIN-01"
+    title: "OpsAI 18443 演示知识一级分类准备"
+    priority: MUST
+    status: "DONE / PASS（名称修复及真实浏览器下拉框验收通过）"
+    owner: codex
+    dependencies:
+      - "PILOT-DEMO-UPGRADE-18443-01"
+    objective: >
+      仅在 opsai-pilot-baseline-validation-01 的 18443 隔离环境中，通过既有 Django Admin 新增或复用
+      六个一级启用分类，并以现有编辑员的新建知识页面验证可选项；不修改文章、版本或反馈。
+    acceptance:
+      - "Printer Support 必须保持原名称、编码和启用状态；新分类必须位于其唯一确定的同一知识空间，parent 为空且编码在空间内唯一。"
+      - "负责人已追加授权创建并停用最小权限临时 Admin 分类维护账号；不得扩展为修改或删除分类权限，不得写 SQL、创建测试文章或修改已有分类归属。"
+      - "以 pilot_editor_01 实际进入知识管理的新建知识页并打开分类下拉框，只检查、不保存。"
+    verification:
+      - "记录每个目标名称、实际编码和新增/复用/冲突结果；未实际浏览器检查不得标记通过。"
+    result:
+      commits: []
+      verification:
+        - "2026-11-18：确认 18443 的 caddy、web、db 均属于 opsai-pilot-baseline-validation-01；Printer Support 唯一位于启用空间 pilot-pc-print-01，编码 PRINT-OFFLINE、一级、启用。"
+        - "2026-11-18：同一空间内六个目标名称及建议编码均未发现记录，故不存在同名、停用或编码占用冲突。"
+        - "2026-11-18：现有分类维护入口为 Django Admin；持久库中 is_staff=True 的账号数为 0。按不临时提权、不重置账号密码的授权边界停止，未创建或修改任何分类、文章、版本或反馈。"
+        - "2026-11-18：负责人追加授权后创建临时账号 pilot_category_maint_01（非 superuser、无组、初始无可用密码；仅 knowledge.view_knowledgespace、knowledge.view_category、knowledge.add_category）。通过 Django Admin 分类新增页提交 6 次，均为 pilot-pc-print-01 的启用一级分类，并产生 6 条 Admin 新增日志。"
+        - "2026-11-18：实际回读发现标准输入传输将 6 个中文名称写为问号字符；建议编码仍正确。Printer Support 的名称、编码、状态、父级保持不变，14 篇既有文章的分类/版本指针哈希保持不变。pilot_editor_01 的新建知识页请求为 200，空间和分类字段均渲染，但无法将问号名称视为目标分类已验收。"
+        - "2026-11-18：浏览器控制通道到 18443 返回 ERR_CONNECTION_CLOSED，未实际打开原生分类下拉框。临时账号已注销并停用（is_active=False、account_status=disabled），仍非 superuser、无可用密码，权限未扩展。"
+        - "2026-11-18：负责人授权修复后，按 6 个建议编码逐条确认记录唯一、启用、一级且名称仍为预期问号数量，记录原 ID；无未知变更。临时启用 pilot_category_maint_01 时仅保留 knowledge.view_knowledgespace、knowledge.view_category、knowledge.change_category，不授予新增或删除。"
+        - "2026-11-18：使用 Unicode 转义经现有 Django Admin 修改表单逐条修复名称；每条先执行未保存表单值回读，再提交保存。6 条均逐字回读为目标中文名称，ID、编码、空间、parent、sort_order、icon 和 is_active 不变，且无文章关联；Printer Support 未变。Admin 修改日志为 6 条。"
+        - "2026-11-18：pilot_editor_01 的新建知识页服务端渲染 200，分类数据源含 Printer Support 和 6 个正确中文项，未保存文章。浏览器通道仍返回 ERR_CONNECTION_CLOSED，真实浏览器下拉框未验。临时账号已再次注销和停用，并撤销新增/修改分类权限；无可用密码，仅保留查看权限。"
+        - "2026-11-18：项目负责人已在 18443 以编辑员完成真实浏览器手测：选择 PC Pilot Printer Knowledge 后，分类下拉框显示 Printer Support 与全部 6 个中文分类，并成功选中“网络与远程”；未保存文章。分类下拉框浏览器验收更新为通过。"
+      notes:
+        - "数据修复及 pilot_editor_01 原生分类下拉框点击验收均已完成。"
+        - "本任务未修改 Printer Support、文章、文章版本或反馈；不得将本任务完成视为已开始 PILOT-DEMO-KNOWLEDGE-CATEGORY-01 的文章归类。"
+
+  - id: "PILOT-DEMO-UPGRADE-18443-01"
+    title: "OpsAI 受控升级 18443 演示环境并复验"
+    priority: MUST
+    status: "DONE / PARTIAL（浏览器与钉钉客户端待验）"
+    owner: codex
+    dependencies:
+      - "PILOT-KNOWLEDGE-CATEGORY-REVIEW-01"
+      - "PILOT-BACKUP-RESTORE-01"
+    objective: >
+      仅将 opsai-pilot-baseline-validation-01 的本机 18443 隔离演示环境升级至
+      e8a54d5f91b7672b9b0495a115b4eeac219a1796，并完成受控备份、恢复与运行复验；
+      不移动演示文章，不进行生产部署。
+    acceptance:
+      - "从目标提交的干净快照构建独立镜像，保留旧镜像；仅应用已核对的 knowledge.0008，不重建数据库或删除数据卷。"
+      - "备份必须通过 SHA-256 校验并在新的隔离 PostgreSQL 容器和卷恢复、比较业务数据后，才允许升级。"
+      - "保持 Caddy、CA/证书卷、域名和 127.0.0.1:18443 绑定不变；不操作 8001、18016、18017 或其他项目。"
+      - "核对健康检查、运行镜像、文章/版本/分类/反馈不变、角色入口边界及既有员工搜索；未实际浏览器或钉钉验证不得标记 PASS。"
+    verification:
+      - "记录旧新镜像、实际迁移、备份恢复与基线比较结果；浏览器和钉钉客户端结果按实际填写。"
+    result:
+      commits: []
+      verification:
+        - "2026-11-18：确认 18443 的 caddy、web、db、PostgreSQL 卷、静态卷和实际 Compose 配置均归属 opsai-pilot-baseline-validation-01；旧 Web 镜像 sha256:71fba06d4e1d6479336ce666c2ca6b56070694a7b6c345c55f86dbd5c6a3cd53，升级前迁移至 knowledge.0007。"
+        - "2026-11-18：按既有备份恢复 SOP 生成仓库外受控 pg_dump custom 备份（182455 bytes，SHA-256 A3590FD143A465E35D1B0DEC8B04A539551B0D852BCA9200497642C6BBF37064）；在新建无端口映射 PostgreSQL 容器和卷恢复成功。文章 12 条、版本 24 条、反馈 3 条的逐行哈希均与源库一致。"
+        - "2026-11-18：从 e8a54d5f91b7672b9b0495a115b4eeac219a1796 的 detached 干净快照构建 opsai-pilot-baseline-01-web:e8a54d5f91b7（sha256:80fefdafb720d91482a2f125ed69349fd4190c8ee3f133425d58792b4c024939）；迁移计划仅为 knowledge.0008_articleversion_proposed_category，实际成功应用。"
+        - "2026-11-18：用新镜像执行 collectstatic（2 个文件更新、127 个保持）并仅重建 Web；HTTPS /health/live、/health/ready 通过内部根证书验证，运行容器使用目标镜像。升级前后文章、版本、反馈基线哈希一致，24 个既有版本的 proposed_category 均为 NULL。"
+        - "2026-11-18：运行中 Django 请求工厂核验编辑员和审核员入口、普通员工入口隐藏及管理/审核直访 403；普通员工对打印不出来、共享盘打不开、ERP 网页打不开的搜索和详情均为 200 并命中正确文章。现场 in_review 版本为 0，未新建或修改演示文章，待审与已发布并列列表场景未实测。"
+      notes:
+        - "内置浏览器到 18443 返回连接关闭，Chrome 验收通道不可用；真实浏览器登录、点击和电脑版钉钉客户端均未实测，故本任务不标记 PASS。"
+        - "回退：0008 仅新增可空字段，旧 Web 与该数据库结构兼容；如需回退 Web/静态，使用保留的旧镜像重新运行 media-init、static-init 和 web，不恢复数据库。恢复数据库将覆盖现库，须另行批准。"
+        - "PILOT-DEMO-KNOWLEDGE-CATEGORY-01 保持 BLOCKED；本任务未修改 KB-000001 至 KB-000012 的正文、分类、知识空间、受众或反馈。"
+
   - id: "PILOT-KNOWLEDGE-CATEGORY-REVIEW-01"
     title: "OpsAI 已发布知识分类变更走审核"
     priority: MUST
@@ -902,7 +1134,6 @@ tasks:
         - "2026-11-18：开发前确认分类权威存储为 Article.category；员工分类浏览、详情和搜索的分类投影均读取 Article，而正文取 current_published_version。采用 ArticleVersion 可空拟分类字段并在批准事务更新 Article 的最小方案。"
         - "PILOT-DEMO-KNOWLEDGE-CATEGORY-01 继续 BLOCKED；本任务通过不代表 18443 演示文章已归类。"
         - "迁移 knowledge.0008 已在新的 18017 隔离 PostgreSQL 库实测；未在 8001、18016、18443 或其他既有环境执行。隔离 Web 使用 Django runserver 仅为服务开发静态文件；未部署、未修改现有环境。"
-
 
   - id: "PILOT-HOME-ROLE-NAV-01"
     title: "OpsAI 首页按权限显示知识管理与审核入口"

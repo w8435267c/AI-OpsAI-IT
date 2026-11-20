@@ -54,6 +54,14 @@
       {% endif %}
     </dl>
 
+    {% if rejection_context %}
+      <section class="article-section" aria-labelledby="rejection-context-title">
+        <h2 id="rejection-context-title">最近一次驳回意见</h2>
+        <p>被驳回版本：v{{ rejection_context.rejected_version_no }}</p>
+        <p>{{ rejection_context.comment }}</p>
+      </section>
+    {% endif %}
+
     <section
       id="knowledge-editor"
       class="article-section draft-editor"
@@ -133,7 +141,7 @@
         </a>
       </div>
       <div class="editor-actions">
-        <a href="{% url 'workflow:submission' detail.kb_no %}">提交审核</a>
+        <a id="submit-review-link" href="{% url 'workflow:submission' detail.kb_no %}">提交审核</a>
         <button id="preview-draft-button" type="button">预览草稿</button>
         <button id="manual-save-button" type="button">保存版本并继续编辑</button>
       </div>

@@ -42,7 +42,7 @@
           <article class="knowledge-card">
             <p class="kb-number">{{ article.kb_no }}</p>
             <h3>
-              <a class="card-link" href="{% url 'knowledge:article_detail' article.kb_no %}">
+              <a class="card-link" href="{% url 'knowledge:article_detail' article.kb_no %}{% if detail_query_string %}?{{ detail_query_string }}{% endif %}">
                 {{ article.title }}
               </a>
             </h3>
@@ -64,6 +64,7 @@
       <div class="empty-state">
         <p>未找到可查看的相关知识。</p>
         <p class="muted">尝试更换关键词。</p>
+        <p><a href="{% url 'knowledge:home' %}">返回首页浏览知识分类</a></p>
       </div>
     {% endif %}
   </section>

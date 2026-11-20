@@ -13,7 +13,7 @@
     <div class="site-shell header-row">
       <a class="site-brand" href="{% url 'knowledge:home' %}">OpsAI IT 故障问答知识库</a>
       <nav aria-label="主要导航">
-        <span class="nav-current" aria-current="page">首页</span>
+        <a href="{% url 'knowledge:home' %}">首页</a>
         {% if request.user.is_authenticated %}
           {% if can_access_knowledge_management %}
             <a href="{% url 'knowledge_manage:list' %}">知识管理</a>
