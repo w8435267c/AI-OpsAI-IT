@@ -21,13 +21,18 @@ from apps.accounts.roles import (
     SYSTEM_ROLE_BY_CODE,
 )
 from apps.audit.models import AuditEvent, AuditEventType
+from apps.knowledge.content import richtext_media_link_ids
 from apps.knowledge.models import (
     Article,
     ArticleType,
     ArticleVersion,
+    ArticleVersionMedia,
     AudiencePolicy,
     Category,
     KnowledgeSpace,
+    MediaAsset,
+    MediaKind,
+    MediaScanStatus,
     ReviewDecision,
     ReviewerSpaceScope,
     ReviewRecord,
@@ -225,6 +230,67 @@ class ApproveAndPublishArticleVersionServiceTests(TestCase):
         values.update(overrides)
         return values
 
+    def attach_two_images_to(self, version):
+        """Build a rich version whose images surround a table."""
+
+        links = []
+        for index in range(2):
+            asset = MediaAsset.objects.create(
+                kind=MediaKind.IMAGE,
+                original_name=f"approve-{self._sequence}-{index}.png",
+                storage_name=f"tests/approve-{self._sequence}-{index}.png",
+                content_type="image/png",
+                size_bytes=1,
+                sha256=(str(index + 1) * 64),
+                scan_status=MediaScanStatus.CLEAN,
+                created_by=self.creator,
+            )
+            links.append(
+                ArticleVersionMedia.objects.create(
+                    article_version=version,
+                    asset=asset,
+                    display_order=index,
+                    body_position=index,
+                    caption=f"批准图片 {index}",
+                )
+            )
+        version.body = {
+            "format": "opsai.richtext/1",
+            "schema_version": 1,
+            "content": [
+                {"type": "paragraph", "content": [{"type": "text", "text": "图片前段"}]},
+                {
+                    "type": "image",
+                    "media_link_id": str(links[0].pk),
+                    "caption": "批准图片 0",
+                    "width": "wide",
+                },
+                {
+                    "type": "table",
+                    "rows": [
+                        {
+                            "cells": [
+                                {
+                                    "type": "tableCell",
+                                    "content": [{"type": "text", "text": "表格内容"}],
+                                }
+                            ]
+                        }
+                    ],
+                },
+                {
+                    "type": "image",
+                    "media_link_id": str(links[1].pk),
+                    "caption": "批准图片 1",
+                    "width": "half",
+                },
+                {"type": "paragraph", "content": [{"type": "text", "text": "图片后段"}]},
+            ],
+        }
+        version.body_plaintext = "图片前段\n表格内容\n图片后段"
+        version.save(update_fields=("body", "body_plaintext", "updated_at"))
+        return links
+
     def expected_fingerprint(self, target, comment="内容准确，可以发布"):
         canonical = json.dumps(
             {"comment": comment, "version_id": str(target.pk)},
@@ -410,6 +476,69 @@ class ApproveAndPublishArticleVersionServiceTests(TestCase):
         self.assertEqual(idempotency.result_code, REVIEW_APPROVED_PUBLISHED)
         self.assertEqual(idempotency.request_fingerprint, self.expected_fingerprint(target))
         self.assertEqual(idempotency.result_payload, result.to_payload())
+
+    def test_approved_successor_remaps_all_version_owned_image_links(self):
+        article, target, _old = self.make_article()
+        source_links = self.attach_two_images_to(target)
+
+        result = approve_and_publish_article_version(**self.approve_kwargs(target))
+
+        successor = ArticleVersion.objects.get(pk=result.successor_draft_id)
+        successor_links = list(successor.media_links.order_by("display_order"))
+        self.assertEqual(len(successor_links), 2)
+        self.assertEqual(
+            richtext_media_link_ids(successor.body), {link.pk for link in successor_links}
+        )
+        self.assertTrue(
+            richtext_media_link_ids(successor.body).isdisjoint({link.pk for link in source_links})
+        )
+        self.assertEqual(successor.body["content"][2]["type"], "table")
+        self.assertEqual(successor.body["content"][1]["width"], "wide")
+        self.assertEqual(successor.body["content"][3]["caption"], "批准图片 1")
+        self.assertEqual(
+            [link.asset_id for link in successor_links], [link.asset_id for link in source_links]
+        )
+
+        saved = autosave_draft(
+            actor=self.creator,
+            article=article,
+            draft_id=successor.pk,
+            expected_lock_version=successor.lock_version,
+            title=successor.title,
+            summary=successor.summary,
+            applicable_scope=successor.applicable_scope,
+            body_text=successor.body_plaintext,
+            structured_content=successor.body,
+            change_summary="验证批准后的图片草稿",
+        )
+        self.assertEqual(saved.lock_version, 2)
+
+    def test_approved_successor_missing_or_cross_version_media_rolls_back(self):
+        article, target, _old = self.make_article()
+        target.body = {
+            "format": "opsai.richtext/1",
+            "schema_version": 1,
+            "content": [
+                {
+                    "type": "image",
+                    "media_link_id": str(uuid4()),
+                    "caption": "未归属图片",
+                    "width": "full",
+                }
+            ],
+        }
+        target.body_plaintext = "未归属图片"
+        target.save(update_fields=("body", "body_plaintext", "updated_at"))
+        before_count = article.versions.count()
+
+        self.assert_approve_error(WORKFLOW_UNAVAILABLE, target)
+
+        article.refresh_from_db()
+        target.refresh_from_db()
+        self.assertEqual(article.versions.count(), before_count)
+        self.assertIsNone(article.current_published_version_id)
+        self.assertIsNone(article.latest_working_version_id)
+        self.assertEqual(target.status, VersionStatus.IN_REVIEW)
 
     def test_republish_supersedes_old_published_and_switches_employee_authority(self):
         article, target, old = self.make_article(published=True)

@@ -43,7 +43,9 @@
 
     <section class="article-section" aria-labelledby="draft-body-title">
       <h2 id="draft-body-title">正文</h2>
-      <div class="article-body">{{ detail.body_text }}</div>
+      <div class="article-body{% if body_html %} richtext-body{% endif %}">
+        {% if body_html %}{{ body_html }}{% else %}{{ detail.body_text }}{% endif %}
+      </div>
     </section>
 
     <section class="article-section" aria-labelledby="draft-change-title">

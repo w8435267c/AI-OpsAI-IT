@@ -4,12 +4,15 @@ from __future__ import annotations
 
 from datetime import timedelta
 from io import StringIO
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from uuid import uuid4
 
+from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core.management import call_command
 from django.db import connection
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
@@ -26,9 +29,13 @@ from apps.knowledge.models import (
     ArticleStatus,
     ArticleType,
     ArticleVersion,
+    ArticleVersionMedia,
     AudiencePolicy,
     Category,
     KnowledgeSpace,
+    MediaAsset,
+    MediaKind,
+    MediaScanStatus,
     ReviewRecord,
     VersionStatus,
 )
@@ -330,6 +337,83 @@ class ManageArticleHistoryTests(TestCase):
         self.assertIn("&lt;script&gt;", html)
         self.assertContains(response, "恢复此版本")
         self.assertContains(response, "恢复不会修改历史记录")
+
+    @override_settings(MEDIA_ROOT=Path(settings.BASE_DIR) / "private_media_test_placeholder")
+    def test_detail_renders_richtext_for_the_exact_history_version_and_protects_its_media(self):
+        with TemporaryDirectory() as directory:
+            with self.settings(MEDIA_ROOT=Path(directory)):
+                asset = MediaAsset.objects.create(
+                    kind=MediaKind.IMAGE,
+                    original_name="history.png",
+                    storage_name="media/history-test.bin",
+                    content_type="image/png",
+                    size_bytes=3,
+                    sha256="b" * 64,
+                    scan_status=MediaScanStatus.CLEAN,
+                    scan_message="扫描通过。",
+                    created_by=self.owner,
+                )
+                link = ArticleVersionMedia.objects.create(
+                    article_version=self.saved,
+                    asset=asset,
+                    body_position=0,
+                )
+                path = Path(directory) / asset.storage_name
+                path.parent.mkdir(parents=True)
+                path.write_bytes(b"png")
+                self.saved.body = {
+                    "format": "opsai.richtext/1",
+                    "schema_version": 1,
+                    "content": [
+                        {
+                            "type": "heading",
+                            "level": 2,
+                            "content": [{"type": "text", "text": "步骤"}],
+                        },
+                        {
+                            "type": "image",
+                            "media_link_id": str(link.pk),
+                            "caption": "截图",
+                            "width": "full",
+                        },
+                        {
+                            "type": "table",
+                            "rows": [
+                                {
+                                    "cells": [
+                                        {
+                                            "type": "tableHeader",
+                                            "content": [{"type": "text", "text": "列"}],
+                                        }
+                                    ]
+                                }
+                            ],
+                        },
+                    ],
+                }
+                self.saved.body_plaintext = "步骤 截图 列"
+                self.saved.save(update_fields=["body", "body_plaintext"])
+
+                response = self.get_as(self.owner, "history_detail", version=self.saved)
+                media_url = reverse(
+                    "knowledge_manage:history_media_content",
+                    args=[self.article.kb_no, self.saved.pk, link.pk],
+                )
+
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, media_url)
+                self.assertContains(response, "<table>", html=False)
+
+                owner = Client()
+                owner.force_login(self.owner)
+                allowed = owner.get(media_url)
+                self.assertEqual(allowed.status_code, 200)
+                self.assertIn("private, no-store", allowed["Cache-Control"])
+                allowed.close()
+
+                denied = Client()
+                denied.force_login(self.other_editor)
+                self.assertEqual(denied.get(media_url).status_code, 404)
 
     def test_list_and_detail_escape_version_text_fields(self):
         ArticleVersion.objects.filter(pk=self.saved.pk).update(

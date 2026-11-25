@@ -158,10 +158,12 @@ class ArticleCreateForm(forms.Form):
         return cleaned_data
 
 
-class ArticleDocxImportForm(ArticleCreateForm):
+class ArticleDocumentImportForm(ArticleCreateForm):
     """Existing create permissions/options plus the one permitted import source."""
 
-    docx_file = forms.FileField(label="Word 文档（.docx）")
+    document_file = forms.FileField(
+        label="选择文档", widget=forms.ClearableFileInput(attrs={"accept": ".docx,.pdf,.txt,.md"})
+    )
     import_token = forms.UUIDField(widget=forms.HiddenInput())
 
     def __init__(self, *, actor, **kwargs):
@@ -169,11 +171,15 @@ class ArticleDocxImportForm(ArticleCreateForm):
         for field_name in ("title", "summary", "body_text", "change_summary"):
             self.fields.pop(field_name)
 
-    def clean_docx_file(self):
-        upload = self.cleaned_data["docx_file"]
-        if not upload.name.lower().endswith(".docx"):
-            raise forms.ValidationError("仅支持 .docx Word 文档。")
+    def clean_document_file(self):
+        upload = self.cleaned_data["document_file"]
+        if not upload.name.lower().endswith((".docx", ".pdf", ".txt", ".md")):
+            raise forms.ValidationError("仅支持 .docx、.pdf、.txt 和 .md 文档。")
         return upload
+
+
+# 保留旧测试和调用方的导入名；新页面和视图使用统一表单。
+ArticleDocxImportForm = ArticleDocumentImportForm
 
 
 class ArticleDraftForm(forms.Form):

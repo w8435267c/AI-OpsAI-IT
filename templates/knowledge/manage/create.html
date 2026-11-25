@@ -9,24 +9,29 @@
   <header class="category-header">
     <p class="eyebrow">CREATE KNOWLEDGE</p>
     <h1>新建知识</h1>
-    <p>提交后系统将原子创建 Article 与首个草稿，并进入只读草稿落地页。</p>
+    <p>提交后系统将原子创建 Article 与首个草稿，并进入可编辑草稿页。</p>
   </header>
 
-  <section class="content-section" aria-labelledby="create-form-title">
+  <section class="content-section form-panel" aria-labelledby="create-form-title">
     <h2 id="create-form-title">文章与初始草稿</h2>
-    <form method="post">
+    <p class="form-intro">手工创建适合从空白草稿开始；保存后仍可在既有编辑页继续完善内容并提交审核。</p>
+    <form class="knowledge-create-form" method="post">
       {% csrf_token %}
       {{ form.as_p }}
-      <button type="submit">创建知识</button>
+      <button class="primary-action" type="submit">创建知识草稿</button>
     </form>
   </section>
-  <section class="content-section" aria-labelledby="docx-import-title">
-    <h2 id="docx-import-title">从 Word 导入</h2>
-    <p>仅支持单篇 .docx：标题、段落、列表和 PNG/JPEG 内嵌图片。表格、浮动图片和其他不能可靠转换的内容会提示，不会静默导入。</p>
-    <form method="post" action="{% url 'knowledge_manage:docx_import' %}" enctype="multipart/form-data">
+  <section class="content-section form-panel import-panel" aria-labelledby="docx-import-title">
+    <h2 id="docx-import-title">导入知识文档</h2>
+    <div class="import-guidance">
+      <p><strong>支持格式：</strong>.docx、.pdf、.txt、.md；最大文件大小 {{ document_import_max_mb }} MB。</p>
+      <p>DOCX 保留正文内 PNG/JPEG 图片；PDF 仅导入可靠文本层；Markdown 不执行 HTML、脚本或外部资源。</p>
+      <p>系统会先进行真实格式校验和安全扫描，再打开可编辑草稿供校对。表格、浮动图片、本地图片引用及不能可靠转换的内容会明确提示，不会静默宣称无损导入。</p>
+    </div>
+    <form class="document-import-form" method="post" action="{% url 'knowledge_manage:docx_import' %}" enctype="multipart/form-data">
       {% csrf_token %}
       {{ import_form.as_p }}
-      <button type="submit">导入为新草稿</button>
+      <button class="import-action" type="submit">扫描并导入为新草稿</button>
     </form>
   </section>
   <script src="{% static 'js/knowledge_create.js' %}" defer></script>

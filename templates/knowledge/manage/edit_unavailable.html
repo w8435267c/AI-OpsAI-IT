@@ -1,0 +1,30 @@
+{% extends "knowledge/manage/base.html" %}
+
+{% block title %}{{ article.kb_no }} | 暂不可编辑{% endblock %}
+
+{% block manage_content %}
+  <nav class="detail-navigation" aria-label="文章状态导航">
+    <a class="back-link" href="{% url 'knowledge_manage:list' %}">← 返回知识管理</a>
+    <a href="{% url 'knowledge_manage:history' article.kb_no %}">查看版本历史</a>
+  </nav>
+  <article class="article-detail">
+    <header class="article-header">
+      <p class="eyebrow">ARTICLE STATUS</p>
+      <p class="kb-number">{{ article.kb_no }}</p>
+      <h1>{{ article.title }}</h1>
+    </header>
+    {% if article.state == "in_review" %}
+      <section class="article-section" aria-labelledby="in-review-title">
+        <h2 id="in-review-title">文章正在审核中，暂不可编辑</h2>
+        <p>v{{ article.version_no }} 已提交审核。为保证审核内容不被改变，系统不会在访问本页面时自动恢复、克隆或修改该版本。</p>
+        <p><a href="{% url 'knowledge_manage:history_detail' article.kb_no article.version_id %}">查看待审核版本</a></p>
+      </section>
+    {% else %}
+      <section class="article-section" aria-labelledby="published-title">
+        <h2 id="published-title">文章已发布，当前没有工作草稿</h2>
+        <p>v{{ article.version_no }} 是当前发布版本。此页面不会因 GET 访问自动创建新草稿；当前没有独立的新修订入口时，请先查看版本历史并联系知识库管理员核查工作草稿状态。</p>
+        <p><a href="{% url 'knowledge_manage:history_detail' article.kb_no article.version_id %}">查看已发布版本</a></p>
+      </section>
+    {% endif %}
+  </article>
+{% endblock %}

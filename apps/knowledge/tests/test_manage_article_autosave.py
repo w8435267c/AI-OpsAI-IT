@@ -325,6 +325,71 @@ class ManageArticleAutosaveTests(TestCase):
         self.assertContains(refreshed, 'name="expected_lock_version"')
         self.assertContains(refreshed, 'value="8"')
 
+    def test_tiptap_empty_nodes_autosave_and_refresh_without_losing_structure(self):
+        structured_content = {
+            "format": "opsai.richtext/1",
+            "schema_version": 1,
+            "content": [
+                {
+                    "type": "paragraph",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "tiptap autosave marker",
+                            "marks": [
+                                {"type": "bold"},
+                                {"type": "color", "color": "blue"},
+                            ],
+                        }
+                    ],
+                },
+                {"type": "paragraph", "content": []},
+                {
+                    "type": "table",
+                    "rows": [
+                        {
+                            "cells": [
+                                {
+                                    "type": "tableHeader",
+                                    "content": [{"type": "text", "text": "column"}],
+                                },
+                                {"type": "tableHeader", "content": []},
+                            ]
+                        },
+                        {
+                            "cells": [
+                                {
+                                    "type": "tableCell",
+                                    "content": [{"type": "text", "text": "value"}],
+                                },
+                                {"type": "tableCell", "content": []},
+                            ]
+                        },
+                    ],
+                },
+                {"type": "codeBlock", "language": "text", "text": "keep-code"},
+            ],
+        }
+
+        response = self.post_json(self.payload(structured_content=structured_content))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["draft"]["lock_version"], 8)
+        self.draft.refresh_from_db()
+        self.assertEqual(self.draft.lock_version, 8)
+        self.assertEqual(self.draft.body["content"][1]["content"], [])
+        self.assertEqual(self.draft.body["content"][2]["rows"][0]["cells"][1]["content"], [])
+        self.assertEqual(self.draft.body["content"][3]["text"], "keep-code")
+        self.assertEqual(
+            self.draft.body["content"][0]["content"][0]["marks"],
+            [{"type": "bold"}, {"type": "color", "color": "blue"}],
+        )
+        self.assertIn("tiptap autosave marker", self.draft.body_plaintext)
+
+        refreshed = self.client.get(reverse("knowledge_manage:edit", args=[self.article.kb_no]))
+        self.assertEqual(refreshed.status_code, 200)
+        self.assertContains(refreshed, "tiptap autosave marker")
+
     def test_two_window_stale_token_returns_409_without_overwriting_first_write(self):
         first = self.post_json(self.payload(title="窗口 A 标题"))
         stale = self.post_json(self.payload(title="窗口 B 标题"))

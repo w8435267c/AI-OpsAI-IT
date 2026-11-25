@@ -48,6 +48,7 @@ class ArticleVersionHistoryDetail:
     title: str
     summary: str
     applicable_scope: object
+    body: object
     body_text: str
     change_summary: str
     created_by_name: str
@@ -148,6 +149,7 @@ def get_article_version_history_detail(
         title=version.title,
         summary=version.summary,
         applicable_scope=deepcopy(version.applicable_scope),
+        body=deepcopy(version.body),
         body_text=version.body_plaintext,
         change_summary=version.change_summary,
         created_by_name=_display_name(version.created_by) or "",

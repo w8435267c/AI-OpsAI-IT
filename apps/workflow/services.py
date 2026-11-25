@@ -24,6 +24,7 @@ from apps.accounts.roles import (
     SYSTEM_ROLE_BY_CODE,
 )
 from apps.audit.models import AuditEvent, AuditEventType
+from apps.knowledge.content import remap_richtext_media_links, richtext_media_link_ids
 from apps.knowledge.models import (
     Article,
     ArticleVersion,
@@ -955,6 +956,28 @@ def _next_reject_version_no(*, article: Article) -> int:
     return max_version_no + 1
 
 
+def _copy_and_remap_successor_media(*, source, destination, error_class) -> None:
+    """Copy version-owned media and make the successor body point at its own links.
+
+    Media links are version-scoped UUIDs.  A successor must never retain a
+    source-version UUID, even when the underlying immutable asset is reused.
+    The caller is already inside the workflow transaction, so a missing or
+    inactive source link rolls back both the new version and copied links.
+    """
+
+    from apps.knowledge.media_services import copy_active_media_links
+
+    link_id_map = copy_active_media_links(source=source, destination=destination)
+    referenced_media = richtext_media_link_ids(source.body)
+    if not referenced_media.issubset(link_id_map):
+        raise error_class(
+            WORKFLOW_UNAVAILABLE,
+            "后续草稿的正文媒体关联不完整，未创建可编辑版本。",
+        )
+    destination.body = remap_richtext_media_links(source.body, link_id_map)
+    destination.save(update_fields=("body", "updated_at"))
+
+
 def _create_successor_draft(*, article: Article, target: ArticleVersion) -> ArticleVersion:
     successor = ArticleVersion(
         article=article,
@@ -976,9 +999,11 @@ def _create_successor_draft(*, article: Article, target: ArticleVersion) -> Arti
     )
     successor.full_clean(validate_unique=False, validate_constraints=False)
     successor.save(force_insert=True)
-    from apps.knowledge.media_services import copy_active_media_links
-
-    copy_active_media_links(source=target, destination=successor)
+    _copy_and_remap_successor_media(
+        source=target,
+        destination=successor,
+        error_class=RejectArticleVersionError,
+    )
     return successor
 
 
@@ -1396,9 +1421,11 @@ def _create_approved_successor_draft(
     )
     successor.full_clean(validate_unique=False, validate_constraints=False)
     successor.save(force_insert=True)
-    from apps.knowledge.media_services import copy_active_media_links
-
-    copy_active_media_links(source=target, destination=successor)
+    _copy_and_remap_successor_media(
+        source=target,
+        destination=successor,
+        error_class=ApprovePublishArticleVersionError,
+    )
     return successor
 
 

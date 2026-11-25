@@ -18,6 +18,43 @@ evidence_boundary:
   - "最近一次远端实时证据：GitHub fusion/wagtail-poc 为 5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e，本地 DATA-01 基线相对其纯领先 11 个提交；Gitee 实时状态因 SSL 连接失败为 UNKNOWN。"
 
 tasks:
+  - id: "KB-MULTI-FORMAT-IMPORT-01"
+    title: "多格式知识文档导入与统一富文本知识内容 V1.1"
+    priority: MUST
+    status: BLOCKED
+    owner: codex
+    dependencies:
+      - "KB-ARTICLE-MEDIA-MVP-01"
+      - "KB-DOCX-IMPORT-DRAFT-01"
+    objective: >
+      在既有安全 DOCX 导入基础上，统一支持 .docx、.pdf、.txt 与 .md 导入为新的未发布富文本知识草稿，
+      以版本化、服务端校验的结构化 JSON 为 ArticleVersion 正文权威来源，复用私有存储、真实格式校验、
+      ClamAV、版本媒体、既有编辑、审核发布与受众鉴权，不建立第二套流程。
+    acceptance:
+      - "第一批格式均经大小、实际格式、安全扫描和受限解析后才可创建草稿；失败不留可见半成品或未引用私有文件。"
+      - "DOCX 图片顺序不退化；PDF 仅接受可靠文本层且拒绝加密/扫描/不可解析内容；TXT 编码失败与 Markdown HTML、脚本、外部资源均明确失败或警告。"
+      - "创建页显示统一入口、格式/限制/提取预览和不兼容提示，继续复用空间、分类、文章类型、适用范围、受众及生效时间。"
+      - "在全新隔离 PostgreSQL、ClamAV 与私有媒体卷中完成合成样本、失败分支、编辑、审核、发布、授权阅读与 DOCX 回归验收。"
+      - "结构化正文、编辑预览与员工正式阅读复用同一受控解释规则；旧纯文本历史版本保持可读，搜索纯文本由结构化正文派生。"
+      - "DOCX 支持受限的标题、强调、列表、表格、内嵌 PNG/JPEG、图注和提示；PDF/TXT/Markdown 归一为同一正文模型，无法可靠转换时明确警告。"
+    verification:
+      - "运行导入专项、媒体/创建/编辑/审核/员工读取回归、Django check、迁移一致性、依赖检查、Ruff、JS 语法和 git diff --check。"
+      - "不操作 18443、18025 或其容器/卷；不合并、不推送、不部署。"
+    notes:
+      - "工作树：D:\\Desktop\\OpsAI\\AI-OpsAI-IT-multi-import；分支：feature/kb-multi-format-import-01；起始 HEAD：8b982ef994d19fc37806ab49c4f5c17fe33658da。"
+      - "主线存在 10 项未提交部署改动；本任务从已提交基线独立开展，不复制这些改动。"
+      - "2026-11-22：pypdf-7.1.1 官方 wheel SHA-256 已核验并在独立 Python 3.13 环境离线安装；专项 24 passed，apps 回归 924 passed / 23 skipped / 723 subtests。新建 opsai-multi-import-acceptance-01 的 PostgreSQL、ClamAV、私有媒体卷与独立 Caddy TLS 完成真实扫描和四格式草稿创建；公开根证书仅导出到仓库外临时目录并以显式 CA 验证。"
+      - "2026-11-22：隔离 Web 已仅以经核验的 Linux cp313/x86_64 Pillow 12.3.0 wheel 重建；容器内 Pillow 12.3.0、Gunicorn 27.0.0、pypdf 7.1.1、pip check、Django check、PNG/JPEG 解码与真实 ClamAV clean 探针均通过。隔离库已准备四个合成验收账号、审核范围、受众组和四格式样本；Caddy 根证书文件 SHA-256 已与运行容器一致。Windows `.venv` 未安装 Linux wheel，保持 ABI 隔离。真实浏览器 E2E 尚未完成，状态为 BLOCKED，未提交。"
+      - "2026-11-22：负责人授权在同一任务内扩展为统一富文本正文。允许本任务新增必要的 knowledge 模型/迁移、受控渲染、原始导入源文件关联、本地 vendor Tiptap 开源依赖、管理预览和员工阅读接线；F1–F6 分阶段验收，浏览器联合验收完成前保持 BLOCKED。"
+      - "2026-11-23：负责人追加正文编辑区统一和剪贴板 PNG/JPEG 图片粘贴范围。富文本为唯一 rich-text 编辑入口；派生 body_text 只读折叠展示。粘贴仅复用现有当前版本私有媒体上传、扫描和关联接口，禁止 data URL、外部 URL 或跳过 ClamAV；真实 Firefox 验收仍未完成。"
+      - "2026-11-23：编辑/媒体专项 71 passed、192 subtests；完整 apps 回归 945 passed、23 skipped、733 subtests。Ruff、Django check、迁移一致性、JS 语法、富文本构建及 diff 检查通过。隔离 Web 已更新为 sha256:91e46f5838d11db72962d3aeafa4df26dc2759945fa6654701ee7e00772f8693；浏览器人工验收仍为唯一关键缺口，任务保持 BLOCKED。"
+      - "2026-11-23：Firefox 粘贴故障的上传 POST 为 200、对应媒体关联为 clean；根因是 Tiptap configure 深拷贝媒体 URL 映射，且有效图片粘贴未阻止默认 HTML 路径。现由图片节点使用同一可变映射并对真实 PNG/JPEG 粘贴 preventDefault 后返回 true。专项 72 passed、192 subtests；完整 apps 回归 946 passed、23 skipped、733 subtests。隔离 Web 为 sha256:f7cdfd721e71c7b563c328a6f877ef67847e5afb1778ec0caf8b3173133d328d；Firefox 保存/刷新复验前保持 BLOCKED。"
+      - "2026-11-23：KB-000009 v1 为 in_review 的 opsai.richtext/1，含 4 图、4 表和 9 个 clean 媒体关联；历史详情原仅渲染 body_plaintext，现改用共享安全富文本渲染器和精确历史版本媒体路由，不修改历史数据。历史专项 28 passed、26 subtests；完整 apps 回归 947 passed、23 skipped、733 subtests。隔离 Web 为 sha256:a2711b995f978675fa928e2d83c3d05b0006d542bb12f1bc0c6bd5b7fc820946；人工复验前保持 BLOCKED。"
+
+      - "2026-11-23：KB-000009 v1 的 4 个表格 JSON、table/tr/th/td HTML 与历史数据均保持正确（12 个表头单元格、35 个普通单元格，无合并跨度）；阅读态表格此前只有编辑器作用域 CSS，故缺少边框和表头视觉。现统一为四个阅读页面的 richtext-body 样式：清晰蓝白边框、内边距、中文长文本换行，以及仅表格容器横向滚动。专项 30 passed、26 subtests，完整 apps 回归 949 passed、23 skipped、733 subtests；Django check、迁移一致性、Ruff、JS 语法、富文本构建、静态 CSS HTTP 响应和 diff 检查均通过。隔离 Web 为 sha256:eb82c373f16d09a5b853af1f35f04243212caba276664be4951c5d9661321b0f；Firefox 人工复验前保持 BLOCKED。"
+
+      - "2026-11-23：经负责人授权，仅在 opsai-multi-import-acceptance-01 将 KB-000009 的测试受众从 all_employees 收紧为 restricted，新增唯一 user_group / allow / multi-import-authorized-readers 规则；未修改账号、正文、版本、图片、表格、发布状态或原始导入文件。正式 v1、文章状态、两条版本记录和 9 条有效媒体关联的修改前后核验一致。真实隔离服务验证：multi-import-reader 搜索、详情和图片均为允许/HTTP 200；multi-import-denied 搜索不命中、详情和图片均为 HTTP 404，管理和审核原始文件入口也均为 HTTP 404。审核员原始文件下载为 HTTP 200 并新增 1 条下载审计。相关回归 157 passed、68 subtests，Django check 与 diff 检查通过；Firefox 人工权限复验前保持 BLOCKED。"
+
   - id: "PILOT-DB-MEDIA-RESTORE-01"
     title: "数据库与私有媒体联合恢复演练"
     priority: MUST

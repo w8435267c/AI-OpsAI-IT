@@ -3,16 +3,17 @@
 import json
 from uuid import uuid4
 
+from django.conf import settings
 from django.core.paginator import Paginator
-from django.http import HttpRequest, HttpResponse, HttpResponseNotFound, JsonResponse
+from django.http import FileResponse, HttpRequest, HttpResponse, HttpResponseNotFound, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
 
-from apps.knowledge.docx_import import DocxImportError, import_docx_draft
+from apps.knowledge.document_import import DocumentImportError, import_document_draft
 from apps.knowledge.manage_forms import (
     ArticleAutosaveIdentityForm,
     ArticleCreateForm,
-    ArticleDocxImportForm,
+    ArticleDocumentImportForm,
     ArticleDraftForm,
     ArticleRestoreForm,
 )
@@ -27,16 +28,20 @@ from apps.knowledge.manage_readers import (
     ManageArticleCreateOptionsReadError,
     ManageArticleListReadError,
     ManageWorkingArticleReadError,
+    get_manage_article_edit_unavailable,
     get_manage_article_list,
     get_manage_working_article_detail,
 )
 from apps.knowledge.media_services import (
     KnowledgeMediaError,
     get_draft_media,
+    get_draft_media_link,
+    get_history_media,
+    get_history_media_link,
     remove_draft_media,
     upload_draft_media,
 )
-from apps.knowledge.models import Article, Category
+from apps.knowledge.models import Article, ArticleVersionImportSource, Category, MediaScanStatus
 from apps.knowledge.services import (
     ARTICLE_CREATE_INVALID_INPUT,
     ARTICLE_CREATE_PERMISSION_DENIED,
@@ -85,7 +90,7 @@ _DRAFT_WRITE_FIELDS = frozenset(
         "change_summary",
     }
 )
-_DRAFT_WRITE_OPTIONAL_FIELDS = frozenset({"category"})
+_DRAFT_WRITE_OPTIONAL_FIELDS = frozenset({"category", "structured_content"})
 _DRAFT_WRITE_CONFLICT_CODES = {
     DRAFT_CONFLICT,
     DRAFT_NOT_CURRENT,
@@ -253,7 +258,9 @@ def _prepare_draft_write(
             ),
         )
 
-    return article, identity_form.cleaned_data, content_form.cleaned_data, None
+    cleaned = content_form.cleaned_data
+    cleaned["structured_content"] = payload.get("structured_content")
+    return article, identity_form.cleaned_data, cleaned, None
 
 
 @manage_get_page
@@ -346,17 +353,40 @@ def _render_history_detail(
     restore_form: ArticleRestoreForm | None,
     status: int = 200,
 ) -> HttpResponse:
+    from apps.knowledge.richtext_render import RichTextRenderError, render_richtext_html
+
+    media_links = get_history_media(
+        actor=request.user, kb_no=detail.kb_no, version_id=detail.version_id
+    )
+    if media_links is None:
+        return HttpResponseNotFound("未找到可查看的文章版本。")
+    media_urls = {
+        link.pk: reverse(
+            "knowledge_manage:history_media_content",
+            args=[detail.kb_no, detail.version_id, link.pk],
+        )
+        for link in media_links
+    }
+    try:
+        body_html = render_richtext_html(body=detail.body, media_urls=media_urls)
+    except RichTextRenderError:
+        return HttpResponseNotFound("未找到可预览的正文媒体。")
     return render(
         request,
         "knowledge/manage/history_detail.html",
         {
             "detail": detail,
+            "body_html": body_html,
             "scope_json": json.dumps(
                 detail.applicable_scope,
                 ensure_ascii=False,
                 indent=2,
             ),
             "restore_form": restore_form,
+            "has_import_source": ArticleVersionImportSource.objects.filter(
+                article_version_id=detail.version_id,
+                asset__scan_status=MediaScanStatus.CLEAN,
+            ).exists(),
         },
         status=status,
     )
@@ -390,6 +420,74 @@ def manage_article_history_detail(
         if working is not None:
             restore_form = ArticleRestoreForm(initial=_restore_form_initial(working))
     return _render_history_detail(request, detail, restore_form=restore_form)
+
+
+@manage_get_page
+def manage_article_history_media_content(
+    request: HttpRequest, kb_no: str, version_id, media_id
+) -> HttpResponse:
+    """Serve clean history media only after exact version-history authorisation."""
+
+    resolved = get_history_media_link(
+        actor=request.user,
+        kb_no=kb_no,
+        version_id=version_id,
+        media_id=media_id,
+    )
+    if resolved is None:
+        return HttpResponseNotFound("未找到可预览的正文媒体。")
+    link, path = resolved
+    response = FileResponse(path.open("rb"), content_type=link.asset.content_type)
+    response["X-Content-Type-Options"] = "nosniff"
+    response["Cache-Control"] = "private, no-store, max-age=0"
+    return response
+
+
+@manage_get_page
+def manage_article_import_source(
+    request: HttpRequest,
+    kb_no: str,
+    version_id,
+) -> HttpResponse:
+    """Download an import original only after the existing version-history access check."""
+
+    try:
+        detail = get_article_version_history_detail(
+            actor=request.user,
+            kb_no=kb_no,
+            version_id=version_id,
+        )
+    except ArticleVersionHistoryReadError:
+        return HttpResponseNotFound("未找到可核对的原始导入文件。")
+    try:
+        source = ArticleVersionImportSource.objects.select_related(
+            "asset", "article_version__article"
+        ).get(
+            article_version_id=detail.version_id,
+            asset__scan_status=MediaScanStatus.CLEAN,
+        )
+    except ArticleVersionImportSource.DoesNotExist:
+        return HttpResponseNotFound("未找到可核对的原始导入文件。")
+    from apps.knowledge.media_services import _private_root
+
+    path = _private_root() / source.asset.storage_name
+    if not path.is_file():
+        return HttpResponseNotFound("未找到可核对的原始导入文件。")
+    from apps.audit.models import AuditEvent, AuditEventType
+
+    AuditEvent.objects.create(
+        event_type=AuditEventType.MEDIA_DOWNLOADED,
+        actor=request.user,
+        article=source.article_version.article,
+        article_version_id=detail.version_id,
+        metadata={"kind": "import_source", "source_format": source.source_format},
+    )
+    response = FileResponse(
+        path.open("rb"), as_attachment=True, filename=source.asset.original_name
+    )
+    response["X-Content-Type-Options"] = "nosniff"
+    response["Cache-Control"] = "private, no-store, max-age=0"
+    return response
 
 
 def _restore_error_response(
@@ -515,7 +613,7 @@ def manage_article_restore(
 def _render_article_create(
     request: HttpRequest,
     form: ArticleCreateForm,
-    import_form: ArticleDocxImportForm | None = None,
+    import_form: ArticleDocumentImportForm | None = None,
     *,
     status: int = 200,
 ) -> HttpResponse:
@@ -525,7 +623,8 @@ def _render_article_create(
         {
             "form": form,
             "import_form": import_form
-            or ArticleDocxImportForm(actor=request.user, initial={"import_token": uuid4()}),
+            or ArticleDocumentImportForm(actor=request.user, initial={"import_token": uuid4()}),
+            "document_import_max_mb": settings.KNOWLEDGE_MEDIA_MAX_DOCUMENT_BYTES // (1024 * 1024),
         },
         status=status,
     )
@@ -579,11 +678,16 @@ def manage_article_create(request: HttpRequest) -> HttpResponse:
 
 @manage_post_page
 def manage_article_docx_import(request: HttpRequest) -> HttpResponse:
-    """Import one scanned .docx into a brand-new draft, never an existing article."""
+    """Import one scanned supported document into a brand-new draft."""
 
     try:
-        import_form = ArticleDocxImportForm(
-            actor=request.user, data=request.POST, files=request.FILES
+        uploaded_files = request.FILES.copy()
+        # Keep the former single-DOCX field name usable for an in-flight create page.
+        # The rendered form and every new submission use ``document_file``.
+        if "document_file" not in uploaded_files and "docx_file" in uploaded_files:
+            uploaded_files["document_file"] = uploaded_files["docx_file"]
+        import_form = ArticleDocumentImportForm(
+            actor=request.user, data=request.POST, files=uploaded_files
         )
         create_form = ArticleCreateForm(actor=request.user)
     except ManageArticleCreateOptionsReadError as error:
@@ -598,9 +702,9 @@ def manage_article_docx_import(request: HttpRequest) -> HttpResponse:
         response["Location"] = reverse("knowledge_manage:edit", args=[completed[token]])
         return response
     try:
-        article, parsed = import_docx_draft(
+        article, parsed = import_document_draft(
             actor=request.user,
-            upload=import_form.cleaned_data["docx_file"],
+            upload=import_form.cleaned_data["document_file"],
             form_data=import_form.cleaned_data,
         )
     except ArticleCreationError as error:
@@ -608,7 +712,7 @@ def manage_article_docx_import(request: HttpRequest) -> HttpResponse:
             return HttpResponse("没有创建知识的权限。", status=403)
         import_form.add_error(None, error.public_message)
         return _render_article_create(request, create_form, import_form, status=400)
-    except DocxImportError as error:
+    except DocumentImportError as error:
         import_form.add_error(None, error.public_message)
         return _render_article_create(request, create_form, import_form, status=400)
 
@@ -646,6 +750,7 @@ def manage_article_autosave(request: HttpRequest, kb_no: str) -> HttpResponse:
             summary=content["summary"],
             applicable_scope=content["applicable_scope"],
             body_text=content["body_text"],
+            structured_content=content["structured_content"],
             change_summary=content["change_summary"],
             proposed_category=content["category"],
         )
@@ -692,6 +797,7 @@ def manage_article_manual_save(request: HttpRequest, kb_no: str) -> HttpResponse
             summary=content["summary"],
             applicable_scope=content["applicable_scope"],
             body_text=content["body_text"],
+            structured_content=content["structured_content"],
             change_summary=content["change_summary"],
             proposed_category=content["category"],
         )
@@ -724,6 +830,7 @@ def manage_article_manual_save(request: HttpRequest, kb_no: str) -> HttpResponse
                 "summary": draft.summary,
                 "applicable_scope": draft.applicable_scope,
                 "body_text": draft.body_plaintext,
+                "structured_content": draft.body,
                 "change_summary": draft.change_summary,
                 "restored_from_version_no": restored_from_version_no,
                 "updated_at": draft.updated_at.isoformat(),
@@ -743,11 +850,23 @@ def manage_article_preview(request: HttpRequest, kb_no: str) -> HttpResponse:
             return HttpResponseNotFound("未找到可预览的文章草稿。")
         return HttpResponse(error.public_message, status=403)
 
+    from apps.knowledge.richtext_render import RichTextRenderError, render_richtext_html
+
+    media_urls = {
+        link.pk: reverse("knowledge_manage:media_content", args=[kb_no, link.pk])
+        for link in get_draft_media(actor=request.user, kb_no=kb_no)
+        if link.asset.kind == "image"
+    }
+    try:
+        body_html = render_richtext_html(body=detail.body, media_urls=media_urls)
+    except RichTextRenderError:
+        return HttpResponseNotFound("未找到可预览的正文媒体。")
     return render(
         request,
         "knowledge/manage/preview.html",
         {
             "detail": detail,
+            "body_html": body_html,
             "scope_json": json.dumps(
                 detail.applicable_scope,
                 ensure_ascii=False,
@@ -758,6 +877,25 @@ def manage_article_preview(request: HttpRequest, kb_no: str) -> HttpResponse:
 
 
 @manage_get_page
+def manage_article_media_content(request: HttpRequest, kb_no: str, media_id) -> HttpResponse:
+    """Serve clean current-draft media only through the existing management permission path."""
+
+    resolved = get_draft_media_link(actor=request.user, kb_no=kb_no, media_id=media_id)
+    if resolved is None:
+        return HttpResponseNotFound("未找到可查看的媒体。")
+    link, path = resolved
+    response = FileResponse(
+        path.open("rb"),
+        as_attachment=link.asset.kind == "document",
+        filename=link.asset.original_name if link.asset.kind == "document" else None,
+        content_type=link.asset.content_type,
+    )
+    response["X-Content-Type-Options"] = "nosniff"
+    response["Cache-Control"] = "private, no-store, max-age=0"
+    return response
+
+
+@manage_get_page
 def manage_article_edit(request: HttpRequest, kb_no: str) -> HttpResponse:
     """展示 current DRAFT 的无写入编辑器基础页。"""
 
@@ -765,6 +903,16 @@ def manage_article_edit(request: HttpRequest, kb_no: str) -> HttpResponse:
         detail = get_manage_working_article_detail(actor=request.user, kb_no=kb_no)
     except ManageWorkingArticleReadError as error:
         if error.code == MANAGE_WORKING_ARTICLE_NOT_FOUND_OR_INACCESSIBLE:
+            try:
+                unavailable = get_manage_article_edit_unavailable(actor=request.user, kb_no=kb_no)
+            except ManageWorkingArticleReadError:
+                unavailable = None
+            if unavailable is not None:
+                return render(
+                    request,
+                    "knowledge/manage/edit_unavailable.html",
+                    {"article": unavailable},
+                )
             return HttpResponseNotFound("未找到可查看的文章草稿。")
         return HttpResponse(error.public_message, status=403)
 
@@ -775,6 +923,7 @@ def manage_article_edit(request: HttpRequest, kb_no: str) -> HttpResponse:
             "summary": detail.summary,
             "applicable_scope": detail.applicable_scope,
             "body_text": detail.body_text,
+            "structured_content": detail.body,
             "change_summary": detail.change_summary,
             "category": detail.proposed_category_id,
         },
@@ -784,13 +933,20 @@ def manage_article_edit(request: HttpRequest, kb_no: str) -> HttpResponse:
         rejection_context = get_rejection_context(actor=request.user, kb_no=kb_no)
     except WorkflowReaderError:
         rejection_context = None
+    media_links = list(get_draft_media(actor=request.user, kb_no=kb_no))
     return render(
         request,
         "knowledge/manage/edit.html",
         {
             "detail": detail,
             "form": form,
-            "media_links": get_draft_media(actor=request.user, kb_no=kb_no),
+            "media_links": media_links,
+            "rich_media_urls": {
+                str(link.pk): reverse("knowledge_manage:media_content", args=[kb_no, link.pk])
+                for link in media_links
+                if link.asset.kind == "image"
+            },
+            "media_image_max_bytes": settings.KNOWLEDGE_MEDIA_MAX_IMAGE_BYTES,
             "import_warnings": import_warnings,
             "rejection_context": rejection_context,
         },
@@ -826,6 +982,11 @@ def manage_article_media_upload(request: HttpRequest, kb_no: str) -> HttpRespons
                 "body_position": link.body_position,
                 "scan_status": link.asset.scan_status,
                 "scan_message": link.asset.scan_message,
+                "content_url": (
+                    reverse("knowledge_manage:media_content", args=[kb_no, link.pk])
+                    if link.asset.kind == "image"
+                    else None
+                ),
             },
         }
     )

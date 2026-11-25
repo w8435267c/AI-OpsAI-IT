@@ -3,7 +3,7 @@
 from uuid import uuid4
 
 from django.contrib import messages
-from django.http import HttpRequest, HttpResponse, HttpResponseNotFound
+from django.http import FileResponse, HttpRequest, HttpResponse, HttpResponseNotFound
 from django.shortcuts import render
 from django.urls import reverse
 
@@ -13,6 +13,8 @@ from apps.knowledge.manage_readers import (
     ManageWorkingArticleReadError,
     get_manage_working_article_detail,
 )
+from apps.knowledge.media_services import _private_root
+from apps.knowledge.models import ArticleVersionImportSource, ArticleVersionMedia, MediaScanStatus
 
 from .readers import (
     REVIEW_FORBIDDEN,
@@ -162,6 +164,25 @@ def review_detail(request: HttpRequest, version_id) -> HttpResponse:
         detail = get_review_detail(actor=request.user, version_id=version_id)
     except WorkflowReaderError as error:
         return _reader_error_response(error)
+    from apps.knowledge.richtext_render import RichTextRenderError, render_richtext_html
+
+    media_urls = {
+        link.pk: reverse("workflow:media", args=[detail.target.version_id, link.pk])
+        for link in ArticleVersionMedia.objects.filter(
+            article_version_id=detail.target.version_id,
+            is_active=True,
+            asset__kind="image",
+            asset__scan_status=MediaScanStatus.CLEAN,
+        )
+    }
+    try:
+        body_html = render_richtext_html(body=detail.target.body, media_urls=media_urls)
+    except RichTextRenderError:
+        return HttpResponseNotFound("未找到可预览的正文媒体。")
+    has_import_source = ArticleVersionImportSource.objects.filter(
+        article_version_id=detail.target.version_id,
+        asset__scan_status=MediaScanStatus.CLEAN,
+    ).exists()
     return render(
         request,
         "workflow/review_detail.html",
@@ -170,8 +191,69 @@ def review_detail(request: HttpRequest, version_id) -> HttpResponse:
             "idempotency_key": str(uuid4()),
             "submission": None,
             "can_take_action": detail.target.status == "in_review",
+            "body_html": body_html,
+            "has_import_source": has_import_source,
         },
     )
+
+
+@manage_get_page
+def review_media_content(request: HttpRequest, version_id, media_id) -> HttpResponse:
+    """Serve a clean image only after review-reader scope checks for that exact version."""
+
+    try:
+        detail = get_review_detail(actor=request.user, version_id=version_id)
+    except WorkflowReaderError:
+        return HttpResponseNotFound("未找到可预览的正文媒体。")
+    try:
+        link = ArticleVersionMedia.objects.select_related("asset").get(
+            pk=media_id,
+            article_version_id=detail.target.version_id,
+            is_active=True,
+            asset__kind="image",
+            asset__scan_status=MediaScanStatus.CLEAN,
+        )
+    except ArticleVersionMedia.DoesNotExist:
+        return HttpResponseNotFound("未找到可预览的正文媒体。")
+    path = _private_root() / link.asset.storage_name
+    if not path.is_file():
+        return HttpResponseNotFound("未找到可预览的正文媒体。")
+    response = FileResponse(path.open("rb"), content_type=link.asset.content_type)
+    response["X-Content-Type-Options"] = "nosniff"
+    response["Cache-Control"] = "private, no-store, max-age=0"
+    return response
+
+
+@manage_get_page
+def review_import_source(request: HttpRequest, version_id) -> HttpResponse:
+    """Allow an authorised reviewer to download the clean original for the reviewed version."""
+
+    try:
+        detail = get_review_detail(actor=request.user, version_id=version_id)
+        source = ArticleVersionImportSource.objects.select_related("asset").get(
+            article_version_id=detail.target.version_id,
+            asset__scan_status=MediaScanStatus.CLEAN,
+        )
+    except (WorkflowReaderError, ArticleVersionImportSource.DoesNotExist):
+        return HttpResponseNotFound("未找到可核对的原始导入文件。")
+    path = _private_root() / source.asset.storage_name
+    if not path.is_file():
+        return HttpResponseNotFound("未找到可核对的原始导入文件。")
+    from apps.audit.models import AuditEvent, AuditEventType
+
+    AuditEvent.objects.create(
+        event_type=AuditEventType.MEDIA_DOWNLOADED,
+        actor=request.user,
+        article_id=detail.article.article_id,
+        article_version_id=detail.target.version_id,
+        metadata={"kind": "import_source", "source_format": source.source_format},
+    )
+    response = FileResponse(
+        path.open("rb"), as_attachment=True, filename=source.asset.original_name
+    )
+    response["X-Content-Type-Options"] = "nosniff"
+    response["Cache-Control"] = "private, no-store, max-age=0"
+    return response
 
 
 @manage_get_post_page

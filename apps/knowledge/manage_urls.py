@@ -9,8 +9,11 @@ from apps.knowledge.manage_views import (
     manage_article_edit,
     manage_article_history,
     manage_article_history_detail,
+    manage_article_history_media_content,
+    manage_article_import_source,
     manage_article_list,
     manage_article_manual_save,
+    manage_article_media_content,
     manage_article_media_remove,
     manage_article_media_upload,
     manage_article_preview,
@@ -26,6 +29,7 @@ urlpatterns = [
     path("<str:kb_no>/autosave/", manage_article_autosave, name="autosave"),
     path("<str:kb_no>/save/", manage_article_manual_save, name="save"),
     path("<str:kb_no>/media/upload/", manage_article_media_upload, name="media_upload"),
+    path("<str:kb_no>/media/<uuid:media_id>/", manage_article_media_content, name="media_content"),
     path(
         "<str:kb_no>/media/<uuid:media_id>/remove/",
         manage_article_media_remove,
@@ -37,6 +41,16 @@ urlpatterns = [
         "<str:kb_no>/history/<uuid:version_id>/",
         manage_article_history_detail,
         name="history_detail",
+    ),
+    path(
+        "<str:kb_no>/history/<uuid:version_id>/media/<uuid:media_id>/",
+        manage_article_history_media_content,
+        name="history_media_content",
+    ),
+    path(
+        "<str:kb_no>/history/<uuid:version_id>/source/",
+        manage_article_import_source,
+        name="import_source",
     ),
     path(
         "<str:kb_no>/history/<uuid:version_id>/restore/",

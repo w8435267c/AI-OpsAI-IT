@@ -901,6 +901,45 @@ class ArticleVersionMedia(models.Model):
             raise ValidationError(errors)
 
 
+class ArticleVersionImportSource(models.Model):
+    """A private original document retained for authorised import verification only."""
+
+    id = models.UUIDField(_("导入源文件 ID"), primary_key=True, default=uuid.uuid4, editable=False)
+    article_version = models.OneToOneField(
+        ArticleVersion,
+        on_delete=models.PROTECT,
+        related_name="import_source",
+        db_comment="原始导入文件只属于一个版本快照，不作为员工附件公开。",
+    )
+    asset = models.ForeignKey(
+        MediaAsset,
+        on_delete=models.PROTECT,
+        related_name="import_source_versions",
+        db_comment="已经完成格式校验与扫描的私有原始文件资产。",
+    )
+    source_format = models.CharField(max_length=10)
+    conversion_warnings = models.JSONField(default=list, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "kb_article_version_import_source"
+        db_table_comment = "导入原始文件元数据，仅供有既有编辑或审核权限的人员核对。"
+
+    def clean(self) -> None:
+        super().clean()
+        errors: dict[str, str] = {}
+        if self.source_format not in {"docx", "pdf", "txt", "md"}:
+            errors["source_format"] = _("导入源文件格式无效。")
+        if self.asset_id and self.asset.kind != MediaKind.DOCUMENT:
+            errors["asset"] = _("导入源文件必须引用文档类型私有资产。")
+        if not isinstance(self.conversion_warnings, list) or not all(
+            isinstance(item, str) and item.strip() for item in self.conversion_warnings
+        ):
+            errors["conversion_warnings"] = _("转换警告必须是非空文本数组。")
+        if errors:
+            raise ValidationError(errors)
+
+
 def _audience_policy_error(audience_type, effect, audience_policy) -> str | None:
     """返回 allow 规则与文章受众策略不一致时的中文错误；一致返回 None。
 

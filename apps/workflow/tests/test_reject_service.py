@@ -21,13 +21,18 @@ from apps.accounts.roles import (
     SYSTEM_ROLE_BY_CODE,
 )
 from apps.audit.models import AuditEvent, AuditEventType
+from apps.knowledge.content import richtext_media_link_ids
 from apps.knowledge.models import (
     Article,
     ArticleType,
     ArticleVersion,
+    ArticleVersionMedia,
     AudiencePolicy,
     Category,
     KnowledgeSpace,
+    MediaAsset,
+    MediaKind,
+    MediaScanStatus,
     ReviewDecision,
     ReviewerSpaceScope,
     ReviewRecord,
@@ -219,6 +224,53 @@ class RejectArticleVersionServiceTests(TestCase):
         values.update(overrides)
         return values
 
+    def attach_image_to(self, version):
+        asset = MediaAsset.objects.create(
+            kind=MediaKind.IMAGE,
+            original_name=f"reject-{self._sequence}.png",
+            storage_name=f"tests/reject-{self._sequence}.png",
+            content_type="image/png",
+            size_bytes=1,
+            sha256="f" * 64,
+            scan_status=MediaScanStatus.CLEAN,
+            created_by=self.creator,
+        )
+        link = ArticleVersionMedia.objects.create(
+            article_version=version,
+            asset=asset,
+            body_position=0,
+            caption="驳回图片",
+        )
+        version.body = {
+            "format": "opsai.richtext/1",
+            "schema_version": 1,
+            "content": [
+                {"type": "paragraph", "content": [{"type": "text", "text": "驳回前段"}]},
+                {
+                    "type": "image",
+                    "media_link_id": str(link.pk),
+                    "caption": "驳回图片",
+                    "width": "full",
+                },
+                {
+                    "type": "table",
+                    "rows": [
+                        {
+                            "cells": [
+                                {
+                                    "type": "tableCell",
+                                    "content": [{"type": "text", "text": "保留表格"}],
+                                }
+                            ]
+                        }
+                    ],
+                },
+            ],
+        }
+        version.body_plaintext = "驳回前段\n保留表格"
+        version.save(update_fields=("body", "body_plaintext", "updated_at"))
+        return link
+
     def expected_fingerprint(self, target, comment="步骤存在安全风险"):
         canonical = json.dumps(
             {"comment": comment, "version_id": str(target.pk)},
@@ -354,6 +406,50 @@ class RejectArticleVersionServiceTests(TestCase):
         self.assertEqual(idempotency.result_code, REVIEW_REJECTED)
         self.assertEqual(idempotency.request_fingerprint, self.expected_fingerprint(target))
         self.assertEqual(idempotency.result_payload, result.to_payload())
+
+    def test_rejected_successor_remaps_version_owned_image_links(self):
+        article, target, _published = self.make_article(published=True)
+        source_link = self.attach_image_to(target)
+
+        result = reject_article_version(**self.reject_kwargs(target))
+
+        successor = ArticleVersion.objects.get(pk=result.successor_draft_id)
+        successor_link = ArticleVersionMedia.objects.get(article_version=successor)
+        self.assertEqual(richtext_media_link_ids(successor.body), {successor_link.pk})
+        self.assertNotEqual(successor_link.pk, source_link.pk)
+        self.assertEqual(successor_link.asset_id, source_link.asset_id)
+        self.assertEqual(successor.body["content"][1]["caption"], "驳回图片")
+        self.assertEqual(successor.body["content"][1]["width"], "full")
+        self.assertEqual(successor.body["content"][2]["type"], "table")
+
+    def test_rejected_successor_missing_or_cross_version_media_rolls_back(self):
+        article, target, published = self.make_article(published=True)
+        target.body = {
+            "format": "opsai.richtext/1",
+            "schema_version": 1,
+            "content": [
+                {
+                    "type": "image",
+                    "media_link_id": str(uuid4()),
+                    "caption": "未归属图片",
+                    "width": "full",
+                }
+            ],
+        }
+        target.body_plaintext = "未归属图片"
+        target.save(update_fields=("body", "body_plaintext", "updated_at"))
+        before_count = article.versions.count()
+
+        with self.assertRaises(RejectArticleVersionError) as caught:
+            reject_article_version(**self.reject_kwargs(target))
+
+        self.assertEqual(caught.exception.code, WORKFLOW_UNAVAILABLE)
+        article.refresh_from_db()
+        target.refresh_from_db()
+        self.assertEqual(article.versions.count(), before_count)
+        self.assertEqual(article.current_published_version_id, published.pk)
+        self.assertIsNone(article.latest_working_version_id)
+        self.assertEqual(target.status, VersionStatus.IN_REVIEW)
 
     def test_version_number_uses_article_maximum_not_rejected_version(self):
         article, target, _ = self.make_article(target_version_no=2, high_history_version_no=10)

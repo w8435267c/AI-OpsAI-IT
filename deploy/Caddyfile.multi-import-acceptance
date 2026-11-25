@@ -1,0 +1,26 @@
+# Only for the isolated multi-format import acceptance environment.
+https://localhost {
+	tls internal
+
+	header {
+		-Server
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "same-origin"
+	}
+
+	@private_media path /media/*
+	respond @private_media "Not Found" 404
+
+	handle_path /static/* {
+		root * /srv/static
+		# Acceptance assets are not content-hashed; force revalidation after a Web image update.
+		header Cache-Control "no-cache"
+		file_server
+	}
+
+	reverse_proxy web:8000 {
+		header_up X-Forwarded-Proto https
+		header_up X-Real-IP {remote_host}
+	}
+}

@@ -55,20 +55,26 @@
     <section class="article-section" aria-labelledby="body-title">
       <h2 id="body-title">正文</h2>
       {% if detail.body_text %}
-        <div class="article-body">
-          <!-- {{ detail.body_text }} -->
-          {% for paragraph in detail.body_paragraphs %}
-            {% if paragraph.text %}<p>{{ paragraph.text }}</p>{% endif %}
-            {% for media in paragraph.images %}
-              <figure class="article-image">
-                <a href="{% url 'knowledge:media_content' detail.kb_no media.link_id %}" target="_blank" rel="noopener">
-                  <img src="{% url 'knowledge:media_content' detail.kb_no media.link_id %}" alt="{{ media.caption|default:'知识步骤截图' }}">
-                </a>
-                {% if media.caption %}<figcaption>{{ media.caption }}</figcaption>{% endif %}
-              </figure>
+        {% if detail.body_html %}
+          <div class="article-body richtext-body">
+            {{ detail.body_html }}
+          </div>
+        {% else %}
+          <div class="article-body">
+            <!-- {{ detail.body_text }} -->
+            {% for paragraph in detail.body_paragraphs %}
+              {% if paragraph.text %}<p>{{ paragraph.text }}</p>{% endif %}
+              {% for media in paragraph.images %}
+                <figure class="article-image">
+                  <a href="{% url 'knowledge:media_content' detail.kb_no media.link_id %}" target="_blank" rel="noopener">
+                    <img src="{% url 'knowledge:media_content' detail.kb_no media.link_id %}" alt="{{ media.caption|default:'知识步骤截图' }}">
+                  </a>
+                  {% if media.caption %}<figcaption>{{ media.caption }}</figcaption>{% endif %}
+                </figure>
+              {% endfor %}
             {% endfor %}
-          {% endfor %}
-        </div>
+          </div>
+        {% endif %}
       {% else %}
         <p class="empty-state">暂无正文内容。</p>
       {% endif %}

@@ -8,9 +8,11 @@ from datetime import datetime
 from uuid import UUID
 
 from django.db.models import QuerySet
+from django.urls import reverse
 
 from apps.accounts.models import User
 from apps.knowledge.models import Article, ArticleVersionMedia, MediaKind, MediaScanStatus
+from apps.knowledge.richtext_render import RichTextRenderError, render_richtext_html
 from apps.knowledge.selectors import visible_articles
 
 
@@ -31,6 +33,7 @@ class EmployeeArticleDetail:
     published_at: datetime
     media: tuple[EmployeeArticleMedia, ...]
     body_paragraphs: tuple[EmployeeBodyParagraph, ...]
+    body_html: str | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -116,6 +119,17 @@ def get_employee_article_detail(
             EmployeeBodyParagraph(text="", images=tuple(leading_images)),
             *body_paragraphs,
         )
+    media_urls = {
+        item.link_id: reverse("knowledge:media_content", args=[article.kb_no, item.link_id])
+        for item in media
+        if item.kind == MediaKind.IMAGE
+    }
+    try:
+        body_html = render_richtext_html(body=version.body, media_urls=media_urls)
+    except RichTextRenderError:
+        # A corrupt historical rich snapshot must never expose an unauthorised
+        # media reference through the employee read path.
+        return None
     return EmployeeArticleDetail(
         kb_no=article.kb_no,
         title=version.title,
@@ -130,4 +144,5 @@ def get_employee_article_detail(
         published_at=version.published_at,
         media=media,
         body_paragraphs=body_paragraphs,
+        body_html=body_html,
     )

@@ -1,0 +1,22 @@
+{
+  "name": "opsai-it-richtext-assets",
+  "private": true,
+  "scripts": {
+    "build:richtext": "esbuild static/js/richtext_editor_source.js --bundle --format=iife --target=es2022 --minify --outfile=static/js/richtext_editor.js && node -e \"const fs=require('fs'),p='static/js/richtext_editor.js';let s=fs.readFileSync(p,'utf8');const b='renderMarkdown:()=>'+String.fromCharCode(96)+'  \\n'+String.fromCharCode(96),a='renderMarkdown:()=>'+JSON.stringify('  \\n');if(!s.includes(b))throw new Error('Expected hard-break template literal not found');fs.writeFileSync(p,s.replace(b,a));\""
+  },
+  "dependencies": {
+    "@tiptap/core": "3.20.0",
+    "@tiptap/extension-color": "3.20.0",
+    "@tiptap/extension-link": "3.20.0",
+    "@tiptap/extension-table": "3.20.0",
+    "@tiptap/extension-table-cell": "3.20.0",
+    "@tiptap/extension-table-header": "3.20.0",
+    "@tiptap/extension-table-row": "3.20.0",
+    "@tiptap/extension-text-style": "3.20.0",
+    "@tiptap/extension-underline": "3.20.0",
+    "@tiptap/starter-kit": "3.20.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12"
+  }
+}

@@ -1,0 +1,27 @@
+# Isolated acceptance image for KB-MULTI-FORMAT-IMPORT-01 only.
+# The trusted base supplies the project runtime; the explicit wheelhouse context
+# supplies the approved pypdf wheel without contacting an index during build.
+FROM opsai-it-web:latest
+
+USER root
+COPY --from=wheelhouse /gunicorn-27.0.0-py3-none-any.whl /tmp/wheelhouse/
+COPY --from=wheelhouse /pillow-12.3.0-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl /tmp/wheelhouse/
+COPY --from=wheelhouse /pypdf-7.1.1-py3-none-any.whl /tmp/wheelhouse/
+RUN pip install --no-index --no-deps \
+        /tmp/wheelhouse/gunicorn-27.0.0-py3-none-any.whl \
+        /tmp/wheelhouse/pillow-12.3.0-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl \
+        /tmp/wheelhouse/pypdf-7.1.1-py3-none-any.whl \
+    && python -c "import PIL, gunicorn, pypdf; assert PIL.__version__ == '12.3.0'; assert gunicorn.__version__ == '27.0.0'; assert pypdf.__version__ == '7.1.1'" \
+    && pip check \
+    && rm -rf /tmp/wheelhouse /app \
+    && mkdir -p /app/private_media /app/staticfiles \
+    && chown -R appuser:appuser /app
+
+WORKDIR /app
+COPY --chown=appuser:appuser . .
+RUN mkdir -p /app/private_media /app/staticfiles \
+    && chown -R appuser:appuser /app/private_media /app/staticfiles
+
+USER appuser
+EXPOSE 8000
+CMD ["gunicorn", "config.wsgi:application", "--bind=0.0.0.0:8000", "--workers=2", "--timeout=60", "--graceful-timeout=30", "--access-logfile=-", "--error-logfile=-", "--worker-tmp-dir=/dev/shm"]

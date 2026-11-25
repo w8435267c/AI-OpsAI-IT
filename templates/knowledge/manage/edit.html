@@ -71,12 +71,15 @@
       data-save-url="{% url 'knowledge_manage:save' detail.kb_no %}"
       data-preview-url="{% url 'knowledge_manage:preview' detail.kb_no %}"
       data-media-upload-url="{% url 'knowledge_manage:media_upload' detail.kb_no %}"
+      data-media-image-max-bytes="{{ media_image_max_bytes }}"
       aria-labelledby="draft-editor-title"
     >
       <h2 id="draft-editor-title">工作版本内容</h2>
       {% csrf_token %}
       <input type="hidden" name="draft_id" value="{{ detail.draft_id }}">
       <input type="hidden" name="expected_lock_version" value="{{ detail.lock_version }}">
+      {{ detail.body|json_script:"structured-content" }}
+      {{ rich_media_urls|json_script:"rich-media-urls" }}
 
       <div class="draft-editor-fields">
         <div class="draft-editor-field">
@@ -93,8 +96,32 @@
           <p class="muted">{{ form.applicable_scope.help_text }}</p>
         </div>
         <div class="draft-editor-field">
-          {{ form.body_text.label_tag }}
-          {{ form.body_text }}
+          {% if detail.body.format == "opsai.richtext/1" %}
+            <details class="richtext-derived-summary">
+              <summary>自动生成的纯文本摘要（用于搜索，不在此处编辑）</summary>
+              {{ form.body_text.label_tag }}
+              {{ form.body_text }}
+            </details>
+            <p id="richtext-editor-notice" class="muted">请只在下方富文本编辑器编辑正文。图片可通过上传或直接粘贴 PNG/JPEG 截图；保存前会由服务端再次校验。</p>
+            <div class="richtext-toolbar" role="toolbar" aria-label="富文本工具栏">
+              <button type="button" data-rich-command="undo">撤销</button><button type="button" data-rich-command="redo">重做</button>
+              <button type="button" data-rich-command="heading">标题</button><button type="button" data-rich-command="bold">加粗</button><button type="button" data-rich-command="italic">斜体</button><button type="button" data-rich-command="underline">下划线</button>
+              <button type="button" data-rich-command="color">颜色</button><button type="button" data-rich-command="bulletList">无序列表</button><button type="button" data-rich-command="orderedList">有序列表</button>
+              <button type="button" data-rich-command="blockquote">引用</button><button type="button" data-rich-command="codeBlock">代码块</button><button type="button" data-rich-command="table">插入表格</button><button type="button" data-rich-command="callout">提示框</button>
+              <button type="button" data-rich-command="addRowBefore">表格前插行</button><button type="button" data-rich-command="addRowAfter">表格后插行</button><button type="button" data-rich-command="deleteRow">删除行</button><button type="button" data-rich-command="addColumnBefore">表格前插列</button><button type="button" data-rich-command="addColumnAfter">表格后插列</button><button type="button" data-rich-command="deleteColumn">删除列</button><button type="button" data-rich-command="toggleHeaderRow">切换表头</button><button type="button" data-rich-command="mergeCells">合并单元格</button><button type="button" data-rich-command="splitCell">拆分单元格</button>
+              <button type="button" data-rich-command="replaceImage">替换所选图片</button><button type="button" data-rich-command="deleteImage">删除所选图片</button><button type="button" data-rich-command="moveImageUp">图片上移</button><button type="button" data-rich-command="moveImageDown">图片下移</button><button type="button" data-rich-command="imageCaption">图片说明</button><button type="button" data-rich-command="imageWidth">图片宽度</button>
+            </div>
+            <div id="richtext-editor-host" class="richtext-editor" aria-label="富文本正文编辑器"></div>
+            <div class="editor-autosave editor-autosave--richtext" role="status" aria-live="polite">
+              <p id="autosave-status" data-state="idle">未修改</p>
+              <a id="autosave-reload" href="{% url 'knowledge_manage:edit' detail.kb_no %}" hidden>
+                重新加载页面
+              </a>
+            </div>
+          {% else %}
+            {{ form.body_text.label_tag }}
+            {{ form.body_text }}
+          {% endif %}
         </div>
         <section class="draft-editor-field media-editor" aria-labelledby="media-editor-title">
           <h3 id="media-editor-title">正文插图与 Word 附件</h3>
@@ -117,6 +144,7 @@
                 <span>{{ link.asset.original_name }}</span>
                 <span>（{{ link.asset.get_scan_status_display }}{% if link.caption %}：{{ link.caption }}{% endif %}）</span>
                 <button type="button" class="remove-media-button" data-remove-url="{% url 'knowledge_manage:media_remove' detail.kb_no link.pk %}">移除</button>
+                {% if link.asset.kind == "image" %}<button type="button" class="insert-media-button" data-media-id="{{ link.pk }}" data-media-caption="{{ link.caption }}">插入正文</button>{% endif %}
               </li>
             {% empty %}
               <li class="muted" data-empty-media>尚未添加媒体。</li>
@@ -134,12 +162,14 @@
         </div>
       </div>
 
-      <div class="editor-autosave" role="status">
-        <p id="autosave-status" aria-live="polite" data-state="idle">未修改</p>
-        <a id="autosave-reload" href="{% url 'knowledge_manage:edit' detail.kb_no %}" hidden>
-          重新加载页面
-        </a>
-      </div>
+      {% if detail.body.format != "opsai.richtext/1" %}
+        <div class="editor-autosave" role="status" aria-live="polite">
+          <p id="autosave-status" data-state="idle">未修改</p>
+          <a id="autosave-reload" href="{% url 'knowledge_manage:edit' detail.kb_no %}" hidden>
+            重新加载页面
+          </a>
+        </div>
+      {% endif %}
       <div class="editor-actions">
         <a id="submit-review-link" href="{% url 'workflow:submission' detail.kb_no %}">提交审核</a>
         <button id="preview-draft-button" type="button">预览草稿</button>
@@ -148,5 +178,6 @@
     </section>
   </article>
 
+  <script src="{% static 'js/richtext_editor.js' %}" defer></script>
   <script src="{% static 'js/knowledge_editor.js' %}" defer></script>
 {% endblock %}

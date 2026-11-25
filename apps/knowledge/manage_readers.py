@@ -44,6 +44,17 @@ class ManageWorkingArticleReadError(KnowledgeServiceError):
     """管理侧 working DRAFT 不可读取时的稳定安全异常。"""
 
 
+@dataclass(frozen=True, slots=True)
+class ManageArticleEditUnavailable:
+    """Authorised article state shown when there is deliberately no working draft."""
+
+    kb_no: str
+    title: str
+    state: str
+    version_id: UUID
+    version_no: int
+
+
 def can_access_manage_article_list(*, actor) -> bool:
     """判断是否可进入管理列表，复用列表 Reader 的身份与权限合同。"""
 
@@ -85,6 +96,7 @@ class ManageWorkingArticleDetail:
     summary: str
     applicable_scope: object
     body_text: str
+    body: object
     change_summary: str
     space_id: UUID
     space_name: str
@@ -225,6 +237,7 @@ def get_manage_working_article_detail(*, actor, kb_no: str) -> ManageWorkingArti
         summary=draft.summary,
         applicable_scope=deepcopy(draft.applicable_scope),
         body_text=draft.body_plaintext,
+        body=deepcopy(draft.body),
         change_summary=draft.change_summary,
         space_id=article.space_id,
         space_name=article.space.name,
@@ -240,3 +253,50 @@ def get_manage_working_article_detail(*, actor, kb_no: str) -> ManageWorkingArti
             else None
         ),
     )
+
+
+def get_manage_article_edit_unavailable(
+    *, actor, kb_no: str
+) -> ManageArticleEditUnavailable | None:
+    """Return an explanatory state only after the normal management access check."""
+    current_actor, is_admin, _is_editor = _resolve_writer_actor(
+        actor=actor,
+        user_query=User.objects,
+        required_permissions=_MANAGE_ARTICLE_LIST_REQUIRED_PERMISSIONS,
+        error_type=ManageWorkingArticleReadError,
+        error_code=MANAGE_WORKING_ARTICLE_PERMISSION_DENIED,
+        public_message="没有查看文章草稿的权限。",
+    )
+    try:
+        article = Article.objects.select_related("space", "current_published_version").get(
+            kb_no=kb_no, space__is_active=True
+        )
+    except Article.DoesNotExist:
+        _raise_working_not_found()
+    if not _has_article_version_object_access(
+        actor=current_actor, article=article, is_admin=is_admin
+    ):
+        _raise_working_not_found()
+    pending = (
+        ArticleVersion.objects.filter(article=article, status=VersionStatus.IN_REVIEW)
+        .order_by("-version_no", "-pk")
+        .first()
+    )
+    if pending is not None and article.latest_working_version_id is None:
+        return ManageArticleEditUnavailable(
+            kb_no=article.kb_no,
+            title=pending.title,
+            state="in_review",
+            version_id=pending.pk,
+            version_no=pending.version_no,
+        )
+    published = article.current_published_version
+    if published is not None and article.latest_working_version_id is None:
+        return ManageArticleEditUnavailable(
+            kb_no=article.kb_no,
+            title=published.title,
+            state="published_without_draft",
+            version_id=published.pk,
+            version_no=published.version_no,
+        )
+    return None

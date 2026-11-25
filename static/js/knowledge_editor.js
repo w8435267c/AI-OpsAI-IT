@@ -23,14 +23,29 @@
   const summary = editor.querySelector('[name="summary"]');
   const scope = editor.querySelector('[name="applicable_scope"]');
   const bodyText = editor.querySelector('[name="body_text"]');
+  const structuredContentElement = document.getElementById("structured-content");
   const changeSummary = editor.querySelector('[name="change_summary"]');
   const category = editor.querySelector('[name="category"]');
   const fields = [title, summary, scope, bodyText, changeSummary, category];
+  let structuredContent = null;
+  if (structuredContentElement) {
+    try {
+      const candidate = JSON.parse(structuredContentElement.textContent || "null");
+      if (candidate && candidate.format === "opsai.richtext/1") {
+        structuredContent = candidate;
+        bodyText.readOnly = true;
+        bodyText.setAttribute("aria-describedby", "richtext-editor-notice");
+      }
+    } catch (error) {
+      structuredContent = null;
+    }
+  }
   let pageVersion = Number(editor.dataset.versionNo);
   const autosaveUrl = editor.dataset.autosaveUrl;
   const saveUrl = editor.dataset.saveUrl;
   const previewUrl = editor.dataset.previewUrl;
   const mediaUploadUrl = editor.dataset.mediaUploadUrl;
+  const mediaImageMaxBytes = Number(editor.dataset.mediaImageMaxBytes) || (5 * 1024 * 1024);
   const mediaForm = editor.querySelector("#media-upload-form");
   const mediaStatus = editor.querySelector("#media-upload-status");
   const mediaList = editor.querySelector("#draft-media-list");
@@ -125,6 +140,9 @@
       throw new Error("当前草稿锁版本无效，请重新加载页面。");
     }
 
+    if (window.opsaiRichtextEditor) {
+      structuredContent = window.opsaiRichtextEditor.getContent();
+    }
     return {
       draft_id: draftId.value,
       expected_lock_version: expectedLockVersion,
@@ -132,6 +150,7 @@
       summary: summary.value,
       applicable_scope: parsedScope,
       body_text: bodyText.value,
+      ...(structuredContent ? { structured_content: structuredContent } : {}),
       change_summary: changeSummary.value,
       category: category.value || null,
     };
@@ -350,6 +369,9 @@
     summary.value = payload.draft.summary;
     scope.value = JSON.stringify(payload.draft.applicable_scope, null, 2);
     bodyText.value = payload.draft.body_text;
+    structuredContent = payload.draft.structured_content?.format === "opsai.richtext/1"
+      ? payload.draft.structured_content
+      : null;
     changeSummary.value = payload.draft.change_summary;
     category.value = payload.draft.proposed_category_id || "";
     if (mediaForm) {
@@ -523,7 +545,7 @@
       return;
     }
     dirty = true;
-    setStatus("有未保存修改", "dirty");
+    setStatus("有未保存修改，将在停止输入 2 秒后自动保存", "dirty");
     scheduleAutosave();
   }
 
@@ -544,7 +566,76 @@
     remove.dataset.removeUrl = `${editor.dataset.mediaUploadUrl.replace("/upload/", `/${media.id}/remove/`)}`;
     remove.textContent = "移除";
     item.append(name, description, remove);
+    if (media.kind === "image") {
+      const insert = document.createElement("button");
+      insert.type = "button";
+      insert.className = "insert-media-button";
+      insert.dataset.mediaId = media.id;
+      insert.dataset.mediaCaption = media.caption || "";
+      insert.textContent = "插入正文";
+      item.append(insert);
+    }
     mediaList.append(item);
+  }
+
+  async function removeUninsertedPastedMedia(media) {
+    if (!media?.id || !mediaUploadUrl || !draftId?.value) return;
+    const removeUrl = mediaUploadUrl.replace("/upload/", `/${media.id}/remove/`);
+    const formData = new FormData();
+    formData.set("draft_id", draftId.value);
+    try {
+      await fetch(removeUrl, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "X-CSRFToken": csrfToken.value },
+        body: formData,
+      });
+    } catch (_error) {
+      // The page will show no successful insertion. A later refresh exposes any server-side failure.
+    }
+  }
+
+  async function uploadPastedImage({ file, token }) {
+    if (blocked || !mediaUploadUrl || !mediaStatus || !file) {
+      window.opsaiRichtextEditor?.cancelPastedImage(token);
+      return;
+    }
+    if (!["image/png", "image/jpeg"].includes(file.type.toLowerCase()) || file.size > mediaImageMaxBytes) {
+      const maximumMb = Math.floor(mediaImageMaxBytes / (1024 * 1024));
+      mediaStatus.textContent = `仅支持不超过 ${maximumMb} MB 的 PNG 或 JPEG 粘贴图片。`;
+      window.opsaiRichtextEditor?.cancelPastedImage(token);
+      return;
+    }
+    const formData = new FormData();
+    formData.set("draft_id", draftId.value);
+    formData.set("caption", "");
+    formData.set("body_position", "0");
+    formData.set("file", file, file.name || (file.type === "image/png" ? "clipboard.png" : "clipboard.jpg"));
+    try {
+      const response = await fetch(mediaUploadUrl, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "X-CSRFToken": csrfToken.value },
+        body: formData,
+      });
+      const payload = await response.json();
+      if (!response.ok || payload.ok !== true || payload.media?.kind !== "image") {
+        mediaStatus.textContent = safeErrorMessage(payload, "粘贴图片上传或扫描失败，正文未改变。");
+        window.opsaiRichtextEditor?.cancelPastedImage(token);
+        return;
+      }
+      window.opsaiRichtextEditor?.registerMedia(payload.media.id, payload.media.content_url);
+      if (!window.opsaiRichtextEditor?.insertPastedImage(token, payload.media.id, payload.media.caption)) {
+        await removeUninsertedPastedMedia(payload.media);
+        mediaStatus.textContent = "图片已扫描通过，但原光标位置已失效；正文未插入图片。";
+        return;
+      }
+      addMediaListItem(payload.media);
+      mediaStatus.textContent = "粘贴图片已扫描通过并插入正文。";
+    } catch (error) {
+      mediaStatus.textContent = "粘贴图片上传结果未知，正文未插入图片；请刷新后确认。";
+      window.opsaiRichtextEditor?.cancelPastedImage(token);
+    }
   }
 
   if (mediaForm && mediaStatus && mediaList && mediaUploadUrl) {
@@ -569,6 +660,10 @@
           return;
         }
         addMediaListItem(payload.media);
+        if (payload.media.kind === "image") {
+          window.opsaiRichtextEditor?.registerMedia(payload.media.id, payload.media.content_url);
+          window.opsaiRichtextEditor?.acceptUploadedImage(payload.media.id, payload.media.caption);
+        }
         mediaStatus.textContent = payload.media.scan_message;
         mediaForm.reset();
         const mediaDraftId = mediaForm.querySelector('[name="draft_id"]');
@@ -581,6 +676,12 @@
     });
 
     mediaList.addEventListener("click", async (event) => {
+      const insert = event.target.closest(".insert-media-button");
+      if (insert) {
+        window.opsaiRichtextEditor?.insertImage(insert.dataset.mediaId, insert.dataset.mediaCaption || "");
+        markDirty();
+        return;
+      }
       const button = event.target.closest(".remove-media-button");
       if (!button || blocked || !button.dataset.removeUrl) return;
       button.disabled = true;
@@ -618,6 +719,20 @@
   fields.forEach((field) => {
     field.addEventListener("input", markDirty);
     field.addEventListener("change", markDirty);
+  });
+  document.addEventListener("opsai-richtext-change", markDirty);
+  document.addEventListener("opsai-richtext-image-paste", (event) => {
+    void uploadPastedImage(event.detail || {});
+  });
+  window.addEventListener("beforeunload", (event) => {
+    if (!dirty && !inFlight && !manualInFlight) {
+      return;
+    }
+    // Do not issue an unreliable write while the document is unloading.  The
+    // browser confirmation gives the editor a chance to wait for the existing
+    // debounced/CAS-protected request to finish instead.
+    event.preventDefault();
+    event.returnValue = "";
   });
   manualSaveButton.addEventListener("click", requestManualSave);
   previewButton.addEventListener("click", requestPreview);

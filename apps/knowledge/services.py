@@ -18,18 +18,25 @@ from apps.accounts.roles import (
     SYSTEM_ROLE_BY_CODE,
 )
 
-from .content import build_plaintext_body
+from .content import (
+    build_body_content,
+    remap_richtext_media_links,
+    richtext_media_link_ids,
+)
 from .models import (
     Article,
     ArticleStatus,
     ArticleType,
     ArticleVersion,
+    ArticleVersionMedia,
     AudiencePolicy,
     Category,
     FeedbackOutcome,
     FeedbackRecord,
     KnowledgeNumberCounter,
     KnowledgeSpace,
+    MediaKind,
+    MediaScanStatus,
     VersionStatus,
 )
 
@@ -166,9 +173,24 @@ def _validate_editable_version_fields(
             raise error from exc
 
 
-def _build_validated_plaintext_body(*, body_text, raise_invalid) -> tuple[dict[str, str], str]:
+def _build_validated_body(
+    *,
+    body_text,
+    structured_content,
+    allowed_media_link_ids,
+    raise_invalid,
+) -> tuple[dict, str]:
     try:
-        return build_plaintext_body(body_text)
+        body, body_plaintext = build_body_content(
+            body_text=body_text,
+            structured_content=structured_content,
+        )
+        referenced_ids = richtext_media_link_ids(body)
+        if allowed_media_link_ids is not None and not referenced_ids.issubset(
+            allowed_media_link_ids
+        ):
+            raise ValueError("富文本图片必须属于当前草稿版本且已通过扫描。")
+        return body, body_plaintext
     except ValueError as exc:
         try:
             raise_invalid(str(exc))
@@ -183,6 +205,8 @@ def _validate_scalar_inputs(
     summary: str,
     applicable_scope: dict[str, object],
     body_text: str,
+    structured_content: dict | None,
+    allowed_media_link_ids: set,
     change_summary: str,
     review_due_at: datetime,
     audience_policy: str | None,
@@ -208,7 +232,12 @@ def _validate_scalar_inputs(
     ):
         _raise_invalid("生效时间必须是带时区的日期时间。")
 
-    return _build_validated_plaintext_body(body_text=body_text, raise_invalid=_raise_invalid)
+    return _build_validated_body(
+        body_text=body_text,
+        structured_content=structured_content,
+        allowed_media_link_ids=allowed_media_link_ids,
+        raise_invalid=_raise_invalid,
+    )
 
 
 def _saved_instance(value, model) -> bool:
@@ -456,6 +485,7 @@ def create_article(
     owner=None,
     audience_policy=None,
     effective_at=None,
+    structured_content=None,
 ) -> tuple[Article, ArticleVersion]:
     """原子创建 Article、首个 DRAFT、工作指针并推进全局 KB 编号。"""
     body, body_plaintext = _validate_scalar_inputs(
@@ -464,6 +494,8 @@ def create_article(
         summary=summary,
         applicable_scope=applicable_scope,
         body_text=body_text,
+        structured_content=structured_content,
+        allowed_media_link_ids=set(),
         change_summary=change_summary,
         review_due_at=review_due_at,
         audience_policy=audience_policy,
@@ -595,6 +627,8 @@ def _validate_version_write_inputs(
     summary,
     applicable_scope,
     body_text,
+    structured_content,
+    allowed_media_link_ids,
     change_summary,
 ):
     if (
@@ -610,11 +644,26 @@ def _validate_version_write_inputs(
         change_summary=change_summary,
         raise_invalid=_raise_version_write_invalid,
     )
-    body, body_plaintext = _build_validated_plaintext_body(
+    body, body_plaintext = _build_validated_body(
         body_text=body_text,
+        structured_content=structured_content,
+        allowed_media_link_ids=allowed_media_link_ids,
         raise_invalid=_raise_version_write_invalid,
     )
     return _normalize_draft_id(draft_id), body, body_plaintext
+
+
+def _active_clean_image_link_ids(*, draft_id) -> set:
+    """Only current-version, scanned-clean image links may be referenced by rich JSON."""
+
+    return set(
+        ArticleVersionMedia.objects.filter(
+            article_version_id=draft_id,
+            is_active=True,
+            asset__kind=MediaKind.IMAGE,
+            asset__scan_status=MediaScanStatus.CLEAN,
+        ).values_list("pk", flat=True)
+    )
 
 
 def _lock_article_for_version_write(
@@ -828,6 +877,7 @@ def _autosave_draft(
     body_text,
     change_summary,
     proposed_category=None,
+    structured_content=None,
 ) -> ArticleVersion:
     _current_actor, current_article, _is_admin = _resolve_article_version_write_context(
         actor=actor,
@@ -840,6 +890,8 @@ def _autosave_draft(
         summary=summary,
         applicable_scope=applicable_scope,
         body_text=body_text,
+        structured_content=structured_content,
+        allowed_media_link_ids=_active_clean_image_link_ids(draft_id=draft_id),
         change_summary=change_summary,
     )
     if proposed_category is not None and (
@@ -922,6 +974,7 @@ def autosave_draft(
     body_text,
     change_summary,
     proposed_category=None,
+    structured_content=None,
 ) -> ArticleVersion:
     """使用乐观锁原地更新当前 DRAFT；不创建版本或写入 Article。"""
     try:
@@ -934,6 +987,7 @@ def autosave_draft(
             summary=summary,
             applicable_scope=applicable_scope,
             body_text=body_text,
+            structured_content=structured_content,
             change_summary=change_summary,
             proposed_category=proposed_category,
         )
@@ -963,6 +1017,7 @@ def _manual_save_draft(
     body_text,
     change_summary,
     proposed_category=None,
+    structured_content=None,
 ) -> tuple[ArticleVersion, ArticleVersion]:
     current_actor, current_article, is_admin = _resolve_article_version_write_context(
         actor=actor,
@@ -976,6 +1031,8 @@ def _manual_save_draft(
         summary=summary,
         applicable_scope=applicable_scope,
         body_text=body_text,
+        structured_content=structured_content,
+        allowed_media_link_ids=_active_clean_image_link_ids(draft_id=draft_id),
         change_summary=change_summary,
     )
 
@@ -1034,7 +1091,15 @@ def _manual_save_draft(
         _insert_new_draft(new_draft=new_draft)
         from apps.knowledge.media_services import copy_active_media_links
 
-        copy_active_media_links(source=saved_version, destination=new_draft)
+        link_id_map = copy_active_media_links(source=saved_version, destination=new_draft)
+        referenced_media = richtext_media_link_ids(saved_version.body)
+        if not referenced_media.issubset(link_id_map):
+            raise ArticleVersionWriteError(
+                MODEL_CONSISTENCY_FAILED,
+                "保存版本的图片关联不完整，未创建后续草稿。",
+            )
+        new_draft.body = remap_richtext_media_links(saved_version.body, link_id_map)
+        new_draft.save(update_fields=("body", "updated_at"))
         _switch_latest_working_version(
             locked_article=locked_article,
             new_draft=new_draft,
@@ -1056,6 +1121,7 @@ def manual_save_draft(
     body_text,
     change_summary,
     proposed_category=None,
+    structured_content=None,
 ) -> tuple[ArticleVersion, ArticleVersion]:
     """冻结当前 DRAFT 为 SAVED，并在同一事务创建下一工作 DRAFT。"""
     try:
@@ -1068,6 +1134,7 @@ def manual_save_draft(
             summary=summary,
             applicable_scope=applicable_scope,
             body_text=body_text,
+            structured_content=structured_content,
             change_summary=change_summary,
             proposed_category=proposed_category,
         )
@@ -1105,6 +1172,8 @@ def _restore_article_version(
         summary=current_summary,
         applicable_scope=current_applicable_scope,
         body_text=current_body_text,
+        structured_content=None,
+        allowed_media_link_ids=set(),
         change_summary=current_change_summary,
     )
     normalized_source_id = _normalize_restore_source_id(source_version_id)
@@ -1176,7 +1245,15 @@ def _restore_article_version(
         _insert_new_draft(new_draft=new_draft)
         from apps.knowledge.media_services import copy_active_media_links
 
-        copy_active_media_links(source=source_version, destination=new_draft)
+        link_id_map = copy_active_media_links(source=source_version, destination=new_draft)
+        referenced_media = richtext_media_link_ids(source_version.body)
+        if not referenced_media.issubset(link_id_map):
+            raise ArticleVersionWriteError(
+                MODEL_CONSISTENCY_FAILED,
+                "恢复版本的图片关联不完整，未创建后续草稿。",
+            )
+        new_draft.body = remap_richtext_media_links(source_version.body, link_id_map)
+        new_draft.save(update_fields=("body", "updated_at"))
         _switch_latest_working_version(
             locked_article=locked_article,
             new_draft=new_draft,

@@ -1,44 +1,65 @@
 # OpsAI Current Task
 
-> 本文件登记唯一当前任务。本轮仅在 `D:\Desktop\OpsAI\AI-OpsAI-IT-kb-integration` 对候选提交 `e0bb027da8bba49784bccb4f314ba7b912480352` 开展数据库与私有媒体的隔离恢复演练；不得修改候选业务代码、原工作区、既有演示/试点/历史验收容器或数据卷、媒体/导入功能工作树、真实业务文档、钉钉或 Autopilot/R9。
+> 本文件登记唯一当前任务。本轮仅在 `D:\Desktop\OpsAI\AI-OpsAI-IT-multi-import` 实施多格式知识文档导入 V1.1；不得修改主线工作树中的未提交试点部署改动，不得操作 18443、18025、既有演示/试点/历史验收容器或数据卷，不合并、不推送、不部署。
 
 ## 1. 当前任务
 
 | 项目 | 当前值 |
 | --- | --- |
-| 任务编号 | `PILOT-DB-MEDIA-RESTORE-01` |
-| 任务名称 | 数据库与私有媒体联合恢复演练 |
-| 任务状态 | `DONE / ISOLATED DB AND PRIVATE-MEDIA RESTORE DRILL PASS` |
-| 工作树 | `D:\Desktop\OpsAI\AI-OpsAI-IT-kb-integration` |
-| 分支 | `integration/kb-media-docx-rehearsal-01` |
-| 候选提交 | `e0bb027da8bba49784bccb4f314ba7b912480352` |
-| 可修改文件 | 仅 `tasks/CURRENT_TASK.md`、`tasks/TASKS.yaml` 的本任务登记与真实验收结果；候选业务代码不修改。 |
-| 外部资源 | 仅新建本任务专用容器、网络、数据库卷、私有媒体卷与仓库外备份/证据目录；使用合成数据。 |
+| 任务编号 | `KB-MULTI-FORMAT-IMPORT-01` |
+| 任务名称 | 多格式知识文档导入与统一富文本知识内容 V1.1 |
+| 任务状态 | `BLOCKED / manual browser E2E pending` |
+| 工作树 | `D:\Desktop\OpsAI\AI-OpsAI-IT-multi-import` |
+| 分支 | `feature/kb-multi-format-import-01` |
+| 起始 HEAD | `8b982ef994d19fc37806ab49c4f5c17fe33658da` |
+| 上游能力 | 复用已提交的版本媒体、私有存储、ClamAV 失败关闭、DOCX 导入、草稿编辑与审核发布；不得复制审核流程。 |
+| 可修改文件 | `apps/knowledge/` 中结构化正文模型、迁移、内容校验/渲染、导入服务、媒体关联、表单、视图、路由、模板、项目自有 JS/CSS 和测试；必要 `apps/audit/` 审计接线；本地 vendor 编辑器资源及其许可证记录；`pyproject.toml` 及实际存在且必须同步的锁定文件；必要隔离验收配置；`tasks/CURRENT_TASK.md`、`tasks/TASKS.yaml`。 |
 
-### 1.1 精确范围与验收
+### 1.1 范围与验收
 
-- 新建独立源/目标 PostgreSQL、ClamAV、Web 与私有媒体卷；端口仅绑定本机，绝不复用或挂载既有演练、演示、试点或历史数据卷。
-- 源环境以合成 Word 导入含步骤内截图的知识，并添加 `.docx` 附件，经既有真实扫描和审核发布流程形成恢复对象；记录文章、版本、受众、媒体关联及 SHA-256。
-- 数据库备份和私有媒体归档使用同一批次号；备份保存于仓库外，清单记录候选版本、时间、相对路径、大小、哈希、命令退出码与耗时，且不包含凭据、私钥或测试账号密码。
-- 恢复到全新空数据库与独立目标媒体卷，先校验批次与文件完整性；目标不得挂载或读取源媒体卷。仅在关系、扫描状态、受众与文件哈希均一致后启动目标 Web。
-- 用浏览器验证恢复后的授权阅读、步骤内图片、Word 下载与下载审计，以及已登录但不在受众内账号对同一图片/附件直链的拒绝；独立备份副本还须验证媒体缺失、哈希不一致及跨批次混用均显式失败。
-- 不修改业务代码，不合并、不推送、不部署、不启动合入主线或正式试点；本轮不重复完整功能回归。
+- 第一批只支持 `.docx`、`.pdf`、`.txt`、`.md`；第二批 `.doc`、`.odt`、`.rtf` 仅保留明确拒绝提示，不实现解析。
+- 各格式使用独立受限解析器，但共用私有临时区、真实格式验证、ClamAV 扫描、标题/正文归一化、创建新草稿、既有编辑和审核发布路径；原始导入文件不自动公开或作为附件。
+- DOCX 保留标题、段落、列表、PNG/JPEG 内嵌图片及正文位置；PDF 仅处理有可靠文本层且未加密的文档，不承诺图片或复杂表格；TXT 支持 UTF-8、UTF-8 BOM 和受控常见中文编码；Markdown 只解析标题、段落、列表和代码块，禁止原始 HTML、脚本和外部资源。
+- 导入必须限制大小、真实格式、PDF 页数/解析资源、DOCX 解包规模、图片数量和解析耗时；扫描或解析失败、格式伪造、越权、重复提交或不安全内容不得留下可见草稿、媒体或私有残留。
+- 创建页改为“导入知识文档”，显示支持格式、限制、处理状态、提取预览和不兼容内容提示；保留既有空间、分类、文章类型、适用范围、受众及生效时间字段。
+- 使用全新隔离测试库与私有媒体卷验证各合成样本、失败关闭、编辑/审核/发布/员工读取和 DOCX 图片能力回归；运行专项、应用回归、Django check、迁移一致性、依赖与静态检查。全部必需项通过后才可本地提交。
 
-### 1.2 开工核验（2026-11-20）
+### 1.1A 范围扩展：统一富文本知识内容（负责人授权，2026-11-22）
 
-- 工作树分支为 `integration/kb-media-docx-rehearsal-01`，完整 `HEAD` 与候选提交一致，开工时工作区干净。
-- 已发现并优先复用 `deploy/backup/pg_backup.ps1`、`deploy/backup/pg_restore.ps1` 的外置自定义格式备份、SHA-256 清单与拒绝覆盖目标数据库保护；私有媒体成对归档/恢复将在仓库外按本任务批次实施，不向候选业务代码补写实现。
-- 上一图片、Word 导入与联合演练记录均作为历史保留，不重跑其完整功能验收；其既有容器、卷和媒体目录均不使用。
+- 保留同一 `Article` / `ArticleVersion`、私有媒体、扫描、审核发布、受众过滤与审计流程；不得建立第二套文章、版本或审核状态机。
+- 将 `ArticleVersion.body` 演进为服务端验证的版本化结构化 JSON 权威正文；`body_plaintext` 只能由其派生，旧 `opsai.plaintext/1` 正文继续兼容读取与编辑升级。
+- 第一版节点范围为标题、段落、文字与安全标记、列表、代码块、引用、表格、私有图片/图注、提示框和安全超链接；禁止任意 HTML、脚本、外部图片、临时链接或私有存储路径进入正文。
+- 四种导入均归一为标题、结构化正文、源格式、受控原始源文件、导入媒体、转换警告和派生纯文本；原文件只向具备既有管理权限的人员开放核对，不自动成为员工下载附件。
+- DOCX 增强为按段落与表格顺序解析，保留受支持标题、强调、安全颜色、列表、表格、内嵌 PNG/JPEG、图注和可识别提示；无法可靠转换的内容必须产生中文警告，不能返回无说明的 500。
+- 编辑与预览使用本地打包、固定版本、MIT 许可的 Tiptap 开源核心和最小扩展；不使用 CDN、云端编辑服务或大型前端应用。管理预览和员工正式阅读复用同一受控 JSON 解释/渲染规则。
+- 本轮阶段依次为 F1 结构化模型与旧数据兼容、F2 DOCX 保真转换、F3 编辑/预览、F4 四格式统一接入、F5 员工阅读/权限、F6 隔离浏览器联合验收。浏览器未完成前保持 `BLOCKED`，不得标记 DONE/PASS。
 
-### 1.3 实际恢复演练证据（2026-11-20）
+### 1.1B 范围扩展：正文编辑区统一与剪贴板图片（负责人授权，2026-11-23）
 
-- 新建 `opsai-pilot-db-media-restore-01` 专用网络和源/目标 PostgreSQL、ClamAV、Web、私有媒体卷；仅绑定 `127.0.0.1:15440/3313/18020`、`127.0.0.1:15441/3314/18021`，最终恢复 Web 额外仅绑定 `127.0.0.1:18022`。所有既有容器、卷、演示和试点资源未被复用。
-- 源环境实际迁移后，用浏览器完成合成 `.docx` 导入、步骤内 PNG、`.docx` 附件真实扫描、提交审核及独立审核员发布；文章为 `KB-000001`，发布版本为 `f9f46711-61e3-4e0c-9e78-63308843625c`。已登录的 `dev_editor` 被显式 DENY，`dev_employee` 为授权员工。
-- 有效批次 `PILOT-DB-MEDIA-RESTORE-01-20261120T100000Z` 保存在仓库外 `D:\Temp\OpsAI-PILOT-DB-MEDIA-RESTORE-01-20261120\backups\`：数据库自定义 dump SHA-256 为 `E171920EFE5D9437DC959684B65DA7533BC3F95855083266A7185B781C723B94`，媒体归档 SHA-256 为 `0EBEC44FBF72EBFB28B2440BC55FF88151612CF9FC163AC0F4F0B658905A5D6A`；媒体清单逐项通过。备份耗时 1.141 秒，数据库恢复脚本耗时 0.900 秒，成对恢复墙钟 1.828 秒，均仅为合成数据演练值。
-- 最终恢复到新的空数据库 `opsai_backup_restore_target2` 和新媒体卷 `opsai-pilot-db-media-restore-01-target2-media`。恢复前先验证备份/归档，恢复后数据库版本指针、DENY 受众、两个媒体关联、`clean` 扫描状态和 SHA-256 全部一致；最终 Web 仅挂载目标媒体卷，未挂载或读取源媒体卷。
-- 浏览器在最终目标完成授权员工正文/第二步旁截图/Word 下载验收；下载审计新增 1 条，附件下载文件对应的目标文件 SHA-256 与备份前一致。已登录但被拒绝账号访问相同图片和附件直链均显示“不存在”。
-- 独立副本失败保护：媒体缺失 SHA 校验退出码 1，媒体哈希不一致退出码 1，数据库与媒体跨批次混用被显式拒绝（退出码 17）。初始批次因合成文章误设未来生效时间导致授权员工不可见，保留为非成功记录；修正源隔离合成记录后使用新批次和新目标完成验收。
-- 仓库外完整证据摘要：`D:\Temp\OpsAI-PILOT-DB-MEDIA-RESTORE-01-20261120\evidence\restore-drill-summary.md`。未修改候选业务代码、未创建提交、未合并、未推送、未部署。
+- `opsai.richtext/1` 草稿只以 Tiptap 为正文编辑权威入口；旧 `body_text` 仅展示由结构化正文派生的折叠只读摘要，且旧纯文本版本仍保留原 textarea 编辑路径。
+- 浏览器仅可将剪贴板实际提供的 PNG/JPEG `File`/`Blob` 交给既有当前版本媒体上传接口；服务端格式校验、私有存储、ClamAV、`ArticleVersionMedia` 归属校验和 CAS 保存不变。不得写入 data URL、外部 URL、`file://`、原始 HTML 或绕过扫描。
+- 异步扫描期间保持粘贴时的文档位置映射；成功后插入内部媒体 ID，失败/位置失效时不插入正文并给出中文提示。普通文字和表格粘贴不应被拦截，浏览器人工验收仍为必需项。
+
+### 1.2 开工核验（2026-11-22）
+
+- 主线 `fusion/wagtail-poc` 位于 `8b982ef994d19fc37806ab49c4f5c17fe33658da`，存在 10 项未提交的试点部署/任务登记改动；未复制、修改、暂存或重置。
+- 本工作树和功能分支从该已提交 HEAD 新建，开工时干净；已确认媒体与 DOCX 导入能力在历史中可复用。
+- 当前尚未选择 PDF 解析依赖；选择前必须核对 Python 3.13 兼容性、维护状态、许可、实际安全用途和 wheel/隔离构建可用性。
+
+### 1.3 本轮真实验证证据（2026-11-22，尚未收口）
+
+- 独立 Python 3.13 `.venv` 已离线校验并安装 `pypdf-7.1.1`；官方给定 SHA-256 与本地 wheel 一致。专项 DOCX/PDF/TXT/Markdown 解析和导入回归为 `24 passed`；正式 `apps/` 回归在仅进程内合成 PostgreSQL 占位变量下为 `924 passed, 23 skipped, 723 subtests passed`。仓库根 `pytest` 仍因既有未安装 Wagtail 实验目录在收集阶段失败，不能计为本任务失败或全量通过。
+- 已新建并仅使用 `opsai-multi-import-acceptance-01-*` 的 PostgreSQL、ClamAV、私有媒体卷、网络和 Web 镜像；未触碰 18025、18443、既有容器或历史卷。空库实际应用 `knowledge.0001` 至 `0009`、`audit.0001` 至 `0002`；隔离镜像已由经核验的 Linux `cp313`/x86_64 Pillow 12.3.0 wheel 重建，运行容器实测 `Pillow 12.3.0`、`gunicorn 27.0.0`、`pypdf 7.1.1`、`pip check` 和 Django check 通过。Pillow 12.3.0 Linux wheel 不适用于 Windows `.venv`，Windows 环境保持 11.3.0，未混用 ABI。
+- 真实 ClamAV 对合成干净内容返回 `clean`，强制不可用主机返回 `failed`。经真实扫描的合成 DOCX、PDF、TXT、Markdown 分别创建 `KB-000001` 至 `KB-000004` 草稿，均未自动发布；扫描器不可用时导入返回 `DOCUMENT_IMPORT_SCAN_FAILED` 且文章数量不变。
+- 真实 ClamAV 对容器内合成干净文件返回 `clean`；Pillow 12.3.0 实测可解码 PNG/JPEG。已在隔离数据库准备编辑员、审核员、授权员工、无权员工、审核空间范围与受众组；所有账号均启用且无可用密码，密码仅能由负责人通过 Django `changepassword` 交互式设置。Caddy 导出的公开根证书 SHA-256 已与当前 Caddy 容器内 `root.crt` 一致，未导出私钥、未修改 Windows 根证书库。
+- 浏览器自动化未通过：专用 Caddy 已提供 `https://localhost:18027`，其独立公开根证书已由显式 CA 上下文验证，且未修改 Windows 根证书库；受控浏览器仍无法向临时 Profile 导入该 CA，因此尚未完成真实登录、导入、发布、受众拒绝及 390×844 验收。不得以 HTTP/单元测试替代浏览器 PASS，任务保持 `BLOCKED / manual browser E2E pending`，不得提交或标记 DONE。
+- 2026-11-23：富文本草稿编辑页将派生 `body_text` 改为折叠只读摘要，Tiptap 为唯一正文编辑入口。剪贴板 PNG/JPEG 仅复用既有当前版本私有媒体上传与 ClamAV 路径，扫描成功后以内部媒体关联 ID 插入并映射原光标位置；不保存 data URL 或外部图片。自动化为编辑/媒体专项 `71 passed, 192 subtests passed`，完整 `apps/` 回归 `945 passed, 23 skipped, 733 subtests passed`，Ruff、Django check、迁移一致性、JS 语法、富文本构建和 `git diff --check` 均通过。隔离 Web 已更新为 `sha256:91e46f5838d11db72962d3aeafa4df26dc2759945fa6654701ee7e00772f8693`；真实 Firefox 粘贴、保存重开及移动视口尚未人工验收，任务仍为 `BLOCKED`。
+- 2026-11-23：Firefox 证据显示粘贴后直接出现“受控图片不可读取”。隔离日志中的对应上传请求均为 `200`，数据库中的新增当前草稿媒体关联均为 `clean`，故排除上传/ClamAV 失败。根因是 Tiptap `configure()` 深拷贝了初始媒体 URL 映射，异步注册的新 URL 未进入图片节点渲染器；有效图片粘贴又错误返回 `false`，未阻止默认 HTML 粘贴。现改为由图片节点闭包读取同一可变 URL 映射，并对真实 PNG/JPEG 粘贴 `preventDefault()` 后返回 `true`。专项 `72 passed, 192 subtests passed`，完整 `apps/` 回归 `946 passed, 23 skipped, 733 subtests passed`；隔离 Web 已更新为 `sha256:f7cdfd721e71c7b563c328a6f877ef67847e5afb1778ec0caf8b3173133d328d`。仍需 Firefox 保存、刷新和位置复验，状态保持 `BLOCKED`。
+- 2026-11-23：`KB-000009` v1（`940f5f8e-4551-46bc-b169-301feb2aa396`）实际为 `in_review` 的 `opsai.richtext/1` 快照，含 4 个图片节点、4 个表格、9 个 clean 当前版本媒体关联，且无工作草稿/正式版本。历史详情此前只投影 `body_plaintext`，故丢失图文展示；现以既有安全渲染器和精确历史版本媒体路由渲染，不修改快照、状态或媒体关联。历史专项 `28 passed, 26 subtests passed`，完整 `apps/` 回归 `947 passed, 23 skipped, 733 subtests passed`；隔离 Web 已更新为 `sha256:a2711b995f978675fa928e2d83c3d05b0006d542bb12f1bc0c6bd5b7fc820946`。人工浏览器复验前保持 `BLOCKED`。
+
+- 2026-11-23：`KB-000009` v1 的 4 个表格 JSON、`table/tr/th/td` HTML 与历史数据均保持正确（12 个表头单元格、35 个普通单元格，无合并跨度）；阅读态表格此前只有编辑器作用域 CSS，故缺少边框和表头视觉。现统一为四个阅读页面的 `richtext-body` 样式：清晰蓝白边框、内边距、中文长文本换行，以及仅表格容器横向滚动。专项 `30 passed, 26 subtests passed`，完整 `apps/` 回归 `949 passed, 23 skipped, 733 subtests passed`；Django check、迁移一致性、Ruff、JS 语法、富文本构建、静态 CSS HTTP 响应和 `git diff --check` 均通过。隔离 Web 已更新为 `sha256:eb82c373f16d09a5b853af1f35f04243212caba276664be4951c5d9661321b0f`；仍待 Firefox 人工复验，任务保持 `BLOCKED`。
+
+- 2026-11-23：经负责人授权，仅在 `opsai-multi-import-acceptance-01` 将 `KB-000009` 的测试受众从 `all_employees` 收紧为 `restricted`，新增唯一 `user_group / allow / multi-import-authorized-readers` 规则；未修改账号、正文、版本、图片、表格、发布状态或原始导入文件。正式 v1、文章状态、两条版本记录和 9 条有效媒体关联的修改前后核验一致。真实隔离服务验证：`multi-import-reader` 搜索、详情和图片均为允许/HTTP 200；`multi-import-denied` 搜索不命中、详情和图片均为 HTTP 404，管理和审核原始文件入口也均为 HTTP 404。审核员原始文件下载为 HTTP 200 并新增 1 条下载审计。相关回归 `157 passed, 68 subtests passed`，Django check 与 `git diff --check` 通过；仍待 Firefox 人工权限复验，任务保持 `BLOCKED`。
 
 ## 2. 已替换的前一当前任务登记（历史保留）
 

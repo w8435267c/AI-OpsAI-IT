@@ -247,7 +247,6 @@ class KnowledgeEditorJavaScriptContractTests(SimpleTestCase):
             "IndexedDB",
             "indexedDB",
             "innerHTML",
-            "beforeunload",
             "sendBeacon",
             "eval(",
             "new Function",
@@ -255,6 +254,12 @@ class KnowledgeEditorJavaScriptContractTests(SimpleTestCase):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, self.source)
         self.assertIn("status.textContent = message", self.source)
+
+    def test_reload_warns_when_a_richtext_change_has_not_finished_saving(self):
+        self.assertIn('window.addEventListener("beforeunload"', self.source)
+        self.assertIn("if (!dirty && !inFlight && !manualInFlight)", self.source)
+        self.assertIn('event.returnValue = ""', self.source)
+        self.assertNotIn("sendBeacon", self.source)
 
     def test_preview_reuses_autosave_state_machine_before_current_tab_navigation(self):
         for expected in (
@@ -279,6 +284,29 @@ class KnowledgeEditorJavaScriptContractTests(SimpleTestCase):
         self.assertIn("previewPending", self.source)
         self.assertIn("请修正后再预览", self.source)
         self.assertIn("continuePreviewAfterAutosave", self.source)
+
+    def test_pasted_images_use_the_existing_private_upload_contract(self):
+        for expected in (
+            'document.addEventListener("opsai-richtext-image-paste"',
+            "function uploadPastedImage",
+            'formData.set("draft_id", draftId.value)',
+            'formData.set("file", file',
+            "mediaUploadUrl",
+            "insertPastedImage(token, payload.media.id",
+            "cancelPastedImage(token)",
+        ):
+            with self.subTest(expected=expected):
+                self.assertIn(expected, self.source)
+        self.assertNotIn("data:image/", self.source)
+
+    def test_pasted_image_registration_uses_the_live_url_mapping(self):
+        source_path = Path(settings.BASE_DIR) / "static" / "js" / "richtext_editor_source.js"
+        source = source_path.read_text(encoding="utf-8")
+        self.assertIn("function createImageNode(mediaUrls)", source)
+        self.assertIn("const url = mediaUrls[HTMLAttributes.mediaLinkId]", source)
+        self.assertIn("event.preventDefault()", source)
+        self.assertIn("return true", source)
+        self.assertNotIn("imageNode.configure({ mediaUrls })", source)
 
 
 class ManageArticleEditPageTests(TestCase):
@@ -391,6 +419,42 @@ class ManageArticleEditPageTests(TestCase):
         )
         Article.objects.filter(pk=cls.non_draft_article.pk).update(latest_working_version=saved)
 
+        cls.in_review_article = cls.make_article(
+            "KB-310005", owner=cls.article_owner, title="审核中文章"
+        )
+        cls.in_review_version = ArticleVersion.objects.create(
+            article=cls.in_review_article,
+            version_no=1,
+            status=VersionStatus.IN_REVIEW,
+            title="审核中的版本",
+            summary="审核摘要",
+            body_plaintext="审核正文",
+            change_summary="提交审核",
+            created_by=cls.article_owner,
+            submitted_by=cls.article_owner,
+            submitted_at=timezone.now(),
+        )
+
+        cls.published_without_draft_article = cls.make_article(
+            "KB-310006", owner=cls.article_owner, title="已发布文章"
+        )
+        cls.published_without_draft_version = ArticleVersion.objects.create(
+            article=cls.published_without_draft_article,
+            version_no=1,
+            status=VersionStatus.PUBLISHED,
+            title="已发布版本",
+            summary="发布摘要",
+            body_plaintext="发布正文",
+            change_summary="已发布",
+            created_by=cls.article_owner,
+            submitted_by=cls.article_owner,
+            submitted_at=timezone.now(),
+            published_at=timezone.now(),
+        )
+        Article.objects.filter(pk=cls.published_without_draft_article.pk).update(
+            current_published_version=cls.published_without_draft_version
+        )
+
     @classmethod
     def make_user(cls, username, group=None, **kwargs):
         user = User.objects.create_user(username=username, **kwargs)
@@ -476,6 +540,51 @@ class ManageArticleEditPageTests(TestCase):
                 self.assertEqual(response.status_code, 404)
                 self.assertEqual(response["Cache-Control"], "private, no-store")
 
+    def test_in_review_without_working_draft_shows_safe_status_guidance_without_writes(self):
+        version_count = ArticleVersion.objects.count()
+        response = self.get_as(self.article_owner, self.in_review_article)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "文章正在审核中，暂不可编辑")
+        self.assertContains(response, "查看待审核版本")
+        self.assertContains(
+            response,
+            reverse(
+                "knowledge_manage:history_detail",
+                args=[self.in_review_article.kb_no, self.in_review_version.pk],
+            ),
+        )
+        self.assertEqual(ArticleVersion.objects.count(), version_count)
+        self.in_review_article.refresh_from_db()
+        self.assertIsNone(self.in_review_article.latest_working_version_id)
+
+    def test_published_without_working_draft_shows_history_guidance_without_writes(self):
+        version_count = ArticleVersion.objects.count()
+        response = self.get_as(self.article_owner, self.published_without_draft_article)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "文章已发布，当前没有工作草稿")
+        self.assertContains(response, "不会因 GET 访问自动创建新草稿")
+        self.assertContains(
+            response,
+            reverse(
+                "knowledge_manage:history_detail",
+                args=[
+                    self.published_without_draft_article.kb_no,
+                    self.published_without_draft_version.pk,
+                ],
+            ),
+        )
+        self.assertEqual(ArticleVersion.objects.count(), version_count)
+        self.published_without_draft_article.refresh_from_db()
+        self.assertIsNone(self.published_without_draft_article.latest_working_version_id)
+
+    def test_unauthorised_user_cannot_receive_an_edit_unavailable_status_page(self):
+        response = self.get_as(self.other_editor, self.in_review_article)
+
+        self.assertEqual(response.status_code, 404)
+        self.assertNotContains(response, "文章正在审核中，暂不可编辑", status_code=404)
+
     def test_page_uses_draft_title_and_escapes_plaintext_body(self):
         response = self.get_as(self.article_owner)
 
@@ -518,6 +627,27 @@ class ManageArticleEditPageTests(TestCase):
                 self.assertNotContains(response, f'name="{forbidden_name}"')
 
         self.assertContains(response, "&quot;说明&quot;: &quot;中文范围&quot;", html=False)
+
+    def test_richtext_body_uses_a_single_editing_surface_and_hides_derived_text(self):
+        self.draft.body = {
+            "format": "opsai.richtext/1",
+            "schema_version": 1,
+            "content": [
+                {
+                    "type": "paragraph",
+                    "content": [{"type": "text", "text": "富文本正文"}],
+                }
+            ],
+        }
+        self.draft.body_plaintext = "富文本正文"
+        self.draft.save(update_fields=["body", "body_plaintext"])
+
+        response = self.get_as(self.article_owner)
+
+        self.assertContains(response, 'id="richtext-editor-host"')
+        self.assertContains(response, 'class="richtext-derived-summary"')
+        self.assertContains(response, "自动生成的纯文本摘要", html=False)
+        self.assertContains(response, "不在此处编辑", html=False)
         self.assertContains(response, "当前为草稿")
         self.assertContains(response, "v2")
         self.assertContains(response, "锁版本 7")

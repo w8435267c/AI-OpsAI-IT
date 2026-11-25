@@ -85,6 +85,8 @@
                 <a href="{% url 'knowledge_manage:edit' article.kb_no %}">编辑草稿</a>
               {% elif article.pending_review_version_no %}
                 <span>已提交审核，等待审核员处理</span>
+              {% elif article.current_published_version %}
+                <span>已发布，当前没有工作草稿</span>
               {% endif %}
               <a href="{% url 'knowledge_manage:history' article.kb_no %}">版本历史</a>
             </p>

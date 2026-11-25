@@ -166,6 +166,151 @@ a {
   margin-top: 2rem;
 }
 
+.form-panel {
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: var(--surface);
+}
+
+.form-panel > h2 {
+  margin-top: 0;
+}
+
+.form-intro,
+.import-guidance {
+  margin: 0 0 1.25rem;
+  color: var(--muted);
+}
+
+.import-panel {
+  border-color: #b8c8df;
+}
+
+.import-guidance {
+  display: grid;
+  gap: 0.55rem;
+  padding: 1rem 1.1rem;
+  border-left: 0.3rem solid var(--brand);
+  border-radius: 0.5rem;
+  background: #eef5ff;
+  color: #29496e;
+}
+
+.import-guidance p {
+  margin: 0;
+}
+
+.knowledge-create-form,
+.document-import-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.knowledge-create-form > p,
+.document-import-form > p {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+}
+
+.knowledge-create-form label,
+.document-import-form label {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.knowledge-create-form input,
+.knowledge-create-form select,
+.knowledge-create-form textarea,
+.document-import-form input,
+.document-import-form select,
+.document-import-form textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 0.72rem 0.8rem;
+  border: 1px solid #9db1cd;
+  border-radius: 0.6rem;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+
+.document-import-form input[type="file"] {
+  padding: 0.45rem;
+  border-style: dashed;
+  background: #f8fbff;
+}
+
+.document-import-form input[type="file"]::file-selector-button {
+  margin-right: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 0;
+  border-radius: 0.4rem;
+  background: #dceafe;
+  color: var(--brand-dark);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.knowledge-create-form input:focus-visible,
+.knowledge-create-form select:focus-visible,
+.knowledge-create-form textarea:focus-visible,
+.document-import-form input:focus-visible,
+.document-import-form select:focus-visible,
+.document-import-form textarea:focus-visible {
+  outline: 3px solid #82b1ff;
+  outline-offset: 2px;
+}
+
+.knowledge-create-form .helptext,
+.document-import-form .helptext,
+.knowledge-create-form .errorlist,
+.document-import-form .errorlist {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.knowledge-create-form .errorlist,
+.document-import-form .errorlist {
+  color: #a61b1b;
+  font-weight: 650;
+}
+
+.primary-action,
+.import-action {
+  justify-self: start;
+  padding: 0.75rem 1.15rem;
+  border: 1px solid var(--brand-dark);
+  border-radius: 0.65rem;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.primary-action {
+  background: var(--brand);
+}
+
+.import-action {
+  background: var(--brand-dark);
+}
+
+.primary-action:hover,
+.primary-action:focus-visible,
+.import-action:hover,
+.import-action:focus-visible {
+  filter: brightness(0.9);
+}
+
+.primary-action:focus-visible,
+.import-action:focus-visible {
+  outline: 3px solid #82b1ff;
+  outline-offset: 2px;
+}
+
 .section-heading {
   display: flex;
   align-items: baseline;
@@ -480,6 +625,46 @@ time {
   margin: 0 0 1rem;
 }
 
+/* Shared server-rendered rich content: draft, history, review, and employee views. */
+.richtext-body {
+  white-space: normal;
+}
+
+.richtext-body .rich-table-scroll {
+  max-width: 100%;
+  margin: 1rem 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  border: 1px solid #b8c8df;
+  border-radius: 0.5rem;
+  background: var(--surface);
+  -webkit-overflow-scrolling: touch;
+}
+
+.richtext-body .rich-table-scroll table {
+  width: 100%;
+  min-width: 38rem;
+  border-collapse: collapse;
+  background: var(--surface);
+}
+
+.richtext-body .rich-table-scroll th,
+.richtext-body .rich-table-scroll td {
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #b8c8df;
+  color: var(--ink);
+  text-align: left;
+  vertical-align: top;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.richtext-body .rich-table-scroll th {
+  background: #eaf2ff;
+  color: var(--brand-dark);
+  font-weight: 700;
+}
+
 .article-image {
   margin: 1rem 0;
   max-width: 100%;
@@ -538,6 +723,50 @@ time {
   resize: vertical;
 }
 
+.richtext-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.75rem;
+  border: 1px solid #b8c8df;
+  border-radius: 0.65rem;
+  background: #f5f8fd;
+}
+
+.richtext-toolbar button {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #7893b8;
+  border-radius: 0.4rem;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.richtext-editor {
+  min-height: 18rem;
+  padding: 1rem;
+  border: 1px solid #9db1cd;
+  border-radius: 0.65rem;
+  background: var(--surface);
+}
+
+.richtext-editor .ProseMirror:focus { outline: 3px solid #82b1ff; outline-offset: 3px; }
+.richtext-editor table { border-collapse: collapse; width: 100%; }
+.richtext-editor th, .richtext-editor td { min-width: 5rem; padding: 0.45rem; border: 1px solid #9db1cd; vertical-align: top; }
+.richtext-editor figure.ProseMirror-selectednode { outline: 3px solid var(--brand); }
+
+.richtext-derived-summary {
+  padding: 0.75rem;
+  border: 1px dashed #9db1cd;
+  border-radius: 0.65rem;
+  background: #f8fbff;
+  color: var(--muted);
+}
+
+.richtext-derived-summary summary { cursor: pointer; font-weight: 650; }
+.richtext-derived-summary textarea { min-height: 7rem; margin-top: 0.75rem; }
+
 .draft-editor-field input:focus-visible,
 .draft-editor-field textarea:focus-visible {
   outline: 3px solid #82b1ff;
@@ -560,6 +789,10 @@ time {
 
 .editor-autosave p {
   margin: 0;
+}
+
+.editor-autosave--richtext {
+  margin: 0.8rem 0 0;
 }
 
 .editor-actions {

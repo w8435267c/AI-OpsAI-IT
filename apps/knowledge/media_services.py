@@ -66,6 +66,60 @@ def get_draft_media(*, actor, kb_no: str):
     )
 
 
+def get_draft_media_link(*, actor, kb_no: str, media_id):
+    """Resolve one clean active current-draft asset for an authorised manager only."""
+
+    try:
+        detail = get_manage_working_article_detail(actor=actor, kb_no=kb_no)
+    except ManageWorkingArticleReadError:
+        return None
+    try:
+        link = ArticleVersionMedia.objects.select_related("asset", "article_version__article").get(
+            pk=media_id,
+            article_version_id=detail.draft_id,
+            is_active=True,
+            asset__scan_status=MediaScanStatus.CLEAN,
+        )
+    except ArticleVersionMedia.DoesNotExist:
+        return None
+    path = _private_root() / link.asset.storage_name
+    return (link, path) if path.is_file() else None
+
+
+def get_history_media(*, actor, kb_no: str, version_id):
+    """Return only clean image links belonging to one authorised history snapshot."""
+
+    from apps.knowledge.version_readers import (
+        ArticleVersionHistoryReadError,
+        get_article_version_history_detail,
+    )
+
+    try:
+        detail = get_article_version_history_detail(actor=actor, kb_no=kb_no, version_id=version_id)
+    except ArticleVersionHistoryReadError:
+        return None
+    return ArticleVersionMedia.objects.filter(
+        article_version_id=detail.version_id,
+        is_active=True,
+        asset__kind=MediaKind.IMAGE,
+        asset__scan_status=MediaScanStatus.CLEAN,
+    ).select_related("asset")
+
+
+def get_history_media_link(*, actor, kb_no: str, version_id, media_id):
+    """Resolve a clean image only after exact history-version access checks."""
+
+    links = get_history_media(actor=actor, kb_no=kb_no, version_id=version_id)
+    if links is None:
+        return None
+    try:
+        link = links.get(pk=media_id)
+    except ArticleVersionMedia.DoesNotExist:
+        return None
+    path = _private_root() / link.asset.storage_name
+    return (link, path) if path.is_file() else None
+
+
 def get_employee_media_link(*, actor, kb_no: str, media_id):
     """按员工受众和当前发布版本取媒体；失败时不泄露资源存在性。"""
 
@@ -331,17 +385,20 @@ def remove_draft_media(*, actor, kb_no: str, draft_id, media_id) -> None:
         ) from exc
 
 
-def copy_active_media_links(*, source: ArticleVersion, destination: ArticleVersion) -> None:
+def copy_active_media_links(*, source: ArticleVersion, destination: ArticleVersion) -> dict:
     """创建新工作版本时复制关联，而非共享可变关联；资产文件保持不可变。"""
 
+    link_id_map = {}
     for link in source.media_links.filter(is_active=True).select_related("asset"):
-        ArticleVersionMedia.objects.create(
+        copied_link = ArticleVersionMedia.objects.create(
             article_version=destination,
             asset=link.asset,
             display_order=link.display_order,
             body_position=link.body_position,
             caption=link.caption,
         )
+        link_id_map[link.pk] = copied_link.pk
+    return link_id_map
 
 
 def ensure_version_media_publishable(*, version: ArticleVersion) -> None:

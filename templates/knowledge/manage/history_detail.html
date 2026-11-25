@@ -36,12 +36,22 @@
     </section>
     <section class="article-section" aria-labelledby="history-body-title">
       <h2 id="history-body-title">正文</h2>
-      <div class="history-plaintext">{{ detail.body_text|linebreaksbr }}</div>
+      {% if body_html %}
+        <div class="richtext-body">{{ body_html }}</div>
+      {% else %}
+        <div class="history-plaintext">{{ detail.body_text|linebreaksbr }}</div>
+      {% endif %}
     </section>
     <section class="article-section" aria-labelledby="history-change-title">
       <h2 id="history-change-title">版本说明</h2>
       <p>{{ detail.change_summary }}</p>
     </section>
+    {% if has_import_source %}
+      <section class="article-section" aria-labelledby="history-source-title">
+        <h2 id="history-source-title">原始导入文件</h2>
+        <p><a href="{% url 'knowledge_manage:import_source' detail.kb_no detail.version_id %}">查看原始导入文件</a></p>
+      </section>
+    {% endif %}
 
     {% if restore_form %}
       <section class="article-section restore-warning" aria-labelledby="restore-title">
