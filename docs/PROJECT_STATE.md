@@ -6,16 +6,16 @@
 
 | 项目 | 当前状态 |
 | --- | --- |
-| 快照日期 | 2026-10-31 |
-| 当前工作区 | `D:\Desktop\OpsAI\AI-OpsAI-IT-wagtail-poc` |
+| 快照日期 | 2026-11-28 |
+| 当前工作区 | `D:\Desktop\OpsAI\AI-OpsAI-IT-fusion-integration-01` |
 | 当前分支 | `fusion/wagtail-poc` |
-| 本轮实施授权基线 HEAD | `176131758efa01658ffe3a9fee5dee517937154a` |
-| 远端实时核验 | 最近一次实时证据：GitHub `fusion/wagtail-poc` 为 `5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e`，本地基线纯领先 11 个提交；Gitee 因 SSL 连接失败为 `UNKNOWN`；本轮禁止 Push |
-| 当前阶段 | LOCAL-DEMO-REVIEW-WEB-01 已完成离线 Web 实现与自动化验收；独立演示浏览器验收待环境恢复 |
+| 本轮状态收口基线 HEAD | `4436547d25893a079e7192f73d5ffbe06102dd40` |
+| 远端实时核验 | GitHub 与 Gitee 的 `fusion/wagtail-poc` 均为 `4436547d25893a079e7192f73d5ffbe06102dd40`；本地工作区干净，本轮不 Push |
+| 当前阶段 | `KB-MULTI-FORMAT-IMPORT-01` 已完成证据与状态收口；无获授权的后继业务开发任务 |
 | 正式技术主体 | Python 3.13 + Django 5.2 LTS 模块化单体 |
 | Wagtail 状态 | 融合方向已确认，F02～F08 已形成隔离 PoC 证据，尚未进入正式根依赖、正式 settings 或正式路由 |
 | 电脑 B 环境 | Python、正式项目依赖、WSL 2、Docker Desktop、Docker Engine 和 Docker Compose 已恢复；根目录 `.env` 存在、被 Git 忽略且未跟踪，内容与适用性未验证 |
-| 最近完成开发 | `LOCAL-DEMO-REVIEW-WEB-01`，`DONE / OFFLINE WEB IMPLEMENTATION COMPLETED` |
+| 最近完成开发 | `KB-MULTI-FORMAT-IMPORT-01`，`DONE`；实现提交 `4589dbd` 已在正式分支历史中 |
 | 当前开发任务 | 无；后续必须基于新的完整 HEAD 单独授权 |
 | Task 10 功能 | PASS |
 | Task 10 安全 | PASS |
@@ -26,9 +26,9 @@
 | Task 12E 真实浏览器验收 | `PASS_WITH_VISUAL_FINDINGS`；P0/P1/P2 均为 0，P3 为 2 |
 | 当前业务主线 | 本地演示数据、Service 闭环和审核 Web 已实现；`TASK13-REVIEW-WEB-E2E-01` 的独立 PostgreSQL 与桌面/手机浏览器验收已 PASS；Task 12 暂停且主任务尚未正式封板，Task 13 主任务仍为 BACKLOG |
 | Task 13 代码现状 | 六个既有提交保留；Task 13-08 核心修复 Commit `1050b8fbf1fc384a79a90fcc86ae9320e5afb67e` 已完成并有修正夹具 PostgreSQL 14 PASS 证据，Task 13 主任务仍未完成 |
-| 当前交接状态 | 无真实 Agent 切换；审核 Web E2E 切片已 `DONE / PASS`；Task 12 为 `PAUSED / IN_PROGRESS HISTORY PRESERVED`；Task 13 主任务为 `BACKLOG / unassigned` |
+| 当前交接状态 | 无真实 Agent 切换；多格式导入已收口；Task 12 为 `PAUSED / IN_PROGRESS HISTORY PRESERVED`；Task 13 主任务为 `BACKLOG / unassigned` |
 
-本快照的总体结论是：Task 10、Task 11 均已正式 `DONE / codex`；Task 12A～12E 的历史成果保留，但 Task 12 主任务暂停且未封板。DATA-01 已在独立本地演示环境中证明正式 Service 的创建、保存、提交、独立审核、发布、员工搜索与详情链路可运行，不能外推为生产上线。`TASK13-REVIEW-WEB-E2E-01` 已补足审核 HTTP/UI 的独立 E2E、PostgreSQL 与浏览器证据；Task 13 主任务仍缺 Worker/通知、原持久环境前置检查和主任务级负责人验收，继续为 `BACKLOG / unassigned`。正式内容权威保持 `Article + ArticleVersion`，8J 仍为 `BLOCKED / unassigned`。
+本快照的总体结论是：Task 10、Task 11 和 `KB-MULTI-FORMAT-IMPORT-01` 均有已提交的实现与相应验收证据；多格式导入实现提交为 `4589dbd`，已在 GitHub/Gitee 同步的正式分支历史中。该能力的 Firefox 人工验收、P1 修复和历史自动化结果均见最终验收报告，但并非本轮重跑结果。Task 12A～12E 的历史成果保留，但 Task 12 主任务暂停且未封板。`TASK13-REVIEW-WEB-E2E-01` 已补足审核 HTTP/UI 的独立 E2E、PostgreSQL 与浏览器证据；Task 13 主任务仍缺 Worker/通知、原持久环境前置检查和主任务级负责人验收，继续为 `BACKLOG / unassigned`。Task 14 尚未获开发授权。正式内容权威保持 `Article + ArticleVersion`，8J 仍为 `BLOCKED / unassigned`。
 
 ## 2. 状态证据规则
 
@@ -246,12 +246,13 @@ Task 10 的 10A～10E 分别对应 Commit `cf8bf1ff1692dedd69e5fbf97f0632a460d66
 - DATA-01 实现提交只新增五个授权文件；专项 10 PASS、正式 `apps/tests` 837 PASS、浏览器验收和备份恢复证据均已写入提交及 SOP。
 - 最近一次实时远端核验中，GitHub `fusion/wagtail-poc` 为 `5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e`，本地 DATA-01 基线相对其纯领先 11 个提交；Gitee 因 SSL 连接失败为 `UNKNOWN`。本状态不宣称三端同步，G03 不执行 Push。
 - Task 12 当前保持 `PAUSED / IN_PROGRESS HISTORY PRESERVED`；Task 13 主任务保持 `BACKLOG / unassigned`，其 `TASK13-REVIEW-WEB-E2E-01` 子任务为 `DONE / PASS`；任务 8J 保持 `BLOCKED / unassigned`。
+- `KB-MULTI-FORMAT-IMPORT-01` 已于 2026-11-28 完成状态收口：实现提交 `4589dbd71885b27309e9be9ec51000d5981135a2` 为当前正式分支的祖先，最终验收报告为 `docs/KB-MULTI-FORMAT-IMPORT-01_最终验收报告.md`。历史 `pytest apps -q` 为 965 passed、23 skipped、737 subtests passed；P1 媒体专项、Django check、迁移一致性、Ruff 与 JS 检查通过。根目录 pytest 的 Wagtail PoC 误收集 16 错误、Windows 对 18027 内部 CA 未信任及镜像标签不可单独证明字节一致性均继续保留。
 - `LOCAL-DEMO-REVIEW-WEB-01` 已完成离线实现：审核队列、详情、本人已审核记录、提交、批准与驳回页面均复用既有 Reader/Service；专项与关联测试 `51 passed`、`118 subtests`，全量离线回归 `846 passed`、`23 skipped`、`712 subtests`。
 - Task 12D-00 为 `DONE / SYNCED`，12D-01 为 `DESIGN PASS`，12D-02～12D-06 均为 `DONE / SYNCED`；PostgreSQL 17.11 临时并发补证使用端口 15432 与 tmpfs，六类竞争和 Lock wait 均 PASS，资源已完全清理，且不构成 8J 验收。
 
 ## 11. 下一步边界
 
-DATA-01 与审核 Web 离线实现均已完成；`TASK13-REVIEW-WEB-E2E-01` 已在独立环境完成审核页面的桌面和 `390 × 844` 浏览器验收以及 PostgreSQL 定向回归。`DINGTALK-H5-SSO-MVP-01` 已登记为唯一下一项业务任务，但没有代码实施、真实钉钉调用或凭据访问授权。Task 12 继续暂停，只有在负责人最终验收、`390 × 844` 窄屏视觉验收或书面豁免、Gitee 当前远端 HEAD 核验及必要治理同步完成后，才具备申请正式封板的条件。Task 13 六个既有提交保留，主任务正式状态仍为 `BACKLOG / unassigned`；本 E2E 子任务不代表 Task 13 全面开工或完成。
+DATA-01、审核 Web E2E 与多格式导入均已有各自独立证据；当前没有获授权的后继业务任务。下一项建议是由负责人单独授权 Task 13 的正式验收证据收口，不得自动启动 Task 13 或 Task 14。Task 12 继续暂停，只有在负责人最终验收、`390 × 844` 窄屏视觉验收或书面豁免、Gitee 当前远端 HEAD 核验及必要治理同步完成后，才具备申请正式封板的条件。Task 13 六个既有提交保留，主任务正式状态仍为 `BACKLOG / unassigned`；本 E2E 子任务不代表 Task 13 全面开工或完成。
 
 当前边界继续禁止自动执行：
 

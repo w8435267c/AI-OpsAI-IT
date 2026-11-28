@@ -1,23 +1,23 @@
 # OpsAI AI Handoff
 
-> `TASK13-REVIEW-WEB-E2E-01` 已完成独立隔离环境验收：五阶段 PASS、隔离 PostgreSQL 定向回归 114/114 PASS、桌面与 `390 × 844` 真实浏览器 PASS。Task 13 主任务继续为 BACKLOG；本文件不构成自动 Resume、任务领取或业务执行授权。
+> `KB-MULTI-FORMAT-IMPORT-01` 已完成证据与状态收口：实现提交 `4589dbd` 已在正式分支历史中，最终验收报告记录 Firefox 四格式人工验收和 P1 修复。当前没有获授权的后继业务任务；本文件不构成自动 Resume、任务领取或业务执行授权。
 
 ## 1. 当前交接状态
 
-当前没有真实的 Agent 切换事件。审核 Web 实施复用既有 Reader/Service，未修改状态机、模型或持久数据；E2E 执行基线为 `01529d2a23c7e2c46bb81fa984eb838080eeb63f`，原始证据的 SHA-256 为 `43B600CEB6410A503276A1DA37534D50BCE2627DA4810253D1A665F921ABF989`。Task 12 保持暂停，Task 13 六个既有提交保留且主任务仍未完成。
+当前没有真实的 Agent 切换事件。本轮仅收口任务状态，未修改业务代码、数据库、容器或其他工作区。多格式导入最终验收报告位于 `docs/KB-MULTI-FORMAT-IMPORT-01_最终验收报告.md`；实现提交为 `4589dbd71885b27309e9be9ec51000d5981135a2`。Task 12 保持暂停，Task 13 六个既有提交保留且主任务仍未完成。
 
 | 项目 | 当前值 |
 | --- | --- |
-| 当前已登记任务 | `DINGTALK-H5-SSO-MVP-01`；`REGISTERED / NOT STARTED`，尚无实施授权 |
-| 最近完成任务 | `TASK13-REVIEW-WEB-E2E-01`；`DONE / PASS` |
-| 后续待授权事项 | 钉钉 H5 免登与员工身份映射 MVP 的逐文件实施范围、测试租户与凭据注入方式；不自动启动 |
-| 本轮实施授权基线 | `01529d2a23c7e2c46bb81fa984eb838080eeb63f` |
-| 远端实时状态 | 最近一次核验：GitHub `fusion/wagtail-poc` 为 `5bf0632af3dd19163b7ac0fe0f6d126b6a19b19e`，本地基线纯领先 11 个提交；Gitee 因 SSL 连接失败为 `UNKNOWN`；未 Push |
-| 本轮验证 | 五阶段隔离 E2E PASS；PostgreSQL 定向回归 `114` 项 OK；桌面 `1280 × 720`、手机 `390 × 844` 真实浏览器 PASS |
+| 当前已登记任务 | 无；等待项目负责人基于当前 HEAD 单独授权 |
+| 最近完成任务 | `KB-MULTI-FORMAT-IMPORT-01`；`DONE` |
+| 后续待授权事项 | Task 13 正式验收证据收口；不得自动启动 |
+| 本轮状态收口基线 | `4436547d25893a079e7192f73d5ffbe06102dd40` |
+| 远端实时状态 | GitHub 与 Gitee 的 `fusion/wagtail-poc` 均为 `4436547d25893a079e7192f73d5ffbe06102dd40`；本轮未 Push |
+| 本轮验证 | 只读核验确认 `4589dbd` 为当前正式分支祖先；最终验收报告记录 Firefox、P1、历史自动化与隔离环境证据，未在本轮重跑 |
 | Task 12 | `PAUSED / IN_PROGRESS HISTORY PRESERVED`；未完成封板条件完整保留 |
 | Task 13 | `BACKLOG / unassigned`；审核 Web 候选不代表 Task 13 全面开工 |
-| 当前等待动作 | 负责人对钉钉 MVP 的精确实施范围、测试租户与凭据注入方式作出单独授权 |
-| 当前禁止动作 | 不自动开展后续审核 Web、Task 12 或 Task 13；不重做 DATA-01/Task 13-08，不操作原持久数据库或真实 `.env`，不 Push、Merge 或部署 |
+| 当前等待动作 | 负责人对 Task 13 正式验收证据收口的精确范围作出单独授权 |
+| 当前禁止动作 | 不自动开展 Task 12、Task 13、Task 14 或钉钉真实接入；不操作原持久数据库或真实 `.env`，不 Push、Merge 或部署 |
 | Agent 切换状态 | 未发生 |
 
 DATA-01 的事实边界：实现 Commit 只新增独立 Compose、演示配置样例、正式 Service 编排命令、10 项安全测试和 SOP。演示环境完成创建、保存、提交、独立审核、批准发布、员工搜索/详情、未登录与无权隔离、幂等和备份恢复验证，外部通知发送次数为 0。审核 Web 只接线既有 Reader/Service；后续 `TASK13-REVIEW-WEB-E2E-01` 已在另一套独立资源完成浏览器与 PostgreSQL 验收，仍不得描述为生产上线。
@@ -258,5 +258,5 @@ Task 10 最终验证为页面专项 `30 passed`、knowledge `310 passed`、正�
 - 当前没有真实 Agent 切换；如后续切换，下一 Agent 必须先核验本轮新 HEAD、DATA-01 Commit/SOP、ADR-0003、ADR-0004 及 Task 13 既有证据，不得自行启动后续审核、Task 12、Task 13 或重做 DATA-01。
 - 任务 8J 保持 `BLOCKED / unassigned`；Task 13 保持 `BACKLOG / unassigned`。
 - Task 13 六个既有提交已经覆盖 submit、reject、approve/publish 和 Reader 等底层能力；其审核 HTTP/UI、隔离 PostgreSQL 与桌面/手机 E2E 已由 `TASK13-REVIEW-WEB-E2E-01` 完成，但 Worker/通知、持久环境和负责人对完整主任务的独立验收仍缺失，因此 Task 13 未完成。
-- `DINGTALK-H5-SSO-MVP-01` 已登记为下一项唯一业务任务，范围仅为 H5 免登、可信身份映射和既有受众权限复用；尚未获得实施、测试租户、真实凭据或生产接入授权。
-- 本文件与 `tasks/CURRENT_TASK.md`、`tasks/TASKS.yaml` 的 DATA-01、审核 Web、Task 12/12E/13/13-07/13-08/13-08-ARCHIVE 状态保持一致；HANDOFF 文本不能授予执行权，未经单独授权不得继续 Task 13、正式接入 Wagtail 或操作原持久数据库。
+- `KB-MULTI-FORMAT-IMPORT-01` 已完成：历史 `pytest apps -q` 为 965 passed、23 skipped、737 subtests passed；P1 媒体专项、Django check、迁移一致性、Ruff 与 JS 检查均通过。根目录 pytest 的历史 Wagtail PoC 误收集 16 错误、Windows 未信任 18027 内部 CA、以及 18027 镜像标签不能单独证明字节一致性，均为保留限制而非本轮隐去项。
+- 禁止触碰 `AI-OpsAI-IT-wagtail-poc` 的 20 项未提交改动、`AI-OpsAI-IT-mainline` 的 10 项未提交/未跟踪改动，以及 `AI-OpsAI-IT-multi-import` 隔离工作区。HANDOFF 文本不能授予执行权；下一步仅建议 Task 13 正式验收证据收口，须先获单独授权。

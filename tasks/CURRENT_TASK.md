@@ -1,19 +1,27 @@
 # OpsAI Current Task
 
-> 本文件登记唯一当前任务。本轮仅在 `D:\Desktop\OpsAI\AI-OpsAI-IT-multi-import` 实施多格式知识文档导入 V1.1；不得修改主线工作树中的未提交试点部署改动，不得操作 18443、18025、既有演示/试点/历史验收容器或数据卷，不合并、不推送、不部署。
+> 当前没有获授权的后继业务开发任务。`KB-MULTI-FORMAT-IMPORT-01` 已于 2026-11-28 完成证据与状态收口；不得因此自动启动 Task 13、Task 14 或其他任务。
 
-## 1. 当前任务
+## 1. 已完成任务（历史收口）
 
 | 项目 | 当前值 |
 | --- | --- |
 | 任务编号 | `KB-MULTI-FORMAT-IMPORT-01` |
 | 任务名称 | 多格式知识文档导入与统一富文本知识内容 V1.1 |
-| 任务状态 | `BLOCKED / manual browser E2E pending` |
+| 任务状态 | `DONE` |
 | 工作树 | `D:\Desktop\OpsAI\AI-OpsAI-IT-multi-import` |
 | 分支 | `feature/kb-multi-format-import-01` |
 | 起始 HEAD | `8b982ef994d19fc37806ab49c4f5c17fe33658da` |
 | 上游能力 | 复用已提交的版本媒体、私有存储、ClamAV 失败关闭、DOCX 导入、草稿编辑与审核发布；不得复制审核流程。 |
 | 可修改文件 | `apps/knowledge/` 中结构化正文模型、迁移、内容校验/渲染、导入服务、媒体关联、表单、视图、路由、模板、项目自有 JS/CSS 和测试；必要 `apps/audit/` 审计接线；本地 vendor 编辑器资源及其许可证记录；`pyproject.toml` 及实际存在且必须同步的锁定文件；必要隔离验收配置；`tasks/CURRENT_TASK.md`、`tasks/TASKS.yaml`。 |
+
+### 1.0 最终收口结论（2026-11-28）
+
+- 最终验收报告：`docs/KB-MULTI-FORMAT-IMPORT-01_最终验收报告.md`。该报告记录负责人 Firefox 四格式人工验收、KB-000009 有权阅读和无权文章/媒体拒绝、P1 后继草稿图片关联修复及回滚验证。
+- 实现提交：`4589dbd71885b27309e9be9ec51000d5981135a2`，已是正式分支 `fusion/wagtail-poc` 当前 HEAD `4436547d25893a079e7192f73d5ffbe06102dd40` 的祖先；GitHub 与 Gitee 的该正式分支均已核验为当前 HEAD。
+- 历史测试证据（非本轮重跑）：`pytest apps -q` 为 `965 passed, 23 skipped, 737 subtests passed`；P1 媒体专项为 `65 passed, 89 subtests passed`；Django check、迁移一致性、Ruff、JS 检查和 `git diff --check` 通过。
+- 遗留限制：Windows 未信任 18027 内部根 CA；镜像标签不能单独证明运行容器与当前正式分支逐字节一致；根目录 `pytest -q` 会误收集历史 Wagtail PoC 并出现 16 个环境/导入错误，不能称为全仓绿色。
+- 后续状态：等待项目负责人指定并授权唯一下一项任务；不得自动将 Task 13 或 Task 14 设为进行中。
 
 ### 1.1 范围与验收
 
@@ -46,7 +54,7 @@
 - 本工作树和功能分支从该已提交 HEAD 新建，开工时干净；已确认媒体与 DOCX 导入能力在历史中可复用。
 - 当前尚未选择 PDF 解析依赖；选择前必须核对 Python 3.13 兼容性、维护状态、许可、实际安全用途和 wheel/隔离构建可用性。
 
-### 1.3 本轮真实验证证据（2026-11-22，尚未收口）
+### 1.3 历史阶段验证记录（2026-11-22 起；以 1.0 最终收口结论为准）
 
 - 独立 Python 3.13 `.venv` 已离线校验并安装 `pypdf-7.1.1`；官方给定 SHA-256 与本地 wheel 一致。专项 DOCX/PDF/TXT/Markdown 解析和导入回归为 `24 passed`；正式 `apps/` 回归在仅进程内合成 PostgreSQL 占位变量下为 `924 passed, 23 skipped, 723 subtests passed`。仓库根 `pytest` 仍因既有未安装 Wagtail 实验目录在收集阶段失败，不能计为本任务失败或全量通过。
 - 已新建并仅使用 `opsai-multi-import-acceptance-01-*` 的 PostgreSQL、ClamAV、私有媒体卷、网络和 Web 镜像；未触碰 18025、18443、既有容器或历史卷。空库实际应用 `knowledge.0001` 至 `0009`、`audit.0001` 至 `0002`；隔离镜像已由经核验的 Linux `cp313`/x86_64 Pillow 12.3.0 wheel 重建，运行容器实测 `Pillow 12.3.0`、`gunicorn 27.0.0`、`pypdf 7.1.1`、`pip check` 和 Django check 通过。Pillow 12.3.0 Linux wheel 不适用于 Windows `.venv`，Windows 环境保持 11.3.0，未混用 ABI。

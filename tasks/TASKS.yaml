@@ -1,7 +1,7 @@
 project: AI-OpsAI-IT-wagtail-poc
 branch: fusion/wagtail-poc
 version: 1
-updated_at: "2026-10-31"
+updated_at: "2026-11-28"
 
 evidence_boundary:
   - "正式 Django 工程当前已有 Task 12E 累计自动化证据：717 passed、9 skipped、571 subtests、0 failed；Django system check、迁移一致性检查、Ruff、Format、git diff --check 与 node --check 通过。9 个 skipped 项为 SQLite test settings 下的 PostgreSQL 专项。"
@@ -21,7 +21,7 @@ tasks:
   - id: "KB-MULTI-FORMAT-IMPORT-01"
     title: "多格式知识文档导入与统一富文本知识内容 V1.1"
     priority: MUST
-    status: BLOCKED
+    status: DONE
     owner: codex
     dependencies:
       - "KB-ARTICLE-MEDIA-MVP-01"
@@ -54,6 +54,19 @@ tasks:
       - "2026-11-23：KB-000009 v1 的 4 个表格 JSON、table/tr/th/td HTML 与历史数据均保持正确（12 个表头单元格、35 个普通单元格，无合并跨度）；阅读态表格此前只有编辑器作用域 CSS，故缺少边框和表头视觉。现统一为四个阅读页面的 richtext-body 样式：清晰蓝白边框、内边距、中文长文本换行，以及仅表格容器横向滚动。专项 30 passed、26 subtests，完整 apps 回归 949 passed、23 skipped、733 subtests；Django check、迁移一致性、Ruff、JS 语法、富文本构建、静态 CSS HTTP 响应和 diff 检查均通过。隔离 Web 为 sha256:eb82c373f16d09a5b853af1f35f04243212caba276664be4951c5d9661321b0f；Firefox 人工复验前保持 BLOCKED。"
 
       - "2026-11-23：经负责人授权，仅在 opsai-multi-import-acceptance-01 将 KB-000009 的测试受众从 all_employees 收紧为 restricted，新增唯一 user_group / allow / multi-import-authorized-readers 规则；未修改账号、正文、版本、图片、表格、发布状态或原始导入文件。正式 v1、文章状态、两条版本记录和 9 条有效媒体关联的修改前后核验一致。真实隔离服务验证：multi-import-reader 搜索、详情和图片均为允许/HTTP 200；multi-import-denied 搜索不命中、详情和图片均为 HTTP 404，管理和审核原始文件入口也均为 HTTP 404。审核员原始文件下载为 HTTP 200 并新增 1 条下载审计。相关回归 157 passed、68 subtests，Django check 与 diff 检查通过；Firefox 人工权限复验前保持 BLOCKED。"
+
+    result:
+      commits:
+        - "4589dbd71885b27309e9be9ec51000d5981135a2"
+      verification:
+        - "历史最终验收：Firefox 四格式人工验收及 KB-000009 有权阅读、无权文章/媒体拒绝通过；P1 批准/驳回后继草稿媒体重映射与回滚专项通过。"
+        - "历史自动化：pytest apps -q 为 965 passed、23 skipped、737 subtests passed；P1 媒体专项为 65 passed、89 subtests passed；Django check、迁移一致性、Ruff、JS 检查和 git diff --check 通过。"
+        - "2026-11-28 只读收口核验：工作区干净；4589dbd 为当前正式分支祖先；GitHub/Gitee 的 fusion/wagtail-poc 均为 4436547d25893a079e7192f73d5ffbe06102dd40。"
+      notes:
+        - "最终验收报告：docs/KB-MULTI-FORMAT-IMPORT-01_最终验收报告.md。"
+        - "历史根目录 pytest -q 因 experiments/wagtail_* 误收集产生 16 个环境/导入错误，不能描述为全仓测试绿色。"
+        - "Windows 尚未信任 18027 隔离环境的内部根 CA；18027 镜像标签不能单独证明其与当前正式分支逐字节一致。"
+        - "任务完成不解除 8J、Task 13 主任务或真实钉钉集成的授权边界；Task 15 与既有媒体能力重叠，后续应先做证据映射。"
 
   - id: "PILOT-DB-MEDIA-RESTORE-01"
     title: "数据库与私有媒体联合恢复演练"
